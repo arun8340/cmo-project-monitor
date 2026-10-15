@@ -12,7 +12,7 @@ Next.js 16 (App Router) · TypeScript · Tailwind v4 · shadcn/ui (Base UI) · P
 
 ```bash
 npm install            # also runs `prisma generate`
-cp .env.example .env   # DATABASE_URL="file:./dev.db"
+cp .env.example .env   # then set AUTH_SECRET (see below)
 npm run db:migrate     # create / update the SQLite database
 npm run db:seed        # demo data + placeholder imagery
 npm run dev            # http://localhost:3000
@@ -22,6 +22,9 @@ npm run dev            # http://localhost:3000
 > (`better-sqlite3`, `prisma`, `@prisma/engines`, `esbuild`, `unrs-resolver`) are already listed
 > under `allowScripts` in `package.json`.
 
+`AUTH_SECRET` encrypts the login session cookie. Generate one with `openssl rand -base64 33` and paste it
+into `.env`. Changing it signs everyone out.
+
 Useful scripts:
 
 | Script | What it does |
@@ -29,10 +32,12 @@ Useful scripts:
 | `npm run db:seed` | Wipes and re-seeds all data (safe to re-run) |
 | `npm run db:reset` | Drops the DB, re-applies migrations and re-seeds |
 | `npm run db:studio` | Opens Prisma Studio to browse the data |
+| `npm run check:scopes` | Verifies each demo user sees only the data in their scope |
 
 ## Demo users
 
-All demo users have the password **`Demo@123`**.
+All demo users have the password **`Demo@123`**. The login page has a clickable "Demo accounts" list;
+hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
 
 | Role | Rajasthan | Maharashtra |
 |---|---|---|
@@ -52,6 +57,27 @@ All demo users have the password **`Demo@123`**.
   pending issues tagged to the last review meeting. CMO directives exist per state, some overdue.
 - Seed data lives in `prisma/seed-data/` — edit those files to change names, budgets or statuses.
 
+## Authentication and access control
+
+- **Login:** Auth.js v5 (credentials, JWT cookie, 8-hour session). Config in `auth.config.ts` / `auth.ts`.
+- **`proxy.ts`** does quick cookie-only redirects (logged out → `/login`, non-admins away from `/select-state` and `/admin`).
+  It is *not* the security boundary.
+- **`lib/auth/dal.ts`** is: every page and server action gets the user via `requireUser()` /
+  `requirePermission()` / `requireStateAccess()`, which re-load the user from the database on each request.
+- **`lib/auth/scope.ts`** turns the user's role into database filters. Every query for projects, issues,
+  directives, districts or departments must include the matching scope:
+
+| Role | Sees |
+|---|---|
+| Admin | Everything in the selected state; can switch states |
+| CMO / CS | Whole state |
+| Department Head | Own department, all districts in the state |
+| District Collector | Own district, all departments |
+| Field Officer | Only projects assigned to them |
+
+Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins and
+sign-outs are recorded in `AuditLog`.
+
 ## Where things live
 
 | Path | Purpose |
@@ -59,6 +85,8 @@ All demo users have the password **`Demo@123`**.
 | `config/states.ts` | Per-state config (names, locale, GeoJSON path, map centre/zoom, colour) |
 | `lib/constants.ts` | Status / priority / source enums, roles and permissions |
 | `lib/db.ts` | Shared Prisma client (server only) |
+| `lib/auth/` | Data access layer (`dal.ts`) and role scoping (`scope.ts`) |
+| `auth.ts`, `auth.config.ts`, `proxy.ts` | Auth.js setup and request-level redirects |
 | `prisma/schema.prisma` | Data model |
 | `prisma/seed.ts` | Seed script; `prisma/demo-imagery.ts` draws the placeholder images |
 | `public/geo/` | District boundary GeoJSON (you add these — see below) |
