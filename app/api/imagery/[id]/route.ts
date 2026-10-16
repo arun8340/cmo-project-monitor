@@ -15,7 +15,7 @@ const NOT_FOUND = () => new Response("Not found", { status: 404, headers: { "Cac
 export async function GET(request: NextRequest, ctx: RouteContext<"/api/imagery/[id]">) {
   const { id } = await ctx.params;
   const user = await getCurrentUser();
-  if (!user) return NOT_FOUND();
+  if (!user || user.mustChangePassword) return NOT_FOUND();
 
   const capture = await db.imageryCapture.findUnique({ where: { id }, select: { projectId: true, filePath: true, mimeType: true } });
   if (!capture || !(await findAccessibleProject(user, capture.projectId))) return NOT_FOUND();

@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PasswordChangedToast } from "@/components/account/password-changed-toast";
 import { StateMapPanel } from "@/components/state-map/state-map-panel";
 import { KpiPanel } from "@/components/state-home/kpi-panel";
 import { DepartmentFilter } from "@/components/state-home/department-filter";
@@ -10,6 +11,9 @@ import type { StateConfig } from "@/config/states";
 export default function StateHomePage({ params, searchParams }: PageProps<"/[state]">) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-6">
+      <Suspense>
+        <PasswordChangedToast />
+      </Suspense>
       <Suspense fallback={<HomeSkeleton />}>
         <StateHome params={params} searchParams={searchParams} />
       </Suspense>

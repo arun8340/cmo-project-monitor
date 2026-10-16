@@ -146,3 +146,44 @@ export const VERIFICATION_OUTCOME_LABELS: Record<VerificationOutcome, string> = 
   NO_VISIBLE_CHANGE: "No visible change",
   DISCREPANCY: "Discrepancy with reported progress",
 };
+
+/** Plain-language labels for the role permission table, grouped. */
+export const PERMISSION_GROUPS: { group: string; items: { key: Permission; label: string; hint: string }[] }[] = [
+  {
+    group: "Projects",
+    items: [
+      { key: "projects.view", label: "View projects", hint: "See projects, maps and dashboards in scope (always on)" },
+      { key: "projects.create", label: "Add projects", hint: "Create new projects" },
+      { key: "projects.edit", label: "Edit projects", hint: "Change project details, location, budget and dates" },
+      { key: "progress.update", label: "Update progress", hint: "Record progress % and status" },
+    ],
+  },
+  {
+    group: "Imagery",
+    items: [
+      { key: "imagery.upload", label: "Upload imagery", hint: "Upload satellite, drone and field photos" },
+      { key: "verification.record", label: "Record verifications", hint: "Record the outcome of comparing imagery" },
+    ],
+  },
+  {
+    group: "Issues & directives",
+    items: [
+      { key: "issues.create", label: "Raise issues", hint: "Raise issues on projects" },
+      { key: "issues.update", label: "Update issues", hint: "Change issue status (resolve, reopen, archive)" },
+      { key: "directives.issue", label: "Issue directives", hint: "Issue, close and reopen directives" },
+      { key: "directives.update", label: "Respond to directives", hint: "Mark directives in progress or complied" },
+    ],
+  },
+  {
+    group: "Administration",
+    items: [
+      { key: "audit.view", label: "View activity log", hint: "See the audit log for their state" },
+      { key: "users.manage", label: "Manage users & roles", hint: "Admin portal: users, roles, full audit log" },
+      { key: "masters.manage", label: "Manage master data", hint: "States, districts, departments" },
+      { key: "state.switch", label: "Switch states", hint: "Work across states (admin portal)" },
+    ],
+  },
+];
+
+/** Permissions only the Admin role may hold (administration of the whole system). */
+export const ADMIN_ONLY_PERMISSIONS: Permission[] = ["users.manage", "masters.manage", "state.switch"];

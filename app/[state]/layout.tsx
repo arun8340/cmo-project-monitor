@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppHeader, AppHeaderSkeleton } from "@/components/app-shell/app-header";
-import { StateNav } from "@/components/app-shell/state-nav";
+import { StateNav, type NavItem } from "@/components/app-shell/state-nav";
 import { getStateConfig, STATE_CODES, type StateConfig } from "@/config/states";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { canAccessState } from "@/lib/auth/scope";
@@ -48,11 +48,12 @@ async function StateHeader({ params }: { params: LayoutProps<"/[state]">["params
   );
 }
 
-function navItems(base: string, counts?: { openIssues: number; overdueDirectives: number }) {
+function navItems(base: string, counts?: { openIssues: number; overdueDirectives: number }, showActivity = false): NavItem[] {
   return [
-    { section: "overview" as const, href: base || "/", label: "Overview" },
-    { section: "issues" as const, href: `${base}/issues`, label: "Issues", count: counts?.openIssues },
-    { section: "directives" as const, href: `${base}/directives`, label: "Directives", count: counts?.overdueDirectives, danger: true },
+    { key: "overview", href: base || "/", label: "Overview", fallback: true },
+    { key: "issues", href: `${base}/issues`, label: "Issues", count: counts?.openIssues },
+    { key: "directives", href: `${base}/directives`, label: "Directives", count: counts?.overdueDirectives, danger: true },
+    ...(showActivity ? [{ key: "activity", href: `${base}/activity`, label: "Activity log" }] : []),
   ];
 }
 
@@ -60,5 +61,5 @@ function navItems(base: string, counts?: { openIssues: number; overdueDirectives
 async function NavWithCounts({ base, state }: { base: string; state: StateConfig }) {
   const user = await getCurrentUser();
   if (!user || !canAccessState(user, state.code)) return <StateNav items={navItems(base)} />;
-  return <StateNav items={navItems(base, await getNavCounts(user, state))} />;
+  return <StateNav items={navItems(base, await getNavCounts(user, state), user.permissions.includes("audit.view"))} />;
 }

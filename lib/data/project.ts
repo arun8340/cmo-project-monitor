@@ -7,51 +7,9 @@ import type { StateCode, StateConfig } from "@/config/states";
 import { districtSlug } from "@/lib/district-slug";
 import type { ProjectStatus } from "@/lib/constants";
 import { behindBy, plannedPercent } from "@/lib/progress";
+import { summarize } from "@/lib/audit";
 
 export type ActivityItem = { id: string; action: string; at: Date; userName: string | null; summary: string };
-
-const FIELD_LABELS: Record<string, string> = {
-  name: "name",
-  nameLocal: "local name",
-  description: "description",
-  latitude: "location",
-  longitude: "location",
-  budgetLakhs: "budget",
-  startDate: "start date",
-  plannedEndDate: "planned end date",
-  district: "district",
-  department: "department",
-};
-
-function summarize(action: string, details: string | null): string {
-  let d: Record<string, unknown> = {};
-  try {
-    d = details ? JSON.parse(details) : {};
-  } catch {}
-  switch (action) {
-    case "project.create":
-      return "Project created";
-    case "project.update": {
-      const fields = [...new Set(Object.keys((d.changes as object) ?? {}).map((k) => FIELD_LABELS[k] ?? k))];
-      return fields.length ? `Edited ${fields.join(", ")}` : "Edited project";
-    }
-    case "progress.update": {
-      const from = d.from as { progress?: number } | undefined;
-      const to = d.to as { progress?: number } | undefined;
-      return `Progress ${from?.progress ?? "?"}% → ${to?.progress ?? "?"}%`;
-    }
-    case "issue.create":
-      return `Issue raised: ${d.title ?? ""}`;
-    case "issue.status":
-      return `Issue ${String(d.from ?? "").toLowerCase().replace("_", " ")} → ${String(d.to ?? "").toLowerCase().replace("_", " ")}`;
-    case "verification.record":
-      return `Verification recorded: ${{ PROGRESS_VISIBLE: "progress visible", NO_VISIBLE_CHANGE: "no visible change", DISCREPANCY: "discrepancy" }[d.outcome as string] ?? d.outcome}`;
-    case "imagery.upload":
-      return `Uploaded ${d.count ?? ""} image${d.count === 1 ? "" : "s"}`;
-    default:
-      return action;
-  }
-}
 
 /** Everything the project page needs. Call only after assertCanAccessProject(). */
 export async function getProjectDetail(user: CurrentUser, projectId: string, stateCode: StateCode) {
