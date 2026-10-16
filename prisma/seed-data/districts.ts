@@ -31,7 +31,7 @@ const RAJASTHAN: DistrictSeed[] = [
   { geoCode: "RJ-CHURU", name: "Churu", nameLocal: "चूरू", center: [28.2924, 74.9626] },
   { geoCode: "RJ-DAUSA", name: "Dausa", nameLocal: "दौसा", center: [26.8932, 76.3375] },
   { geoCode: "RJ-DEEG", name: "Deeg", nameLocal: "डीग", center: [27.4719, 77.3277] },
-  { geoCode: "RJ-DHOLPUR", name: "Dholpur", nameLocal: "धौलपुर", center: [26.7025, 77.8934] },
+  { geoCode: "RJ-DHOLPUR", name: "Dholpur", nameLocal: "धौलपुर", aliases: ["Dhaulpur"], center: [26.7025, 77.8934] },
   { geoCode: "RJ-DIDWANA-KUCHAMAN", name: "Didwana-Kuchaman", nameLocal: "डीडवाना-कुचामन", center: [27.4, 74.5667] },
   { geoCode: "RJ-DUNGARPUR", name: "Dungarpur", nameLocal: "डूंगरपुर", center: [23.8417, 73.7147] },
   { geoCode: "RJ-HANUMANGARH", name: "Hanumangarh", nameLocal: "हनुमानगढ़", center: [29.5818, 74.3294] },
@@ -61,7 +61,7 @@ const RAJASTHAN: DistrictSeed[] = [
 
 /** Maharashtra — 36 districts, using current official names. */
 const MAHARASHTRA: DistrictSeed[] = [
-  { geoCode: "MH-AHILYANAGAR", name: "Ahilyanagar", nameLocal: "अहिल्यानगर", aliases: ["Ahmednagar"], center: [19.0948, 74.748] },
+  { geoCode: "MH-AHILYANAGAR", name: "Ahilyanagar", nameLocal: "अहिल्यानगर", aliases: ["Ahmednagar", "Ahmadnagar"], center: [19.0948, 74.748] },
   { geoCode: "MH-AKOLA", name: "Akola", nameLocal: "अकोला", center: [20.7002, 77.0082] },
   { geoCode: "MH-AMRAVATI", name: "Amravati", nameLocal: "अमरावती", center: [20.9374, 77.7796] },
   { geoCode: "MH-BEED", name: "Beed", nameLocal: "बीड", aliases: ["Bid"], center: [18.9891, 75.7601] },
@@ -78,7 +78,7 @@ const MAHARASHTRA: DistrictSeed[] = [
   { geoCode: "MH-JALNA", name: "Jalna", nameLocal: "जालना", center: [19.841, 75.8864] },
   { geoCode: "MH-KOLHAPUR", name: "Kolhapur", nameLocal: "कोल्हापूर", center: [16.705, 74.2433] },
   { geoCode: "MH-LATUR", name: "Latur", nameLocal: "लातूर", center: [18.4088, 76.5604] },
-  { geoCode: "MH-MUMBAI-CITY", name: "Mumbai City", nameLocal: "मुंबई शहर", center: [18.9388, 72.8354] },
+  { geoCode: "MH-MUMBAI-CITY", name: "Mumbai City", nameLocal: "मुंबई शहर", aliases: ["Mumbai"], center: [18.9388, 72.8354] },
   { geoCode: "MH-MUMBAI-SUBURBAN", name: "Mumbai Suburban", nameLocal: "मुंबई उपनगर", center: [19.1197, 72.8468] },
   { geoCode: "MH-NAGPUR", name: "Nagpur", nameLocal: "नागपूर", center: [21.1458, 79.0882] },
   { geoCode: "MH-NANDED", name: "Nanded", nameLocal: "नांदेड", center: [19.1383, 77.321] },
@@ -87,7 +87,7 @@ const MAHARASHTRA: DistrictSeed[] = [
   { geoCode: "MH-PALGHAR", name: "Palghar", nameLocal: "पालघर", center: [19.6967, 72.7699] },
   { geoCode: "MH-PARBHANI", name: "Parbhani", nameLocal: "परभणी", center: [19.2704, 76.7601] },
   { geoCode: "MH-PUNE", name: "Pune", nameLocal: "पुणे", center: [18.5204, 73.8567] },
-  { geoCode: "MH-RAIGAD", name: "Raigad", nameLocal: "रायगड", center: [18.5158, 73.1822] },
+  { geoCode: "MH-RAIGAD", name: "Raigad", nameLocal: "रायगड", aliases: ["Raigarh"], center: [18.5158, 73.1822] },
   { geoCode: "MH-RATNAGIRI", name: "Ratnagiri", nameLocal: "रत्नागिरी", center: [16.9902, 73.312] },
   { geoCode: "MH-SANGLI", name: "Sangli", nameLocal: "सांगली", center: [16.8524, 74.5815] },
   { geoCode: "MH-SATARA", name: "Satara", nameLocal: "सातारा", center: [17.6805, 74.0183] },
