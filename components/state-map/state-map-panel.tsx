@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FeatureCollection } from "geojson";
 import { MapPinOffIcon } from "lucide-react";
 import { HEALTH_STYLE, type Health } from "@/lib/district-health";
+import { districtHref } from "@/lib/district-slug";
 import type { DistrictSummary } from "@/lib/data/state-overview";
 
 // Leaflet needs `window`, so the map only renders in the browser.
@@ -82,7 +83,7 @@ export function StateMapPanel(props: Props) {
                 <li key={d.geoCode}>
                   {d.accessible ? (
                     <Link
-                      href={`${props.basePath}/district/${d.slug}`}
+                      href={districtHref(props.basePath, d.slug, props.styleKey)}
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:bg-muted"
                     >
                       {chip}

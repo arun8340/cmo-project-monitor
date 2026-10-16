@@ -7,6 +7,7 @@ import L from "leaflet";
 import type { Feature, FeatureCollection } from "geojson";
 import { BASEMAP } from "@/config/map";
 import { HEALTH_STYLE } from "@/lib/district-health";
+import { districtHref } from "@/lib/district-slug";
 import type { DistrictSummary } from "@/lib/data/state-overview";
 
 type Props = {
@@ -134,7 +135,7 @@ function drawDistricts(
           path.bringToFront();
         },
         mouseout: () => path.setStyle(style(f)),
-        click: () => router.push(`${props.basePath}/district/${d.slug}`),
+        click: () => router.push(districtHref(props.basePath, d.slug, props.styleKey)),
       });
     },
   }).addTo(map);

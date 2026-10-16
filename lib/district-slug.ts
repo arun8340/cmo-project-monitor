@@ -9,3 +9,8 @@ export function districtSlug(geoCode: string) {
 export function geoCodeFromSlug(stateCode: StateCode, slug: string) {
   return `${stateCode}-${slug.toUpperCase()}`;
 }
+
+/** District link; with a department filter active, go straight to that department's list. */
+export function districtHref(basePath: string, slug: string, deptKey: string) {
+  return `${basePath}/district/${slug}${deptKey === "all" ? "" : `/${deptKey.toLowerCase()}`}`;
+}

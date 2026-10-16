@@ -13,8 +13,8 @@ export const PROJECT_STATUSES = [
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
-  NOT_STARTED: "Not Started",
-  ONGOING: "On-Going",
+  NOT_STARTED: "Not started",
+  ONGOING: "On-going",
   COMPLETED: "Completed",
   DELAYED: "Delayed",
   STALLED: "Stalled",

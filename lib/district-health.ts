@@ -1,3 +1,5 @@
+import type { ProjectStatus } from "@/lib/constants";
+
 /**
  * Red / amber / green health of a district (or any group of projects), shared
  * by the server (classification) and the map/legend (colours and labels).
@@ -47,3 +49,12 @@ export const PROJECT_STATUS_COLOR = {
   stalled: "#d03b3b",
   notStarted: "#cbd5e1",
 } as const;
+
+/** Same colours keyed by the stored project status. */
+export const STATUS_COLOR: Record<ProjectStatus, string> = {
+  COMPLETED: PROJECT_STATUS_COLOR.completed,
+  ONGOING: PROJECT_STATUS_COLOR.ongoing,
+  DELAYED: PROJECT_STATUS_COLOR.delayed,
+  STALLED: PROJECT_STATUS_COLOR.stalled,
+  NOT_STARTED: PROJECT_STATUS_COLOR.notStarted,
+};
