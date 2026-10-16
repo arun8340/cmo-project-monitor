@@ -38,9 +38,8 @@ async function StateHome({
   searchParams: PageProps<"/[state]">["searchParams"];
 }) {
   const [{ state: stateParam }, { dept }] = await Promise.all([params, searchParams]);
-  const { user, state } = await requireStateAccess(stateParam);
+  const { user, state, basePath } = await requireStateAccess(stateParam);
   const overview = await getStateOverview(user, state, typeof dept === "string" ? dept : undefined);
-  const stateSlug = state.code.toLowerCase();
   const allProjects = overview.departments.reduce((sum, d) => sum + d.projects, 0);
 
   return (
@@ -62,7 +61,7 @@ async function StateHome({
       </div>
 
       <DepartmentFilter
-        stateSlug={stateSlug}
+        basePath={basePath}
         departments={overview.departments}
         selected={overview.department?.code ?? null}
         totalProjects={allProjects}
@@ -74,7 +73,7 @@ async function StateHome({
           geoCodeProperty={state.geoCodeProperty}
           center={state.mapCenter}
           zoom={state.mapZoom}
-          stateSlug={stateSlug}
+          basePath={basePath}
           districts={overview.districts}
           styleKey={overview.department?.code ?? "all"}
         />

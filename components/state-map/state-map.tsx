@@ -12,7 +12,8 @@ import type { DistrictSummary } from "@/lib/data/state-overview";
 type Props = {
   data: FeatureCollection;
   districts: DistrictSummary[];
-  stateSlug: string;
+  /** Link prefix for this state's pages ("" on its own portal, "/rj" on admin) */
+  basePath: string;
   geoCodeProperty: string;
   center: [number, number];
   zoom: number;
@@ -133,7 +134,7 @@ function drawDistricts(
           path.bringToFront();
         },
         mouseout: () => path.setStyle(style(f)),
-        click: () => router.push(`/${props.stateSlug}/district/${d.slug}`),
+        click: () => router.push(`${props.basePath}/district/${d.slug}`),
       });
     },
   }).addTo(map);

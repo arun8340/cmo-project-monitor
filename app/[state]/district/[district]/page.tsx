@@ -22,7 +22,7 @@ export default function DistrictPage({ params }: PageProps<"/[state]/district/[d
 
 async function District({ params }: { params: PageProps<"/[state]/district/[district]">["params"] }) {
   const { state: stateParam, district: slug } = await params;
-  const { user, state } = await requireStateAccess(stateParam);
+  const { user, state, basePath } = await requireStateAccess(stateParam);
 
   const district = await db.district.findFirst({
     where: { AND: [districtScope(user, state.code), { geoCode: geoCodeFromSlug(state.code, slug) }] },
@@ -30,11 +30,10 @@ async function District({ params }: { params: PageProps<"/[state]/district/[dist
   if (!district) notFound();
 
   const projects = await db.project.count({ where: { AND: [projectScope(user, state.code), { districtId: district.id }] } });
-  const stateSlug = state.code.toLowerCase();
 
   return (
     <div className="grid gap-4">
-      <Link href={`/${stateSlug}`} className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link href={basePath || "/"} className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ChevronLeftIcon className="size-4" />
         {state.name}
       </Link>

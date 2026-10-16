@@ -6,10 +6,11 @@ import { ChevronDownIcon, LoaderCircleIcon, UserRoundIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { DEMO_ACCOUNTS, DEMO_PASSWORD, SHOW_DEMO_ACCOUNTS } from "@/config/demo-accounts";
+import { DEMO_PASSWORD, SHOW_DEMO_ACCOUNTS, type DemoAccount } from "@/config/demo-accounts";
 import { login, type LoginState } from "./actions";
 
-export function LoginForm() {
+/** `demoAccounts`: only the accounts for the current portal. */
+export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
   const callbackUrl = useSearchParams().get("callbackUrl") ?? "";
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
   const [email, setEmail] = useState(state.email ?? "");
@@ -61,7 +62,7 @@ export function LoginForm() {
         </FieldGroup>
       </form>
 
-      {SHOW_DEMO_ACCOUNTS && (
+      {SHOW_DEMO_ACCOUNTS && demoAccounts.length > 0 && (
         <div className="rounded-lg border bg-muted/40">
           <button
             type="button"
@@ -81,7 +82,7 @@ export function LoginForm() {
                 Click an account to fill the form. Password for all: <code className="font-mono">{DEMO_PASSWORD}</code>
               </p>
               <ul className="grid gap-0.5">
-                {DEMO_ACCOUNTS.map((a) => (
+                {demoAccounts.map((a) => (
                   <li key={a.email}>
                     <button
                       type="button"
