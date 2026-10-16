@@ -11,7 +11,9 @@ import { login, type LoginState } from "./actions";
 
 /** `demoAccounts`: only the accounts for the current portal. */
 export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
-  const callbackUrl = useSearchParams().get("callbackUrl") ?? "";
+  const params = useSearchParams();
+  const callbackUrl = params.get("callbackUrl") ?? "";
+  const sessionEnded = params.get("ended") === "1";
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
   const [email, setEmail] = useState(state.email ?? "");
   const [password, setPassword] = useState("");
@@ -24,6 +26,11 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {sessionEnded && !state.error && (
+        <p role="status" className="rounded-lg border bg-muted/50 px-3 py-2 text-sm text-muted-foreground">
+          You&apos;ve been signed out because your account was changed. Sign in again to continue.
+        </p>
+      )}
       <form action={formAction} noValidate>
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         <FieldGroup>

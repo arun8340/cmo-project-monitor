@@ -11,7 +11,7 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
-import { ROLE_KEYS, type Permission, type RoleKey } from "@/lib/constants";
+import { ADMIN_ONLY_PERMISSIONS, PERMISSIONS, ROLE_KEYS, type Permission, type RoleKey } from "@/lib/constants";
 import { getStateConfig, type StateCode } from "@/config/states";
 import { stateBasePath, type Portal } from "@/config/portals";
 import { getCurrentPortal } from "@/lib/portal";
@@ -20,6 +20,8 @@ import { canAccessState, projectScope, type ScopeUser } from "./scope";
 export type CurrentUser = ScopeUser & {
   /** The portal this request is on (the user's session is only valid here). */
   portal: Portal;
+  /** The user must choose a new password before doing anything else. */
+  mustChangePassword: boolean;
   name: string;
   email: string;
   designation: string | null;
@@ -48,16 +50,25 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   const isAdmin = user.role.key === "ADMIN";
   if (portal.kind === "admin" ? !isAdmin : isAdmin || user.state?.code !== portal.stateCode) return null;
 
-  let permissions: Permission[] = [];
+  let stored: Permission[] = [];
   try {
-    permissions = JSON.parse(user.role.permissions);
+    stored = JSON.parse(user.role.permissions);
   } catch {
-    permissions = [];
+    stored = [];
   }
+  // Admin always has everything (so editing roles can't lock it out); other roles
+  // never get admin-only permissions and always keep "view projects". A user who
+  // must change their password gets no permissions until they do.
+  const permissions: Permission[] = user.mustChangePassword
+    ? []
+    : isAdmin
+      ? [...PERMISSIONS]
+      : [...new Set<Permission>(["projects.view", ...stored.filter((p) => PERMISSIONS.includes(p) && !ADMIN_ONLY_PERMISSIONS.includes(p))])];
 
   return {
     id: user.id,
     portal,
+    mustChangePassword: user.mustChangePassword,
     name: user.name,
     email: user.email,
     designation: user.designation,
@@ -73,10 +84,29 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   };
 });
 
-/** The signed-in user; redirects to /login otherwise. */
+/**
+ * Where to send a request without a usable user: /login, or — when the browser
+ * still holds a session the database no longer accepts (deactivated, role or
+ * state changed) — the route that clears it first, since Proxy sends signed-in
+ * browsers away from /login.
+ */
+async function signInAgain(): Promise<never> {
+  const session = await auth();
+  redirect(session?.user?.id ? "/api/session-ended" : "/login");
+}
+
+/** The signed-in user; redirects to /login otherwise (and to /change-password while one is required). */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) return signInAgain();
+  if (user.mustChangePassword) redirect("/change-password");
+  return user;
+}
+
+/** Like requireUser, but for the change-password page itself. */
+export async function requireUserForPasswordChange(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user) return signInAgain();
   return user;
 }
 

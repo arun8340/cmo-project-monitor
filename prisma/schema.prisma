@@ -227,22 +227,25 @@ model Role {
 }
 
 model User {
-  id           String      @id @default(cuid())
-  name         String
-  email        String      @unique
-  passwordHash String
-  designation  String?
-  roleId       String
-  role         Role        @relation(fields: [roleId], references: [id])
-  stateId      String? // null only for Admin
-  state        State?      @relation(fields: [stateId], references: [id])
-  districtId   String?
-  district     District?   @relation(fields: [districtId], references: [id])
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
-  active       Boolean     @default(true)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id                 String      @id @default(cuid())
+  name               String
+  email              String      @unique
+  passwordHash       String
+  designation        String?
+  roleId             String
+  role               Role        @relation(fields: [roleId], references: [id])
+  stateId            String? // null only for Admin
+  state              State?      @relation(fields: [stateId], references: [id])
+  districtId         String?
+  district           District?   @relation(fields: [districtId], references: [id])
+  departmentId       String?
+  department         Department? @relation(fields: [departmentId], references: [id])
+  active             Boolean     @default(true)
+  /// Set when an Admin creates the user or resets their password; cleared when they choose their own.
+  mustChangePassword Boolean     @default(false)
+  passwordChangedAt  DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   assignedProjects Project[]         @relation("FieldOfficerProjects")
   createdProjects  Project[]         @relation("ProjectCreatedBy")

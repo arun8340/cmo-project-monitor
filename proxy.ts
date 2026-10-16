@@ -48,6 +48,9 @@ export default auth((req) => {
     return NextResponse.redirect(login);
   }
 
+  // Same page on every portal (also where users are sent when a new password is required).
+  if (pathname === "/change-password") return NextResponse.next();
+
   if (portal.kind === "admin") {
     return pathname === "/" ? redirectTo(home) : NextResponse.next();
   }

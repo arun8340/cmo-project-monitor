@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRightIcon, ChevronDownIcon, LogOutIcon } from "lucide-react";
+import { ArrowLeftRightIcon, ChevronDownIcon, KeyRoundIcon, LogOutIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +55,10 @@ export function UserMenu({ name, roleName, scopeLabel, isAdmin }: Props) {
           </DropdownMenuLabel>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => router.push("/change-password")}>
+          <KeyRoundIcon />
+          Change password
+        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={() => router.push("/select-state")}>
             <ArrowLeftRightIcon />

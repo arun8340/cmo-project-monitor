@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type Chip = { key: string; label: string; count: number; href: string; active: boolean; tone?: "danger" };
+type Chip = { key: string; label: string; count?: number; href: string; active: boolean; tone?: "danger" };
 
 /** One row of filter chips with counts (links, so the filter lives in the URL). */
 export function FilterChips({ label, chips }: { label: string; chips: Chip[] }) {
@@ -17,13 +17,13 @@ export function FilterChips({ label, chips }: { label: string; chips: Chip[] }) 
               ? c.tone === "danger"
                 ? "border-red-700 bg-red-700 text-white"
                 : "border-foreground bg-foreground text-background"
-              : c.tone === "danger" && c.count > 0
+              : c.tone === "danger" && (c.count ?? 1) > 0
                 ? "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
                 : "bg-background hover:bg-muted"
           } ${c.count === 0 && !c.active ? "opacity-50" : ""}`}
         >
           {c.label}
-          <span className={c.active ? "opacity-70" : "text-muted-foreground"}>{c.count}</span>
+          {c.count !== undefined && <span className={c.active ? "opacity-70" : "text-muted-foreground"}>{c.count}</span>}
         </Link>
       ))}
     </nav>

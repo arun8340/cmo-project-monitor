@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRightIcon } from "lucide-react";
-import { AppHeader } from "@/components/app-shell/app-header";
+import { AdminHeader } from "@/components/app-shell/admin-header";
+import { PasswordChangedToast } from "@/components/account/password-changed-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { STATES, STATE_CODES } from "@/config/states";
 import { db } from "@/lib/db";
@@ -13,7 +14,10 @@ export const metadata: Metadata = { title: "Select state" };
 export default function SelectStatePage() {
   return (
     <>
-      <AppHeader />
+      <AdminHeader />
+      <Suspense>
+        <PasswordChangedToast />
+      </Suspense>
       <main className="flex-1 bg-muted/30">
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
           <h1 className="text-2xl font-semibold tracking-tight">Select a state</h1>

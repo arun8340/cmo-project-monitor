@@ -39,3 +39,8 @@ export function relativeDays(date: Date, now = new Date()) {
   if (n === 1) return "tomorrow";
   return n < 0 ? `${-n} days ago` : `in ${n} days`;
 }
+
+/** "16 Oct 2026, 2:05 pm" (IST). */
+export function formatDateTime(d: Date | string) {
+  return new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: TZ });
+}
