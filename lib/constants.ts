@@ -34,7 +34,7 @@ export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const ISSUE_STATUS_LABELS: Record<IssueStatus, string> = {
   PENDING: "Pending",
-  IN_PROGRESS: "In Progress",
+  IN_PROGRESS: "In progress",
   RESOLVED: "Resolved",
   ARCHIVED: "Archived",
 };
@@ -54,7 +54,7 @@ export type DirectiveStatus = (typeof DIRECTIVE_STATUSES)[number];
 
 export const DIRECTIVE_STATUS_LABELS: Record<DirectiveStatus, string> = {
   OPEN: "Open",
-  IN_PROGRESS: "In Progress",
+  IN_PROGRESS: "In progress",
   COMPLIED: "Complied",
   CLOSED: "Closed",
 };
@@ -132,8 +132,8 @@ export const ROLE_DEFINITIONS: Record<
   },
   FIELD_OFFICER: {
     name: "Field Officer",
-    description: "Uploads field photos and progress for assigned projects",
-    permissions: ["projects.view", "progress.update", "imagery.upload"],
+    description: "Uploads field photos, progress and issues for assigned projects",
+    permissions: ["projects.view", "progress.update", "imagery.upload", "issues.create"],
   },
 };
 

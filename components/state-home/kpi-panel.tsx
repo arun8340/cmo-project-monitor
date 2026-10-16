@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AlertTriangleIcon, CheckCircle2Icon, ClipboardListIcon, ScrollTextIcon } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PROJECT_STATUS_COLOR } from "@/lib/district-health";
@@ -6,7 +7,8 @@ import type { StateOverview } from "@/lib/data/state-overview";
 const fmtDate = (d: Date) =>
   d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 
-export function KpiPanel({ overview }: { overview: StateOverview }) {
+/** `basePath` prefixes links to the issue / directive lists ("" on a state portal). */
+export function KpiPanel({ overview, basePath }: { overview: StateOverview; basePath: string }) {
   const { totals, issues, directives } = overview;
   const breakdown = [
     { key: "completed", label: "Completed", value: totals.completed },
@@ -67,8 +69,8 @@ export function KpiPanel({ overview }: { overview: StateOverview }) {
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <Tile label="Pending issues" value={issues.pendingAtLastMeeting} />
-            <Tile label="Resolved issues" value={issues.resolvedAtLastMeeting} />
+            <Tile label="Pending issues" value={issues.pendingAtLastMeeting} href={`${basePath}/issues`} />
+            <Tile label="Resolved issues" value={issues.resolvedAtLastMeeting} href={`${basePath}/issues?status=resolved`} />
           </div>
           <p className="text-xs text-muted-foreground">
             {issues.lastMeetingDate ? `${issues.openTotal} open issues in total` : "No review meetings recorded yet"}
@@ -84,26 +86,25 @@ export function KpiPanel({ overview }: { overview: StateOverview }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
-          <Tile label="Open" value={directives.open} />
-          <Tile
-            label="Overdue"
-            value={directives.overdue}
-            alert={directives.overdue > 0}
-          />
+          <Tile label="Open" value={directives.open} href={`${basePath}/directives`} />
+          <Tile label="Overdue" value={directives.overdue} alert={directives.overdue > 0} href={`${basePath}/directives?tab=overdue`} />
         </CardContent>
       </Card>
     </div>
   );
 }
 
-function Tile({ label, value, alert }: { label: string; value: number; alert?: boolean }) {
+function Tile({ label, value, alert, href }: { label: string; value: number; alert?: boolean; href: string }) {
   return (
-    <div className={`rounded-lg border p-3 ${alert ? "border-red-200 bg-red-50" : "bg-muted/30"}`}>
+    <Link
+      href={href}
+      className={`block rounded-lg border p-3 transition hover:shadow-sm ${alert ? "border-red-200 bg-red-50 hover:bg-red-100/70" : "bg-muted/30 hover:bg-muted/60"}`}
+    >
       <div className="text-2xl font-semibold">{value}</div>
       <div className={`flex items-center gap-1 text-xs ${alert ? "text-red-700" : "text-muted-foreground"}`}>
         {alert && <AlertTriangleIcon className="size-3.5" />}
         {label}
       </div>
-    </div>
+    </Link>
   );
 }

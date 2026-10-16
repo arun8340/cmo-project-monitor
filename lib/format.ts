@@ -22,3 +22,20 @@ export function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
+
+const DAY_MS = 86_400_000;
+
+/** Whole IST calendar days from `from` to `to` (positive if `to` is later). */
+export function daysBetween(from: Date, to: Date) {
+  const ist = (d: Date) => Math.floor((d.getTime() + 5.5 * 3_600_000) / DAY_MS);
+  return ist(to) - ist(from);
+}
+
+/** "today", "3 days ago", "in 5 days". */
+export function relativeDays(date: Date, now = new Date()) {
+  const n = daysBetween(now, date);
+  if (n === 0) return "today";
+  if (n === -1) return "yesterday";
+  if (n === 1) return "tomorrow";
+  return n < 0 ? `${-n} days ago` : `in ${n} days`;
+}

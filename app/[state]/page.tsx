@@ -77,7 +77,7 @@ async function StateHome({
           districts={overview.districts}
           styleKey={overview.department?.code ?? "all"}
         />
-        <KpiPanel overview={overview} />
+        <KpiPanel overview={overview} basePath={basePath} />
       </div>
     </div>
   );

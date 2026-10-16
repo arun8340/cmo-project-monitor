@@ -106,6 +106,22 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
 Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins (including
 attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 
+## Issues and directives
+
+The header of every state page links to **Overview**, **Issues** (with the open count) and **Directives** (with the
+overdue count in red).
+
+- **Issues** are raised from a project's page (*Raise issue*) by Collectors, Department Heads, Field Officers (on
+  their assigned projects) and Admin, with a priority and an optional review-meeting date. The Issues page filters by
+  status, priority, district, department and review meeting. Collectors, Department Heads, the CMO and Admin change
+  status (Pending → In progress → Resolved → Archived, or reopen); resolving or reopening needs a note.
+- **Directives** are issued by the CMO / Chief Secretary or Admin to a district, department and/or project, with a
+  **responsible officer** (the Collector of that district or Head of that department) and a due date. The owner (or a
+  Collector / Department Head in scope) marks it *In progress* or *Complied* (compliance note required); the CMO then
+  *accepts and closes* it or *reopens* it. Open directives past their due date show as **Overdue**.
+- Every status change is kept in a **history timeline** on the issue / directive page, and in the audit log.
+- Review meetings are an optional date on each issue for now; a separate Meeting record can be added later.
+
 ## Where things live
 
 | Path | Purpose |
