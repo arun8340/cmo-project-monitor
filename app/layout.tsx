@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       {/* suppressHydrationWarning: browser extensions (e.g. Grammarly) add attributes to <body> */}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
+        <Toaster theme="light" position="top-center" />
       </body>
     </html>
   );

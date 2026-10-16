@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { CircleAlertIcon, SearchXIcon } from "lucide-react";
+import { CircleAlertIcon, PlusIcon, SearchXIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { StatusBadge } from "@/components/project/status-badge";
 import { ProgressCell } from "@/components/project/progress-cell";
 import { ListControls } from "@/components/project/list-controls";
 import { requireStateAccess } from "@/lib/auth/dal";
+import { canCreateProject } from "@/lib/auth/project-permissions";
 import { getProjectList, type ProjectRow } from "@/lib/data/district";
 import { PROJECT_STATUS_LABELS, type ProjectStatus } from "@/lib/constants";
 import { STATUS_COLOR, type StatusCounts } from "@/lib/district-health";
@@ -69,15 +71,28 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
         ]}
       />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {title}
-          {department && <span className="ml-2 font-normal text-muted-foreground">{department.nameLocal}</span>}
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {district.name} district · {counts.total} project{counts.total === 1 ? "" : "s"}
-          {filters.q && <> matching “{filters.q}”</>}
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {title}
+            {department && <span className="ml-2 font-normal text-muted-foreground">{department.nameLocal}</span>}
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {district.name} district · {counts.total} project{counts.total === 1 ? "" : "s"}
+            {filters.q && <> matching “{filters.q}”</>}
+          </p>
+        </div>
+        {canCreateProject(user) && (
+          <Button
+            nativeButton={false}
+            render={
+              <Link href={`${basePath}/project/new?district=${districtSlug}${department ? `&dept=${department.code.toLowerCase()}` : ""}`} />
+            }
+          >
+            <PlusIcon />
+            Add project
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-3">
