@@ -1,7 +1,19 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { CalendarClockIcon, CircleAlertIcon, HistoryIcon, ImageIcon, PencilIcon, ScrollTextIcon, UploadIcon } from "lucide-react";
+import {
+  CalendarClockIcon,
+  CircleAlertIcon,
+  ClipboardCheckIcon,
+  ColumnsIcon,
+  HistoryIcon,
+  ImageIcon,
+  PencilIcon,
+  ScrollTextIcon,
+  UploadIcon,
+} from "lucide-react";
+import { OUTCOME_STYLE } from "@/components/compare/outcome-style";
+import { getVerifications } from "@/lib/data/compare";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
@@ -19,6 +31,7 @@ import { imageryUrl } from "@/lib/imagery/url";
 import { toDateInput, todayIST } from "@/lib/dates";
 import {
   DIRECTIVE_STATUS_LABELS,
+  VERIFICATION_OUTCOME_LABELS,
   IMAGERY_SOURCE_LABELS,
   ISSUE_PRIORITY_LABELS,
   ISSUE_STATUS_LABELS,
@@ -52,7 +65,7 @@ async function Project({ params }: { params: Params["params"] }) {
   const { user, state, basePath } = await requireStateAccess(stateParam);
   const access = await assertCanAccessProject(user, id);
   if (access.stateCode !== state.code) notFound();
-  const detail = await getProjectDetail(user, id, state.code);
+  const [detail, verifications] = await Promise.all([getProjectDetail(user, id, state.code), getVerifications(id)]);
   if (!detail) notFound();
 
   const { project, status, planned, behind, lastUpdate, directives, activity, can } = detail;
@@ -209,17 +222,58 @@ async function Project({ params }: { params: Params["params"] }) {
                 ))}
               </ul>
             )}
-            {can.uploadImagery && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 w-full"
-                nativeButton={false}
-                render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}
-              >
-                <UploadIcon />
-                Upload imagery
-              </Button>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              {project._count.imagery >= 2 && (
+                <Button size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/compare?from=project`} />}>
+                  <ColumnsIcon />
+                  Compare imagery
+                </Button>
+              )}
+              {can.uploadImagery && (
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}>
+                  <UploadIcon />
+                  Upload imagery
+                </Button>
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-xl border bg-card p-4" aria-labelledby="verifications-heading">
+            <h2 id="verifications-heading" className="mb-3 flex items-center gap-2 font-medium">
+              <ClipboardCheckIcon className="size-4 text-muted-foreground" />
+              Verifications
+              <span className="font-normal text-muted-foreground">{verifications.length}</span>
+            </h2>
+            {verifications.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No verifications yet.{project._count.imagery >= 2 && " Compare the imagery to record one."}
+              </p>
+            ) : (
+              <ul className="grid gap-3">
+                {verifications.slice(0, 5).map((v) => {
+                  const style = OUTCOME_STYLE[v.outcome];
+                  return (
+                    <li key={v.id} className="grid gap-1 text-sm">
+                      <div className={`flex items-center gap-1.5 font-medium ${style.className}`}>
+                        <style.icon className="size-4" />
+                        {VERIFICATION_OUTCOME_LABELS[v.outcome]}
+                      </div>
+                      {v.notes && <p className="text-muted-foreground">{v.notes}</p>}
+                      <div className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
+                        <span>
+                          {v.byName} · {formatDate(v.at)}
+                        </span>
+                        <Link
+                          href={`${basePath}/project/${project.id}/compare?from=project&images=${v.imageIds.join(",")}`}
+                          className="underline-offset-2 hover:text-foreground hover:underline"
+                        >
+                          View comparison ({v.fromLabel} → {v.toLabel})
+                        </Link>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
             )}
           </section>
 

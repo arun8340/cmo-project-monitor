@@ -18,3 +18,6 @@ export const canUpdateProgress = (user: CurrentUser) => has(user, "progress.upda
 
 /** Everyone who can update progress except the read-only CMO. Imagery is never edited or deleted. */
 export const canUploadImagery = (user: CurrentUser) => has(user, "imagery.upload");
+
+/** CMO, Admin, Department Heads and Collectors sign off comparisons; Field Officers collect imagery. */
+export const canRecordVerification = (user: CurrentUser) => has(user, "verification.record");

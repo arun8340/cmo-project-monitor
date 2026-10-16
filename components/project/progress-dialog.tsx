@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { submitKeepingValues } from "@/lib/forms";
 import { LoaderCircleIcon, TrendingUpIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
   const goingDown = valid && p < current.progress;
 
   return (
-    <form action={action} className="grid gap-4">
+    <form onSubmit={submitKeepingValues(action)} className="grid gap-4">
       <DialogHeader>
         <DialogTitle>Update progress</DialogTitle>
         <DialogDescription>

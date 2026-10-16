@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { ChevronLeftIcon, ChevronRightIcon, ExternalLinkIcon, MapPinIcon, TriangleAlertIcon } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeftIcon, ChevronRightIcon, ColumnsIcon, ExternalLinkIcon, MapPinIcon, TriangleAlertIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { imageryUrl } from "@/lib/imagery/url";
@@ -28,7 +29,7 @@ export type GalleryItem = {
 };
 
 /** Thumbnails grouped by capture year, newest first, with the date on each tile and a large view (arrow keys to step through). */
-export function Gallery({ items }: { items: GalleryItem[] }) {
+export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]; compareHref: string | null; latestId: string | null }) {
   const [index, setIndex] = useState<number | null>(null);
   const open = index != null;
   const step = useCallback((d: number) => setIndex((i) => (i == null ? i : (i + d + items.length) % items.length)), [items.length]);
@@ -98,14 +99,36 @@ export function Gallery({ items }: { items: GalleryItem[] }) {
             if (e.key === "ArrowLeft") step(-1);
           }}
         >
-          {current && <LargeView item={current} position={`${index! + 1} of ${items.length}`} onPrev={() => step(-1)} onNext={() => step(1)} />}
+          {current && (
+            <LargeView
+              item={current}
+              position={`${index! + 1} of ${items.length}`}
+              onPrev={() => step(-1)}
+              onNext={() => step(1)}
+              compareHref={
+                compareHref && latestId && latestId !== current.id ? `${compareHref}?images=${current.id},${latestId}` : compareHref
+              }
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
   );
 }
 
-function LargeView({ item, position, onPrev, onNext }: { item: GalleryItem; position: string; onPrev: () => void; onNext: () => void }) {
+function LargeView({
+  item,
+  position,
+  onPrev,
+  onNext,
+  compareHref,
+}: {
+  item: GalleryItem;
+  position: string;
+  onPrev: () => void;
+  onNext: () => void;
+  compareHref: string | null;
+}) {
   const meta = SOURCE_META[item.source];
   const far = item.distanceKm != null && item.distanceKm > FAR_FROM_SITE_KM;
   return (
@@ -148,6 +171,12 @@ function LargeView({ item, position, onPrev, onNext }: { item: GalleryItem; posi
             <Row label="Photo location" value="Not recorded" />
           )}
         </dl>
+        {compareHref && (
+          <Link href={compareHref} className="flex w-fit items-center gap-1.5 text-sm font-medium hover:underline">
+            <ColumnsIcon className="size-3.5" />
+            Compare with latest image
+          </Link>
+        )}
         <a
           href={imageryUrl(item.id, "original")}
           target="_blank"

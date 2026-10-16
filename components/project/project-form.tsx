@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { submitKeepingValues } from "@/lib/forms";
 import { LoaderCircleIcon, MapPinIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
@@ -45,7 +46,7 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
   const invalid = (name: keyof ProjectFormInitial) => ({ "aria-invalid": !!err[name] || undefined });
 
   return (
-    <form action={action} className="grid gap-6" noValidate>
+    <form onSubmit={submitKeepingValues(action)} className="grid gap-6" noValidate>
       <input type="hidden" name="state" value={stateSlug} />
       {projectId && <input type="hidden" name="id" value={projectId} />}
 

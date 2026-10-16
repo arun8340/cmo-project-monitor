@@ -80,6 +80,7 @@ model Project {
   issues           Issue[]
   directives       Directive[]
   assignedOfficers User[]           @relation("FieldOfficerProjects")
+  verifications    Verification[]
 
   @@index([districtId, departmentId])
   @@index([status])
@@ -106,6 +107,24 @@ model ImageryCapture {
   createdAt     DateTime  @default(now())
 
   @@index([projectId, captureDate])
+}
+
+// The result of comparing dated imagery against reported progress
+// (recorded from the comparison screen).
+model Verification {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcome     String // VerificationOutcome
+  notes       String?
+  imageIds    String // JSON array of the ImageryCapture ids that were compared, oldest first
+  fromDate    DateTime // capture date of the earliest compared image
+  toDate      DateTime // capture date of the latest compared image
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([projectId, createdAt])
 }
 
 model ProgressUpdate {
@@ -201,6 +220,7 @@ model User {
   directivesIssued Directive[]      @relation("DirectiveFrom")
   directivesOwned  Directive[]      @relation("DirectiveOwner")
   auditLogs        AuditLog[]
+  verifications    Verification[]
 }
 
 model AuditLog {

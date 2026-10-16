@@ -154,6 +154,18 @@ Compatible* or upload a JPEG.
 
 Uploaded imagery is a permanent record: it **cannot be edited or deleted** by anyone.
 
+**Comparing imagery** (*Compare imagery* on a project or its gallery) opens a full-screen view of 2–4 dated
+images side by side. Zooming or panning any image (scroll/pinch, drag, double-click, `+` `−` `0`, arrow keys)
+moves all of them together, so the same spot stays aligned across dates. *Show changes* highlights in red the
+pixels that differ from the earliest selected image, with an approximate "% changed" — a simple pixel
+comparison (no AI), so captures with different framing, zoom or season also show as change. *Download* saves the
+current view as one PNG with dates and project name. The selection is kept in the URL so a comparison can be shared.
+
+**Verifications:** the CMO, Admin, Department Heads and Collectors can *Record verification* from the comparison
+— *Progress visible*, *No visible change* or *Discrepancy with reported progress* (note required) — which is saved
+with the compared images, listed on the project page with a link back to that comparison, and audit-logged.
+Field Officers collect imagery but don't record verifications.
+
 Files are stored privately under `storage/` (set `STORAGE_DIR` to move it) in three sizes (original,
 display ≤2400 px, thumbnail 480 px) and are served only through `/api/imagery/<id>` after a login, portal and
 scope check — there are no public image URLs. If you set up the project before this change, run
