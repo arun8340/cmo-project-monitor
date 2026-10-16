@@ -128,3 +128,64 @@
     @apply font-sans;
   }
 }
+/* State map (Leaflet) tooltip */
+.leaflet-tooltip.sm-tooltip {
+  min-width: 190px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+}
+.leaflet-tooltip.sm-tooltip::before {
+  display: none;
+}
+.sm-tooltip .sm-tt-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+.sm-tooltip .sm-tt-name span {
+  margin-left: 4px;
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+.sm-tooltip .sm-tt-health {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 6px;
+}
+.sm-tooltip .sm-tt-health i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+.sm-tooltip .sm-tt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted-foreground);
+}
+.sm-tooltip .sm-tt-row b {
+  font-weight: 600;
+  color: var(--popover-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.sm-tooltip .sm-tt-muted,
+.sm-tooltip .sm-tt-hint {
+  color: var(--muted-foreground);
+}
+.sm-tooltip .sm-tt-hint {
+  margin-top: 4px;
+  font-size: 11px;
+}
+.leaflet-interactive.sm-locked {
+  cursor: default;
+}
+.leaflet-container {
+  font-family: var(--font-sans);
+}

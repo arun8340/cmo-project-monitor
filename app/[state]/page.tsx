@@ -1,107 +1,102 @@
 import { Suspense } from "react";
-import { ShieldCheckIcon } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/db";
-import { requireStateAccess } from "@/lib/auth/dal";
-import { directiveScope, districtScope, issueScope, projectScope } from "@/lib/auth/scope";
-import { PROJECT_STATUS_LABELS, PROJECT_STATUSES } from "@/lib/constants";
+import { StateMapPanel } from "@/components/state-map/state-map-panel";
+import { KpiPanel } from "@/components/state-home/kpi-panel";
+import { DepartmentFilter } from "@/components/state-home/department-filter";
+import { requireStateAccess, type CurrentUser } from "@/lib/auth/dal";
+import { getStateOverview } from "@/lib/data/state-overview";
+import type { StateConfig } from "@/config/states";
 
-/**
- * Temporary state home (step 2): proves login + role scoping end to end.
- * Replaced by the map dashboard in step 3.
- */
-export default function StateHomePage({ params }: PageProps<"/[state]">) {
+export default function StateHomePage({ params, searchParams }: PageProps<"/[state]">) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-8">
-      <Suspense fallback={<OverviewSkeleton />}>
-        <Overview params={params} />
+    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+      <Suspense fallback={<HomeSkeleton />}>
+        <StateHome params={params} searchParams={searchParams} />
       </Suspense>
     </main>
   );
 }
 
-async function Overview({ params }: { params: PageProps<"/[state]">["params"] }) {
-  const { state: stateParam } = await params;
+function scopeText(user: CurrentUser, state: StateConfig) {
+  switch (user.roleKey) {
+    case "DEPARTMENT_HEAD":
+      return `${user.departmentName} projects across all districts`;
+    case "DISTRICT_COLLECTOR":
+      return `All departments in ${user.districtName} district`;
+    case "FIELD_OFFICER":
+      return `Projects assigned to you in ${user.districtName}`;
+    default:
+      return `All districts and departments in ${state.name}`;
+  }
+}
+
+async function StateHome({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/[state]">["params"];
+  searchParams: PageProps<"/[state]">["searchParams"];
+}) {
+  const [{ state: stateParam }, { dept }] = await Promise.all([params, searchParams]);
   const { user, state } = await requireStateAccess(stateParam);
-
-  const pScope = projectScope(user, state.code);
-  const [byStatus, pendingIssues, openDirectives, districts] = await Promise.all([
-    db.project.groupBy({ by: ["status"], where: pScope, _count: true }),
-    db.issue.count({ where: { AND: [issueScope(user, state.code), { status: { in: ["PENDING", "IN_PROGRESS"] } }] } }),
-    db.directive.count({ where: { AND: [directiveScope(user, state.code), { status: { in: ["OPEN", "IN_PROGRESS"] } }] } }),
-    db.district.count({ where: districtScope(user, state.code) }),
-  ]);
-  const counts = Object.fromEntries(byStatus.map((r) => [r.status, r._count]));
-  const total = byStatus.reduce((sum, r) => sum + r._count, 0);
-
-  const scopeText: Record<string, string> = {
-    ADMIN: `All data in ${state.name} (Admin — can switch states)`,
-    CMO: `All districts and departments in ${state.name}`,
-    DEPARTMENT_HEAD: `${user.departmentName} projects across all districts of ${state.name}`,
-    DISTRICT_COLLECTOR: `All departments in ${user.districtName} district`,
-    FIELD_OFFICER: `Projects assigned to you in ${user.districtName}`,
-  };
+  const overview = await getStateOverview(user, state, typeof dept === "string" ? dept : undefined);
+  const stateSlug = state.code.toLowerCase();
+  const allProjects = overview.departments.reduce((sum, d) => sum + d.projects, 0);
 
   return (
-    <div className="grid gap-6">
-      <div>
-        <p className="text-sm text-muted-foreground">Welcome,</p>
-        <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
+    <div className="grid gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {state.name} <span className="font-normal text-muted-foreground">{state.nameLocal}</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {scopeText(user, state)}
+            {overview.department && (
+              <>
+                {" "}· showing <span className="font-medium text-foreground">{overview.department.name}</span>
+              </>
+            )}
+          </p>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ShieldCheckIcon className="size-4 text-emerald-600" />
-            Your access
-          </CardTitle>
-          <CardDescription>
-            {user.roleName} — {scopeText[user.roleKey]}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-4">
-          <Stat label="Projects visible" value={total} />
-          <Stat label="Districts accessible" value={districts} />
-          <Stat label="Open issues" value={pendingIssues} />
-          <Stat label="Open directives" value={openDirectives} />
-        </CardContent>
-      </Card>
+      <DepartmentFilter
+        stateSlug={stateSlug}
+        departments={overview.departments}
+        selected={overview.department?.code ?? null}
+        totalProjects={allProjects}
+      />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Projects by status</CardTitle>
-          <CardDescription>Only projects within your scope are counted.</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-5">
-          {PROJECT_STATUSES.map((s) => (
-            <Stat key={s} label={PROJECT_STATUS_LABELS[s]} value={counts[s] ?? 0} />
-          ))}
-        </CardContent>
-      </Card>
-
-      <p className="text-sm text-muted-foreground">
-        The interactive state map and dashboard will replace this page in the next build step.
-      </p>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <StateMapPanel
+          geojsonUrl={state.geojson}
+          geoCodeProperty={state.geoCodeProperty}
+          center={state.mapCenter}
+          zoom={state.mapZoom}
+          stateSlug={stateSlug}
+          districts={overview.districts}
+          styleKey={overview.department?.code ?? "all"}
+        />
+        <KpiPanel overview={overview} />
+      </div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function HomeSkeleton() {
   return (
-    <div className="rounded-lg border bg-background p-4">
-      <div className="text-2xl font-semibold tabular-nums">{value}</div>
-      <div className="text-sm text-muted-foreground">{label}</div>
-    </div>
-  );
-}
-
-function OverviewSkeleton() {
-  return (
-    <div className="grid gap-6">
-      <Skeleton className="h-14 w-64" />
-      <Skeleton className="h-48 w-full" />
-      <Skeleton className="h-40 w-full" />
+    <div className="grid gap-4">
+      <Skeleton className="h-12 w-72" />
+      <Skeleton className="h-9 w-full" />
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <Skeleton className="h-105 sm:h-140 lg:h-160" />
+        <div className="grid content-start gap-4">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-36" />
+          <Skeleton className="h-28" />
+        </div>
+      </div>
     </div>
   );
 }
