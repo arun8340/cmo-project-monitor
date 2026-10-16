@@ -114,16 +114,26 @@ function portalServesState(portal: Portal, stateCode: StateCode) {
   return portal.kind === "admin" || portal.stateCode === stateCode;
 }
 
-/** Throws a 404 unless the project exists inside the user's scope. */
-export async function assertCanAccessProject(user: CurrentUser, projectId: string) {
+/**
+ * The project's state if it exists inside the user's scope and on this portal,
+ * otherwise null. Use in server actions, which should return an error rather than 404.
+ */
+export async function findAccessibleProject(user: CurrentUser, projectId: string) {
+  if (typeof projectId !== "string" || !projectId) return null;
   const project = await db.project.findFirst({
     where: { id: projectId },
     select: { id: true, district: { select: { state: { select: { code: true } } } } },
   });
-  if (!project) notFound();
+  if (!project) return null;
   const stateCode = project.district.state.code as StateCode;
-  if (!portalServesState(user.portal, stateCode)) notFound();
+  if (!portalServesState(user.portal, stateCode)) return null;
   const visible = await db.project.count({ where: { AND: [{ id: projectId }, projectScope(user, stateCode)] } });
-  if (!visible) notFound();
-  return { projectId, stateCode };
+  return visible ? { projectId, stateCode } : null;
+}
+
+/** Throws a 404 unless the project exists inside the user's scope. */
+export async function assertCanAccessProject(user: CurrentUser, projectId: string) {
+  const found = await findAccessibleProject(user, projectId);
+  if (!found) notFound();
+  return found;
 }

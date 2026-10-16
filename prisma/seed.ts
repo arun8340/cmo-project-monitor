@@ -232,7 +232,7 @@ async function main() {
           departmentId,
           name: p.name,
           nameLocal: p.nameLocal,
-          description: `${p.name} — ${p.durationMonths}-month works contract under the ${p.dept === "RNB" ? "Roads & Buildings" : p.dept} department.`,
+          description: `${p.name} — ${p.durationMonths}-month works contract under the ${departmentsFor(code).find((d) => d.code === p.dept)?.name ?? p.dept} department.`,
           latitude: lat,
           longitude: lng,
           budgetLakhs: p.budgetLakhs,
