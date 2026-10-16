@@ -15,3 +15,6 @@ export const canEditProject = (user: CurrentUser) => has(user, "projects.edit");
 
 /** Everyone above plus Field Officers on their assigned projects. */
 export const canUpdateProgress = (user: CurrentUser) => has(user, "progress.update");
+
+/** Everyone who can update progress except the read-only CMO. Imagery is never edited or deleted. */
+export const canUploadImagery = (user: CurrentUser) => has(user, "imagery.upload");

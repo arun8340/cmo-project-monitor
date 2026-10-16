@@ -16,3 +16,9 @@ export function formatBudget(lakhs: number | null | undefined) {
   }
   return `₹${Math.round(lakhs)} L`;
 }
+
+/** File size → "740 KB" / "3.2 MB". */
+export function formatBytes(bytes: number) {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+}

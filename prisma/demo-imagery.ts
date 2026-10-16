@@ -1,24 +1,29 @@
 /**
  * Generates placeholder "aerial" imagery for the demo seed: 4 site layouts x
- * 5 construction stages x 3 orientation variants, written to
- * public/uploads/demo/. Replace these with real before/after screenshots
- * (Google Earth historical imagery / Esri Wayback) for a more convincing demo.
+ * 5 construction stages x 3 orientation variants, written to private storage
+ * (storage/demo/<name>/{original.jpg,display.webp,thumb.webp}). Real
+ * before/after imagery can be uploaded through the app instead.
  */
 import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import type { SiteLayout } from "./seed-data/projects";
+import { makeVariants, STORAGE_ROOT_DEFAULT } from "../lib/imagery/variants";
 
-export const DEMO_IMAGERY_DIR = path.join(process.cwd(), "public", "uploads", "demo");
+const STORAGE_ROOT = path.resolve(process.env.STORAGE_DIR || path.join(process.cwd(), STORAGE_ROOT_DEFAULT));
 export const STAGES = [0, 1, 2, 3, 4] as const; // bare → cleared → foundation → structure → complete
 export const VARIANTS = 3;
 
 const W = 1200;
 const H = 800;
 
+/** Storage key of a demo image's original (see lib/storage). */
 export function demoImagePath(layout: SiteLayout, stage: number, variant: number) {
-  return `/uploads/demo/${layout}-s${stage}-v${variant}.jpg`;
+  return `demo/${layout}-s${stage}-v${variant}/original.jpg`;
 }
+
+/** Metadata recorded on each ImageryCapture row, keyed by storage key. */
+export const demoImageMeta = new Map<string, { width: number; height: number; sizeBytes: number }>();
 
 /** Map a progress percentage to a visual construction stage. */
 export function stageForProgress(p: number) {
@@ -168,7 +173,6 @@ function svgFor(layout: SiteLayout, stage: number) {
 }
 
 export async function generateDemoImagery(layouts: SiteLayout[] = ["building", "road", "linear", "pond"]) {
-  await fs.mkdir(DEMO_IMAGERY_DIR, { recursive: true });
   for (const layout of layouts) {
     for (const stage of STAGES) {
       const base = sharp(Buffer.from(svgFor(layout, stage)));
@@ -177,7 +181,17 @@ export async function generateDemoImagery(layouts: SiteLayout[] = ["building", "
         let img = sharp(png);
         if (v === 1) img = img.flop();
         if (v === 2) img = img.rotate(180);
-        await img.jpeg({ quality: 82 }).toFile(path.join(process.cwd(), "public", demoImagePath(layout, stage, v)));
+        const original = await img.jpeg({ quality: 82 }).toBuffer();
+        const key = demoImagePath(layout, stage, v);
+        const dir = path.join(STORAGE_ROOT, path.dirname(key));
+        await fs.mkdir(dir, { recursive: true });
+        const { display, thumb } = await makeVariants(original);
+        await Promise.all([
+          fs.writeFile(path.join(dir, "original.jpg"), original),
+          fs.writeFile(path.join(dir, "display.webp"), display),
+          fs.writeFile(path.join(dir, "thumb.webp"), thumb),
+        ]);
+        demoImageMeta.set(key, { width: W, height: H, sizeBytes: original.length });
       }
     }
   }

@@ -91,7 +91,11 @@ model ImageryCapture {
   project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   captureDate   DateTime
   source        String // ImagerySource: SATELLITE | DRONE | FIELD_PHOTO
-  filePath      String // public URL path, e.g. /uploads/<projectId>/<file>.jpg
+  filePath      String // storage key of the original, e.g. imagery/<projectId>/<uuid>/original.jpg (see lib/storage)
+  mimeType      String?
+  width         Int?
+  height        Int?
+  sizeBytes     Int?
   notes         String?
   // EXIF metadata for geotagged field photos (improvement list)
   exifLatitude  Float?

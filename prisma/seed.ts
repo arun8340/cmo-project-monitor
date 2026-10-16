@@ -14,7 +14,7 @@ import { ROLE_DEFINITIONS, ROLE_KEYS, type IssuePriority, type IssueStatus, type
 import { DISTRICTS } from "./seed-data/districts";
 import { departmentsFor } from "./seed-data/departments";
 import { PROJECTS, type ProjectSeed } from "./seed-data/projects";
-import { generateDemoImagery, demoImagePath, stageForProgress, VARIANTS } from "./demo-imagery";
+import { generateDemoImagery, demoImagePath, demoImageMeta, stageForProgress, VARIANTS } from "./demo-imagery";
 
 const db = new PrismaClient({
   adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" }),
@@ -124,7 +124,7 @@ async function wipe() {
 }
 
 async function main() {
-  console.log("Generating demo imagery → public/uploads/demo …");
+  console.log("Generating demo imagery → storage/demo …");
   await generateDemoImagery();
 
   console.log("Clearing existing data …");
@@ -304,6 +304,8 @@ async function main() {
             captureDate: date,
             source,
             filePath: demoImagePath(p.layout, stageForProgress(value), variant),
+            mimeType: "image/jpeg",
+            ...demoImageMeta.get(demoImagePath(p.layout, stageForProgress(value), variant)),
             notes: i === 0 ? "Baseline imagery before work start" : `Progress reported at capture time: ${value}%`,
             uploadedById: isCollectorDistrict ? collector.id : null,
           },
