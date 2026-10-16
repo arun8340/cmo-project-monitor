@@ -21,3 +21,12 @@ export const canUploadImagery = (user: CurrentUser) => has(user, "imagery.upload
 
 /** CMO, Admin, Department Heads and Collectors sign off comparisons; Field Officers collect imagery. */
 export const canRecordVerification = (user: CurrentUser) => has(user, "verification.record");
+
+/** Collectors, Department Heads, Field Officers (assigned projects) and Admin. */
+export const canRaiseIssue = (user: CurrentUser) => has(user, "issues.create");
+
+/** Collectors, Department Heads, CMO and Admin. */
+export const canUpdateIssue = (user: CurrentUser) => has(user, "issues.update");
+
+/** CMO / Chief Secretary and Admin issue, close and reopen directives. */
+export const canIssueDirective = (user: CurrentUser) => has(user, "directives.issue");

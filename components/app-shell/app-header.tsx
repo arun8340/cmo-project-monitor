@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { LandmarkIcon } from "lucide-react";
 import type { StateConfig } from "@/config/states";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -7,9 +7,10 @@ import { UserMenu } from "./user-menu";
 
 /**
  * Top bar. The state band is static; the user menu streams in (it reads the session).
- * `homeHref` is where the app name links to (the state's map on its portal).
+ * `homeHref` is where the app name links to (the state's map on its portal);
+ * `nav` is an optional row of section links under the bar.
  */
-export function AppHeader({ state, homeHref = "/" }: { state?: StateConfig; homeHref?: string }) {
+export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig; homeHref?: string; nav?: ReactNode }) {
   return (
     <header
       className="sticky top-0 z-40 text-white shadow-sm"
@@ -34,6 +35,7 @@ export function AppHeader({ state, homeHref = "/" }: { state?: StateConfig; home
           <HeaderUser />
         </Suspense>
       </div>
+      {nav && <div className="border-t border-white/10">{nav}</div>}
     </header>
   );
 }

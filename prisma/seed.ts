@@ -199,7 +199,7 @@ async function main() {
     const cmo = await db.user.create({
       data: { name: plan.cmoName, email: `cmo.${s}@demo.gov.in`, passwordHash, designation: "Chief Minister's Office", roleId: roles.CMO.id, stateId: state.id },
     });
-    await db.user.create({
+    const deptHead = await db.user.create({
       data: { name: plan.deptHeadName, email: `pwd.${s}@demo.gov.in`, passwordHash, designation: "Department Head", roleId: roles.DEPARTMENT_HEAD.id, stateId: state.id, departmentId: departments.get("PWD")! },
     });
     const collector = await db.user.create({
@@ -329,6 +329,21 @@ async function main() {
           meetingDate = rand() < 0.6 ? PREVIOUS_MEETING : null;
         }
         const createdAt = meetingDate ?? addDays(NOW, -Math.round(between(10, 90)));
+        const resolvedAt = issueStatus === "RESOLVED" ? (meetingDate ? LAST_MEETING : addDays(createdAt, 20)) : null;
+        const raisedBy = isCollectorDistrict ? collector.id : cmo.id;
+        // History: raised as pending, then (if it has moved on) its current status.
+        const updates: { fromStatus: string | null; toStatus: string; note: string | null; userId: string; createdAt: Date }[] = [
+          { fromStatus: null, toStatus: "PENDING", note: null, userId: raisedBy, createdAt },
+        ];
+        if (issueStatus !== "PENDING") {
+          updates.push({
+            fromStatus: "PENDING",
+            toStatus: issueStatus,
+            note: issueStatus === "RESOLVED" ? "Resolved and confirmed at the review meeting." : issueStatus === "IN_PROGRESS" ? "Action initiated by the department." : null,
+            userId: isCollectorDistrict ? collector.id : cmo.id,
+            createdAt: resolvedAt ?? addDays(createdAt, 7),
+          });
+        }
         await db.issue.create({
           data: {
             projectId: project.id,
@@ -337,9 +352,10 @@ async function main() {
             status: issueStatus,
             priority: tpl.priority,
             meetingDate,
-            resolvedAt: issueStatus === "RESOLVED" ? (meetingDate ? LAST_MEETING : addDays(createdAt, 20)) : null,
-            createdById: isCollectorDistrict ? collector.id : cmo.id,
+            resolvedAt,
+            createdById: raisedBy,
             createdAt,
+            updates: { create: updates },
           },
         });
       }
@@ -368,6 +384,7 @@ async function main() {
         text: "Ensure third-party quality audit for all hospital and health infrastructure projects above ₹10 crore.",
         dueDate: addDays(NOW, -25),
         status: "COMPLIED",
+        ownerId: deptHead.id,
       },
       ...problem.slice(0, 3).map((p, i) => ({
         projectId: p.id,
@@ -383,8 +400,18 @@ async function main() {
       })),
     ];
     for (const d of directives) {
+      const issuedAt = addDays(NOW, -30 + Math.round(between(0, 20)));
+      const history: { fromStatus: string | null; toStatus: string; note: string | null; userId: string | null; createdAt: Date }[] = [
+        { fromStatus: null, toStatus: "OPEN", note: null, userId: cmo.id, createdAt: issuedAt },
+      ];
+      if (d.status === "IN_PROGRESS" || d.status === "COMPLIED") {
+        history.push({ fromStatus: "OPEN", toStatus: "IN_PROGRESS", note: "Work on the directive has started.", userId: d.ownerId ?? null, createdAt: addDays(issuedAt, 3) });
+      }
+      if (d.status === "COMPLIED") {
+        history.push({ fromStatus: "IN_PROGRESS", toStatus: "COMPLIED", note: "Action completed; report submitted to CMO.", userId: d.ownerId ?? null, createdAt: addDays(issuedAt, 9) });
+      }
       await db.directive.create({
-        data: { fromUserId: cmo.id, createdAt: addDays(NOW, -30 + Math.round(between(0, 20))), ...d },
+        data: { fromUserId: cmo.id, createdAt: issuedAt, ...d, updates: { create: history } },
       });
     }
 

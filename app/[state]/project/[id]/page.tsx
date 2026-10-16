@@ -10,9 +10,14 @@ import {
   ImageIcon,
   PencilIcon,
   ScrollTextIcon,
+  PlusIcon,
   UploadIcon,
 } from "lucide-react";
 import { OUTCOME_STYLE } from "@/components/compare/outcome-style";
+import { DirectiveStatusBadge, IssueStatusBadge, PriorityBadge } from "@/components/workflow/badges";
+import { RaiseIssueDialog } from "@/components/issues/raise-issue-dialog";
+import { canIssueDirective, canRaiseIssue } from "@/lib/auth/project-permissions";
+import { db } from "@/lib/db";
 import { getVerifications } from "@/lib/data/compare";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,11 +35,8 @@ import { formatBudget, formatDate } from "@/lib/format";
 import { imageryUrl } from "@/lib/imagery/url";
 import { toDateInput, todayIST } from "@/lib/dates";
 import {
-  DIRECTIVE_STATUS_LABELS,
   VERIFICATION_OUTCOME_LABELS,
   IMAGERY_SOURCE_LABELS,
-  ISSUE_PRIORITY_LABELS,
-  ISSUE_STATUS_LABELS,
   type DirectiveStatus,
   type ImagerySource,
   type IssuePriority,
@@ -53,19 +55,18 @@ export default function ProjectPage({ params }: Params) {
   );
 }
 
-const PRIORITY_STYLE: Record<IssuePriority, string> = {
-  CRITICAL: "border-red-300 bg-red-50 text-red-800",
-  HIGH: "border-orange-300 bg-orange-50 text-orange-800",
-  MEDIUM: "border-amber-300 bg-amber-50 text-amber-800",
-  LOW: "border-slate-300 bg-slate-50 text-slate-700",
-};
 
 async function Project({ params }: { params: Params["params"] }) {
   const { state: stateParam, id } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
   const access = await assertCanAccessProject(user, id);
   if (access.stateCode !== state.code) notFound();
-  const [detail, verifications] = await Promise.all([getProjectDetail(user, id, state.code), getVerifications(id)]);
+  const [detail, verifications, lastMeetingRow] = await Promise.all([
+    getProjectDetail(user, id, state.code),
+    getVerifications(id),
+    db.issue.aggregate({ where: { project: { district: { state: { code: state.code } } } }, _max: { meetingDate: true } }),
+  ]);
+  const lastMeeting = lastMeetingRow._max.meetingDate;
   if (!detail) notFound();
 
   const { project, status, planned, behind, lastUpdate, directives, activity, can } = detail;
@@ -282,6 +283,16 @@ async function Project({ params }: { params: Params["params"] }) {
               <CircleAlertIcon className="size-4 text-muted-foreground" />
               Issues
               <span className="font-normal text-muted-foreground">{project.issues.length}</span>
+              {canRaiseIssue(user) && (
+                <span className="ml-auto">
+                  <RaiseIssueDialog
+                    projectId={project.id}
+                    projectName={project.name}
+                    stateSlug={state.code.toLowerCase()}
+                    lastMeeting={lastMeeting ? formatDate(lastMeeting) : null}
+                  />
+                </span>
+              )}
             </h2>
             {project.issues.length === 0 ? (
               <p className="text-sm text-muted-foreground">No issues raised.</p>
@@ -289,12 +300,12 @@ async function Project({ params }: { params: Params["params"] }) {
               <ul className="grid gap-3">
                 {project.issues.map((i) => (
                   <li key={i.id} className="grid gap-1 text-sm">
-                    <div className="font-medium">{i.title}</div>
+                    <Link href={`${basePath}/issues/${i.id}`} className="font-medium hover:underline">
+                      {i.title}
+                    </Link>
                     <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                      <span className={`rounded-full border px-1.5 py-0.5 ${PRIORITY_STYLE[i.priority as IssuePriority]}`}>
-                        {ISSUE_PRIORITY_LABELS[i.priority as IssuePriority]}
-                      </span>
-                      <span className="rounded-full border px-1.5 py-0.5">{ISSUE_STATUS_LABELS[i.status as IssueStatus]}</span>
+                      <PriorityBadge priority={i.priority as IssuePriority} />
+                      <IssueStatusBadge status={i.status as IssueStatus} />
                       {i.meetingDate && <span className="text-muted-foreground">Review meeting {formatDate(i.meetingDate)}</span>}
                     </div>
                   </li>
@@ -308,6 +319,12 @@ async function Project({ params }: { params: Params["params"] }) {
               <ScrollTextIcon className="size-4 text-muted-foreground" />
               Directives
               <span className="font-normal text-muted-foreground">{directives.length}</span>
+              {canIssueDirective(user) && (
+                <Button variant="outline" size="sm" className="ml-auto" nativeButton={false} render={<Link href={`${basePath}/directives/new?project=${project.id}`} />}>
+                  <PlusIcon />
+                  New
+                </Button>
+              )}
             </h2>
             {directives.length === 0 ? (
               <p className="text-sm text-muted-foreground">No directives for this project.</p>
@@ -318,15 +335,14 @@ async function Project({ params }: { params: Params["params"] }) {
                   const overdue = open && d.dueDate != null && d.dueDate < now;
                   return (
                     <li key={d.id} className="grid gap-1 text-sm">
-                      <p>{d.text}</p>
-                      <div className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                      <Link href={`${basePath}/directives/${d.id}`} className="hover:underline">
+                        {d.text}
+                      </Link>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                        <DirectiveStatusBadge status={d.status as DirectiveStatus} overdue={overdue} />
                         <span>From {d.fromUser.name}</span>
-                        <span>· {DIRECTIVE_STATUS_LABELS[d.status as DirectiveStatus]}</span>
-                        {d.dueDate && (
-                          <span className={overdue ? "font-medium text-red-700" : ""}>
-                            · {overdue ? "Overdue since" : "Due"} {formatDate(d.dueDate)}
-                          </span>
-                        )}
+                        {d.owner && <span>· Owner {d.owner.name}</span>}
+                        {d.dueDate && <span className={overdue ? "font-medium text-red-700" : ""}>· Due {formatDate(d.dueDate)}</span>}
                       </div>
                     </li>
                   );

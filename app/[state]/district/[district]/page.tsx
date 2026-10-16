@@ -57,8 +57,8 @@ async function District({ params }: { params: PageProps<"/[state]/district/[dist
         <Stat label="Completed" value={totals.completed} color={PROJECT_STATUS_COLOR.completed} />
         <Stat label="On-going" value={totals.ongoing} color={PROJECT_STATUS_COLOR.ongoing} />
         <Stat label="Delayed / stalled" value={totals.delayed + totals.stalled} color={PROJECT_STATUS_COLOR.stalled} />
-        <Stat label="Open issues" value={view.openIssues} />
-        <Stat label="Open directives" value={view.openDirectives} />
+        <Stat label="Open issues" value={view.openIssues} href={`${basePath}/issues?district=${slug}`} />
+        <Stat label="Open directives" value={view.openDirectives} href={`${basePath}/directives?district=${slug}`} />
       </dl>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
@@ -95,15 +95,23 @@ async function District({ params }: { params: PageProps<"/[state]/district/[dist
   );
 }
 
-function Stat({ label, value, color }: { label: string; value: number; color?: string }) {
-  return (
-    <div className="flex flex-col-reverse rounded-lg border bg-background p-3">
+function Stat({ label, value, color, href }: { label: string; value: number; color?: string; href?: string }) {
+  const body = (
+    <>
       <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
         {color && <span className="size-2 rounded-full" style={{ backgroundColor: color }} />}
         {label}
       </dt>
       <dd className="text-2xl font-semibold">{value}</dd>
-    </div>
+    </>
+  );
+  const cls = "flex flex-col-reverse rounded-lg border bg-background p-3";
+  return href ? (
+    <Link href={href} className={`${cls} transition hover:bg-muted/50 hover:shadow-sm`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={cls}>{body}</div>
   );
 }
 
