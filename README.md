@@ -15,8 +15,30 @@ npm install            # also runs `prisma generate`
 cp .env.example .env   # then set AUTH_SECRET (see below)
 npm run db:migrate     # create / update the SQLite database
 npm run db:seed        # demo data + placeholder imagery
-npm run dev            # http://localhost:3000
+npm run dev            # then open a portal (below)
 ```
+
+### Portals: one address per state
+
+| Portal | Local address | Who signs in |
+|---|---|---|
+| Rajasthan | <http://rj.localhost:3000> | Rajasthan users only |
+| Maharashtra | <http://mh.localhost:3000> | Maharashtra users only |
+| Admin | <http://admin.localhost:3000> | Admin only — the one place both states are visible |
+
+Plain <http://localhost:3000> lists these links (development only). `*.localhost` addresses work in any
+browser with no setup. A state portal never shows or links to the other state; a user of one state can't
+sign in on the other's portal, and sessions only work on the portal that issued them.
+
+For production, point each address at the same deployment and set them in `.env`:
+
+```bash
+PORTAL_HOST_RJ="rajasthan.cmo-monitor.in"
+PORTAL_HOST_MH="maharashtra.cmo-monitor.in"
+PORTAL_HOST_ADMIN="admin.cmo-monitor.in"
+```
+
+Unknown addresses get "Not found". Behind a reverse proxy, forward the public host (`X-Forwarded-Host`).
 
 > npm 11 blocks dependency install scripts unless approved. The ones this project needs
 > (`better-sqlite3`, `prisma`, `@prisma/engines`, `esbuild`, `unrs-resolver`) are already listed
@@ -37,12 +59,13 @@ Useful scripts:
 
 ## Demo users
 
-All demo users have the password **`Demo@123`**. The login page has a clickable "Demo accounts" list;
-hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
+All demo users have the password **`Demo@123`**. Each portal's login page has a clickable "Demo accounts"
+list with only that portal's accounts; hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
 
-| Role | Rajasthan | Maharashtra |
+Admin: `admin@demo.gov.in` on the **admin portal**.
+
+| Role | Rajasthan portal | Maharashtra portal |
 |---|---|---|
-| Admin (both states) | `admin@demo.gov.in` | ← same |
 | CM / CMO / Chief Secretary | `cmo.rj@demo.gov.in` | `cmo.mh@demo.gov.in` |
 | Department Head (PWD) | `pwd.rj@demo.gov.in` | `pwd.mh@demo.gov.in` |
 | District Collector | `collector.jaipur@demo.gov.in` | `collector.pune@demo.gov.in` |
@@ -61,8 +84,11 @@ hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
 ## Authentication and access control
 
 - **Login:** Auth.js v5 (credentials, JWT cookie, 8-hour session). Config in `auth.config.ts` / `auth.ts`.
-- **`proxy.ts`** does quick cookie-only redirects (logged out → `/login`, non-admins away from `/select-state` and `/admin`).
-  It is *not* the security boundary.
+- **Portals** (`config/portals.ts`): the request's address decides the portal. Logins are only accepted from
+  that portal's users, and each session records its portal and is rejected anywhere else.
+- **`proxy.ts`** routes per portal with cookie-only checks: logged out → `/login`; on a state portal, clean URLs
+  (`/district/jaipur`) are rewritten to the internal `/rj/...` routes, and other states' or admin paths are "not
+  found". It is *not* the security boundary.
 - **`lib/auth/dal.ts`** is: every page and server action gets the user via `requireUser()` /
   `requirePermission()` / `requireStateAccess()`, which re-load the user from the database on each request.
 - **`lib/auth/scope.ts`** turns the user's role into database filters. Every query for projects, issues,
@@ -70,14 +96,14 @@ hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
 
 | Role | Sees |
 |---|---|
-| Admin | Everything in the selected state; can switch states |
+| Admin (admin portal) | Everything in the selected state; can switch states |
 | CMO / CS | Whole state |
 | Department Head | Own department, all districts in the state |
 | District Collector | Own district, all departments |
 | Field Officer | Only projects assigned to them |
 
-Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins and
-sign-outs are recorded in `AuditLog`.
+Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins (including
+attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 
 ## Where things live
 
@@ -87,7 +113,8 @@ sign-outs are recorded in `AuditLog`.
 | `lib/constants.ts` | Status / priority / source enums, roles and permissions |
 | `lib/db.ts` | Shared Prisma client (server only) |
 | `lib/auth/` | Data access layer (`dal.ts`) and role scoping (`scope.ts`) |
-| `auth.ts`, `auth.config.ts`, `proxy.ts` | Auth.js setup and request-level redirects |
+| `auth.ts`, `auth.config.ts`, `proxy.ts` | Auth.js setup and per-portal routing |
+| `config/portals.ts` | Portal addresses (state and admin) |
 | `prisma/schema.prisma` | Data model |
 | `prisma/seed.ts` | Seed script; `prisma/demo-imagery.ts` draws the placeholder images |
 | `public/geo/` | District boundary GeoJSON (generated by `npm run geo:build`) |

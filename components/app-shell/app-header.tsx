@@ -5,8 +5,11 @@ import type { StateConfig } from "@/config/states";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { UserMenu } from "./user-menu";
 
-/** Top bar. The state band is static; the user menu streams in (it reads the session). */
-export function AppHeader({ state }: { state?: StateConfig }) {
+/**
+ * Top bar. The state band is static; the user menu streams in (it reads the session).
+ * `homeHref` is where the app name links to (the state's map on its portal).
+ */
+export function AppHeader({ state, homeHref = "/" }: { state?: StateConfig; homeHref?: string }) {
   return (
     <header
       className="sticky top-0 z-40 text-white shadow-sm"
@@ -14,7 +17,7 @@ export function AppHeader({ state }: { state?: StateConfig }) {
     >
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
         <Link
-          href={state ? `/${state.code.toLowerCase()}` : "/"}
+          href={homeHref}
           className="flex min-w-0 items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white/40"
         >
           <LandmarkIcon className="size-5 shrink-0" />

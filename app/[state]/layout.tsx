@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { AppHeader, AppHeaderSkeleton } from "@/components/app-shell/app-header";
 import { getStateConfig, STATE_CODES } from "@/config/states";
+import { stateBasePath } from "@/config/portals";
+import { getCurrentPortal } from "@/lib/portal";
 
 export function generateStaticParams() {
   return STATE_CODES.map((code) => ({ state: code.toLowerCase() }));
@@ -25,6 +27,8 @@ export default function StateLayout({ children, params }: LayoutProps<"/[state]"
 async function StateHeader({ params }: { params: LayoutProps<"/[state]">["params"] }) {
   const { state } = await params;
   const config = getStateConfig(state.toUpperCase());
-  if (!config) notFound();
-  return <AppHeader state={config} />;
+  const portal = await getCurrentPortal();
+  // A state portal only ever renders its own state.
+  if (!config || !portal || (portal.kind === "state" && portal.stateCode !== config.code)) notFound();
+  return <AppHeader state={config} homeHref={stateBasePath(portal, config.code) || "/"} />;
 }

@@ -2,15 +2,17 @@ import Link from "next/link";
 import type { DepartmentChip } from "@/lib/data/state-overview";
 
 type Props = {
-  stateSlug: string;
+  /** Link prefix for this state's pages ("" on its own portal, "/rj" on admin) */
+  basePath: string;
   departments: DepartmentChip[];
   selected: string | null;
   totalProjects: number;
 };
 
 /** One row of department chips above the map; links keep the filter in the URL. */
-export function DepartmentFilter({ stateSlug, departments, selected, totalProjects }: Props) {
+export function DepartmentFilter({ basePath, departments, selected, totalProjects }: Props) {
   if (departments.length <= 1) return null; // e.g. a Department Head only has one
+  const home = basePath || "/";
 
   const chip = (href: string, active: boolean, label: string, count: number, title?: string) => (
     <Link
@@ -30,9 +32,9 @@ export function DepartmentFilter({ stateSlug, departments, selected, totalProjec
 
   return (
     <nav aria-label="Filter by department" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-      {chip(`/${stateSlug}`, !selected, "All departments", totalProjects)}
+      {chip(home, !selected, "All departments", totalProjects)}
       {departments.map((d) =>
-        chip(`/${stateSlug}?dept=${d.code.toLowerCase()}`, selected === d.code, d.name, d.projects, d.nameLocal),
+        chip(`${home}?dept=${d.code.toLowerCase()}`, selected === d.code, d.name, d.projects, d.nameLocal),
       )}
     </nav>
   );

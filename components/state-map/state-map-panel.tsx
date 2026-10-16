@@ -19,7 +19,7 @@ type Props = {
   geoCodeProperty: string;
   center: [number, number];
   zoom: number;
-  stateSlug: string;
+  basePath: string;
   districts: DistrictSummary[];
   styleKey: string;
 };
@@ -82,7 +82,7 @@ export function StateMapPanel(props: Props) {
                 <li key={d.geoCode}>
                   {d.accessible ? (
                     <Link
-                      href={`/${props.stateSlug}/district/${d.slug}`}
+                      href={`${props.basePath}/district/${d.slug}`}
                       className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs hover:bg-muted"
                     >
                       {chip}

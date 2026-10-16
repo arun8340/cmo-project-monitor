@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import { redirect } from "next/navigation";
-import { homePathFor } from "@/auth.config";
+import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/dal";
 
 /**
- * "/" has no content of its own. Proxy normally redirects before this renders;
- * this is the fallback that sends users to their home (state or state picker).
+ * "/" has no content of its own. On a state portal Proxy rewrites it to that
+ * state's map, and on the admin portal it redirects to the state picker; this
+ * is only a fallback.
  */
 export default function RootPage() {
   return (
@@ -17,6 +17,7 @@ export default function RootPage() {
 
 async function RedirectHome() {
   const user = await requireUser();
-  redirect(homePathFor(user.roleKey, user.stateCode));
+  if (user.portal.kind === "admin") redirect("/select-state");
+  notFound();
   return null;
 }
