@@ -40,6 +40,8 @@ function summarize(action: string, details: string | null): string {
       const to = d.to as { progress?: number } | undefined;
       return `Progress ${from?.progress ?? "?"}% → ${to?.progress ?? "?"}%`;
     }
+    case "verification.record":
+      return `Verification recorded: ${{ PROGRESS_VISIBLE: "progress visible", NO_VISIBLE_CHANGE: "no visible change", DISCREPANCY: "discrepancy" }[d.outcome as string] ?? d.outcome}`;
     case "imagery.upload":
       return `Uploaded ${d.count ?? ""} image${d.count === 1 ? "" : "s"}`;
     default:

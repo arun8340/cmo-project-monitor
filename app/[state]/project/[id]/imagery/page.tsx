@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ImagesIcon, UploadIcon } from "lucide-react";
+import { ColumnsIcon, ImagesIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
@@ -105,12 +105,20 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
             {project.name} · {all.length} image{all.length === 1 ? "" : "s"} on {dates} date{dates === 1 ? "" : "s"}
           </p>
         </div>
-        {canUploadImagery(user) && (
-          <Button nativeButton={false} render={<Link href={`${galleryPath}/upload`} />}>
-            <UploadIcon />
-            Upload imagery
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {all.length >= 2 && (
+            <Button variant={canUploadImagery(user) ? "outline" : "default"} nativeButton={false} render={<Link href={`${projectPath}/compare`} />}>
+              <ColumnsIcon />
+              Compare imagery
+            </Button>
+          )}
+          {canUploadImagery(user) && (
+            <Button nativeButton={false} render={<Link href={`${galleryPath}/upload`} />}>
+              <UploadIcon />
+              Upload imagery
+            </Button>
+          )}
+        </div>
       </div>
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="availability-heading">
@@ -133,7 +141,7 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
       </nav>
 
       {items.length ? (
-        <Gallery items={items} />
+        <Gallery items={items} compareHref={all.length >= 2 ? `${projectPath}/compare` : null} latestId={all[0]?.id ?? null} />
       ) : (
         <p className="rounded-xl border border-dashed bg-card py-14 text-center text-sm text-muted-foreground">
           {filter ? `No ${SOURCE_META[filter].label.toLowerCase()} imagery yet.` : "No imagery uploaded for this project yet."}

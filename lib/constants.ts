@@ -78,6 +78,7 @@ export const PERMISSIONS = [
   "projects.edit",
   "progress.update",
   "imagery.upload",
+  "verification.record",
   "issues.create",
   "issues.update",
   "directives.issue",
@@ -98,7 +99,7 @@ export const ROLE_DEFINITIONS: Record<
   CMO: {
     name: "CM / CMO / Chief Secretary",
     description: "Whole-state view; issues directives",
-    permissions: ["projects.view", "directives.issue", "directives.update", "issues.update", "audit.view"],
+    permissions: ["projects.view", "verification.record", "directives.issue", "directives.update", "issues.update", "audit.view"],
   },
   DEPARTMENT_HEAD: {
     name: "Department Head",
@@ -108,6 +109,7 @@ export const ROLE_DEFINITIONS: Record<
       "projects.edit",
       "progress.update",
       "imagery.upload",
+      "verification.record",
       "issues.create",
       "issues.update",
       "directives.update",
@@ -122,6 +124,7 @@ export const ROLE_DEFINITIONS: Record<
       "projects.edit",
       "progress.update",
       "imagery.upload",
+      "verification.record",
       "issues.create",
       "issues.update",
       "directives.update",
@@ -132,4 +135,14 @@ export const ROLE_DEFINITIONS: Record<
     description: "Uploads field photos and progress for assigned projects",
     permissions: ["projects.view", "progress.update", "imagery.upload"],
   },
+};
+
+/** Outcome of comparing dated imagery against reported progress. */
+export const VERIFICATION_OUTCOMES = ["PROGRESS_VISIBLE", "NO_VISIBLE_CHANGE", "DISCREPANCY"] as const;
+export type VerificationOutcome = (typeof VERIFICATION_OUTCOMES)[number];
+
+export const VERIFICATION_OUTCOME_LABELS: Record<VerificationOutcome, string> = {
+  PROGRESS_VISIBLE: "Progress visible",
+  NO_VISIBLE_CHANGE: "No visible change",
+  DISCREPANCY: "Discrepancy with reported progress",
 };

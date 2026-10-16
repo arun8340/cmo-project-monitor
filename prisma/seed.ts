@@ -111,6 +111,7 @@ const ISSUE_TEMPLATES: { title: string; priority: IssuePriority }[] = [
 
 async function wipe() {
   await db.auditLog.deleteMany();
+  await db.verification.deleteMany();
   await db.directive.deleteMany();
   await db.issue.deleteMany();
   await db.progressUpdate.deleteMany();
@@ -384,6 +385,32 @@ async function main() {
     for (const d of directives) {
       await db.directive.create({
         data: { fromUserId: cmo.id, createdAt: addDays(NOW, -30 + Math.round(between(0, 20))), ...d },
+      });
+    }
+
+    // A few CMO verifications from the comparison screen.
+    const VERIFY: { status: ProjectStatus; outcome: string; notes: string }[] = [
+      { status: "STALLED", outcome: "DISCREPANCY", notes: "No new work visible in recent imagery although earlier progress was reported. Seek explanation from the contractor." },
+      { status: "DELAYED", outcome: "NO_VISIBLE_CHANGE", notes: "Little visible change between the last two captures." },
+      { status: "COMPLETED", outcome: "PROGRESS_VISIBLE", notes: "Completed structure visible, consistent with reported progress." },
+    ];
+    for (const v of VERIFY) {
+      const target = createdProjects.find((p) => p.status === v.status);
+      if (!target) continue;
+      const imgs = await db.imageryCapture.findMany({ where: { projectId: target.id }, orderBy: { captureDate: "asc" } });
+      if (imgs.length < 2) continue;
+      const pair = [imgs[0], imgs.at(-1)!];
+      await db.verification.create({
+        data: {
+          projectId: target.id,
+          outcome: v.outcome,
+          notes: v.notes,
+          imageIds: JSON.stringify(pair.map((i) => i.id)),
+          fromDate: pair[0].captureDate,
+          toDate: pair[1].captureDate,
+          createdById: cmo.id,
+          createdAt: addDays(NOW, -Math.round(between(2, 10))),
+        },
       });
     }
   }
