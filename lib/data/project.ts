@@ -2,7 +2,7 @@ import "server-only";
 import { db } from "@/lib/db";
 import type { CurrentUser } from "@/lib/auth/dal";
 import { departmentScope, directiveScope, districtScope } from "@/lib/auth/scope";
-import { canEditProject, canUpdateProgress } from "@/lib/auth/project-permissions";
+import { canEditProject, canUpdateProgress, canUploadImagery } from "@/lib/auth/project-permissions";
 import type { StateCode, StateConfig } from "@/config/states";
 import { districtSlug } from "@/lib/district-slug";
 import type { ProjectStatus } from "@/lib/constants";
@@ -40,6 +40,8 @@ function summarize(action: string, details: string | null): string {
       const to = d.to as { progress?: number } | undefined;
       return `Progress ${from?.progress ?? "?"}% → ${to?.progress ?? "?"}%`;
     }
+    case "imagery.upload":
+      return `Uploaded ${d.count ?? ""} image${d.count === 1 ? "" : "s"}`;
     default:
       return action;
   }
@@ -93,7 +95,7 @@ export async function getProjectDetail(user: CurrentUser, projectId: string, sta
       userName: a.user?.name ?? null,
       summary: summarize(a.action, a.details),
     })),
-    can: { edit: canEditProject(user), updateProgress: canUpdateProgress(user) },
+    can: { edit: canEditProject(user), updateProgress: canUpdateProgress(user), uploadImagery: canUploadImagery(user) },
   };
 }
 

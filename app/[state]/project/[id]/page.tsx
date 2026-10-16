@@ -1,8 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { CalendarClockIcon, CircleAlertIcon, HistoryIcon, ImageIcon, PencilIcon, ScrollTextIcon } from "lucide-react";
+import { CalendarClockIcon, CircleAlertIcon, HistoryIcon, ImageIcon, PencilIcon, ScrollTextIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
@@ -16,6 +15,7 @@ import { getProjectDetail } from "@/lib/data/project";
 import { districtSlug } from "@/lib/district-slug";
 import { STATUS_COLOR } from "@/lib/district-health";
 import { formatBudget, formatDate } from "@/lib/format";
+import { imageryUrl } from "@/lib/imagery/url";
 import { toDateInput, todayIST } from "@/lib/dates";
 import {
   DIRECTIVE_STATUS_LABELS,
@@ -181,29 +181,46 @@ async function Project({ params }: { params: Params["params"] }) {
               <ImageIcon className="size-4 text-muted-foreground" />
               Latest imagery
               <span className="font-normal text-muted-foreground">{project._count.imagery}</span>
+              <Link href={`${basePath}/project/${project.id}/imagery`} className="ml-auto text-sm font-normal text-muted-foreground hover:text-foreground">
+                View all
+              </Link>
             </h2>
             {project.imagery.length === 0 ? (
               <p className="text-sm text-muted-foreground">No imagery uploaded yet.</p>
             ) : (
               <ul className="grid grid-cols-2 gap-2">
                 {project.imagery.map((img) => (
-                  <li key={img.id} className="overflow-hidden rounded-lg border">
-                    <Image
-                      src={img.filePath}
-                      alt={`${IMAGERY_SOURCE_LABELS[img.source as ImagerySource]} image, ${formatDate(img.captureDate)}`}
-                      width={300}
-                      height={200}
-                      className="aspect-3/2 w-full object-cover"
-                    />
-                    <div className="px-2 py-1.5 text-xs">
-                      <div className="font-medium">{formatDate(img.captureDate)}</div>
-                      <div className="text-muted-foreground">{IMAGERY_SOURCE_LABELS[img.source as ImagerySource]}</div>
-                    </div>
+                  <li key={img.id}>
+                    <Link href={`${basePath}/project/${project.id}/imagery`} className="block overflow-hidden rounded-lg border hover:shadow-sm">
+                      {/* Access-checked API image (see app/api/imagery). */}
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageryUrl(img.id, "thumb")}
+                        alt={`${IMAGERY_SOURCE_LABELS[img.source as ImagerySource]} image, ${formatDate(img.captureDate)}`}
+                        loading="lazy"
+                        className="aspect-3/2 w-full bg-muted object-cover"
+                      />
+                      <div className="px-2 py-1.5 text-xs">
+                        <div className="font-medium">{formatDate(img.captureDate)}</div>
+                        <div className="text-muted-foreground">{IMAGERY_SOURCE_LABELS[img.source as ImagerySource]}</div>
+                      </div>
+                    </Link>
                   </li>
                 ))}
               </ul>
             )}
-            <p className="mt-2 text-xs text-muted-foreground">Full gallery and date comparison arrive in the next steps.</p>
+            {can.uploadImagery && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-3 w-full"
+                nativeButton={false}
+                render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}
+              >
+                <UploadIcon />
+                Upload imagery
+              </Button>
+            )}
           </section>
 
           <section className="rounded-xl border bg-card p-4" aria-labelledby="issues-heading">
