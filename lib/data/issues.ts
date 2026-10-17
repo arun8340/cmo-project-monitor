@@ -1,4 +1,6 @@
 import "server-only";
+import { getLocale } from "next-intl/server";
+import { localName } from "@/lib/i18n/names";
 import type { Prisma } from "@/generated/prisma/client";
 import type { StateConfig } from "@/config/states";
 import { db } from "@/lib/db";
@@ -53,13 +55,21 @@ export async function listIssues(user: CurrentUser, state: StateConfig, f: Issue
   }
   if (f.q) base.push({ OR: [{ title: { contains: f.q } }, { description: { contains: f.q } }, { project: { name: { contains: f.q } } }] });
 
-  const [byStatus, rows, meetings, districts, departments] = await Promise.all([
+  const [byStatus, rows, meetings, districts, departments, locale] = await Promise.all([
     db.issue.groupBy({ by: ["status"], where: { AND: base }, _count: true }),
     db.issue.findMany({
       where: { AND: [...base, statusWhere(f.status)] },
       include: {
         createdBy: { select: { name: true } },
-        project: { select: { id: true, name: true, district: { select: { name: true, geoCode: true } }, department: { select: { name: true, code: true } } } },
+        project: {
+          select: {
+            id: true,
+            name: true,
+            nameLocal: true,
+            district: { select: { name: true, nameLocal: true, geoCode: true } },
+            department: { select: { name: true, nameLocal: true, code: true } },
+          },
+        },
       },
       take: 500,
     }),
@@ -69,9 +79,11 @@ export async function listIssues(user: CurrentUser, state: StateConfig, f: Issue
       distinct: ["meetingDate"],
       orderBy: { meetingDate: "desc" },
     }),
-    db.district.findMany({ where: districtScope(user, state.code), orderBy: { name: "asc" }, select: { name: true, geoCode: true } }),
-    db.department.findMany({ where: departmentScope(user, state.code), select: { name: true, code: true } }),
+    db.district.findMany({ where: districtScope(user, state.code), orderBy: { name: "asc" }, select: { name: true, nameLocal: true, geoCode: true } }),
+    db.department.findMany({ where: departmentScope(user, state.code), select: { name: true, nameLocal: true, code: true } }),
+    getLocale(),
   ]);
+  const ln = (n: { name: string; nameLocal: string | null }) => localName(locale, n.name, n.nameLocal);
 
   const counts = Object.fromEntries(ISSUE_STATUSES.map((s) => [s, 0])) as Record<IssueStatus, number>;
   for (const g of byStatus) counts[g.status as IssueStatus] = g._count;
@@ -96,17 +108,17 @@ export async function listIssues(user: CurrentUser, state: StateConfig, f: Issue
       createdAt: i.createdAt,
       resolvedAt: i.resolvedAt,
       raisedBy: i.createdBy?.name ?? null,
-      project: { id: i.project.id, name: i.project.name },
-      district: i.project.district.name,
-      department: i.project.department.name,
+      project: { id: i.project.id, name: ln(i.project) },
+      district: ln(i.project.district),
+      department: ln(i.project.department),
     })),
     counts,
     openCount: counts.PENDING + counts.IN_PROGRESS,
     total: Object.values(counts).reduce((a, b) => a + b, 0),
     options: {
       meetings: meetingDays,
-      districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: d.name })),
-      departments: departments.map((d) => ({ code: d.code.toLowerCase(), name: d.name })),
+      districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: ln(d) })),
+      departments: departments.map((d) => ({ code: d.code.toLowerCase(), name: ln(d) })),
     },
   };
 }

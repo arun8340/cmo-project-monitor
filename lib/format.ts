@@ -1,20 +1,38 @@
-/** Display formatting shared by server and client components (fixed locale/time zone). */
+/**
+ * Display formatting shared by server and client components. Fixed time zone
+ * (IST); the language comes from the caller — `getLocale()` on the server,
+ * `useLocale()` in client components — and defaults to English.
+ */
+import { intlLocale, type Locale } from "@/lib/i18n/config";
 
 const TZ = "Asia/Kolkata";
 
-export function formatDate(d: Date | string | null | undefined) {
+/** "16 Oct 2026" / "16 अक्टू॰ 2026". */
+export function formatDate(d: Date | string | null | undefined, locale: Locale = "en") {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: TZ });
+  return new Date(d).toLocaleDateString(intlLocale(locale), { day: "numeric", month: "short", year: "numeric", timeZone: TZ });
 }
 
-/** Budget stored in ₹ lakh → "₹85 L" or "₹24.5 Cr". */
-export function formatBudget(lakhs: number | null | undefined) {
+/** "October 2026". */
+export function formatMonth(d: Date | string, locale: Locale = "en") {
+  return new Date(d).toLocaleDateString(intlLocale(locale), { month: "long", year: "numeric", timeZone: TZ });
+}
+
+const BUDGET_UNITS: Record<Locale, { lakh: string; crore: string }> = {
+  en: { lakh: "L", crore: "Cr" },
+  hi: { lakh: "लाख", crore: "करोड़" },
+  mr: { lakh: "लाख", crore: "कोटी" },
+};
+
+/** Budget stored in ₹ lakh → "₹85 L" or "₹24.5 Cr" (₹85 लाख / ₹24.5 करोड़). */
+export function formatBudget(lakhs: number | null | undefined, locale: Locale = "en") {
   if (lakhs == null) return "—";
+  const unit = BUDGET_UNITS[locale];
   if (lakhs >= 100) {
     const crore = lakhs / 100;
-    return `₹${crore >= 100 ? Math.round(crore).toLocaleString("en-IN") : crore.toFixed(crore >= 10 ? 0 : 1)} Cr`;
+    return `₹${crore >= 100 ? Math.round(crore).toLocaleString("en-IN") : crore.toFixed(crore >= 10 ? 0 : 1)} ${unit.crore}`;
   }
-  return `₹${Math.round(lakhs)} L`;
+  return `₹${Math.round(lakhs)} ${unit.lakh}`;
 }
 
 /** File size → "740 KB" / "3.2 MB". */
@@ -31,16 +49,20 @@ export function daysBetween(from: Date, to: Date) {
   return ist(to) - ist(from);
 }
 
-/** "today", "3 days ago", "in 5 days". */
-export function relativeDays(date: Date, now = new Date()) {
-  const n = daysBetween(now, date);
-  if (n === 0) return "today";
-  if (n === -1) return "yesterday";
-  if (n === 1) return "tomorrow";
-  return n < 0 ? `${-n} days ago` : `in ${n} days`;
+/** "today", "3 days ago", "in 5 days" (आज, 3 दिन पहले, …). */
+export function relativeDays(date: Date, now = new Date(), locale: Locale = "en") {
+  return new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: "auto" }).format(daysBetween(now, date), "day");
 }
 
 /** "16 Oct 2026, 2:05 pm" (IST). */
-export function formatDateTime(d: Date | string) {
-  return new Date(d).toLocaleString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit", hour12: true, timeZone: TZ });
+export function formatDateTime(d: Date | string, locale: Locale = "en") {
+  return new Date(d).toLocaleString(intlLocale(locale), {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: TZ,
+  });
 }

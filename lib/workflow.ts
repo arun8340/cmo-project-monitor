@@ -6,16 +6,17 @@
 import type { CurrentUser } from "@/lib/auth/dal";
 import type { DirectiveStatus, IssueStatus } from "@/lib/constants";
 
+/** `label` is a key in the "workflow" messages. */
 type Transition<S> = { to: S; label: string; noteRequired: boolean };
 
 // ---- Issues: anyone with issues.update may move an issue to any other status.
 export function issueTransitions(from: IssueStatus): Transition<IssueStatus>[] {
   const reopening = from === "RESOLVED" || from === "ARCHIVED";
   const all: Transition<IssueStatus>[] = [
-    { to: "IN_PROGRESS", label: reopening ? "Reopen (in progress)" : "Mark in progress", noteRequired: reopening },
-    { to: "RESOLVED", label: "Mark resolved", noteRequired: true },
-    { to: "PENDING", label: reopening ? "Reopen (pending)" : "Back to pending", noteRequired: reopening },
-    { to: "ARCHIVED", label: "Archive", noteRequired: false },
+    { to: "IN_PROGRESS", label: reopening ? "reopenInProgress" : "markInProgress", noteRequired: reopening },
+    { to: "RESOLVED", label: "markResolved", noteRequired: true },
+    { to: "PENDING", label: reopening ? "reopenPending" : "backToPending", noteRequired: reopening },
+    { to: "ARCHIVED", label: "archive", noteRequired: false },
   ];
   return all.filter((t) => t.to !== from);
 }
@@ -36,17 +37,17 @@ export function directiveTransitions(user: CurrentUser, from: DirectiveStatus, o
   const out: Transition<DirectiveStatus>[] = [];
 
   if (responder && (from === "OPEN" || from === "IN_PROGRESS")) {
-    if (from === "OPEN") out.push({ to: "IN_PROGRESS", label: "Mark in progress", noteRequired: false });
-    out.push({ to: "COMPLIED", label: "Mark complied", noteRequired: true });
+    if (from === "OPEN") out.push({ to: "IN_PROGRESS", label: "markInProgress", noteRequired: false });
+    out.push({ to: "COMPLIED", label: "markComplied", noteRequired: true });
   }
   if (issuer) {
     if (from === "COMPLIED") {
-      out.push({ to: "CLOSED", label: "Accept and close", noteRequired: false });
-      out.push({ to: "OPEN", label: "Reopen — not satisfactory", noteRequired: true });
+      out.push({ to: "CLOSED", label: "acceptClose", noteRequired: false });
+      out.push({ to: "OPEN", label: "reopenUnsatisfactory", noteRequired: true });
     } else if (from === "CLOSED") {
-      out.push({ to: "OPEN", label: "Reopen", noteRequired: true });
+      out.push({ to: "OPEN", label: "reopen", noteRequired: true });
     } else {
-      out.push({ to: "CLOSED", label: "Withdraw / close", noteRequired: true });
+      out.push({ to: "CLOSED", label: "withdraw", noteRequired: true });
     }
   }
   return out;

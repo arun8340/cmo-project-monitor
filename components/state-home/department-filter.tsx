@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import type { DepartmentChip } from "@/lib/data/state-overview";
+import { localNames } from "@/lib/i18n/names";
 
 type Props = {
   /** Link prefix for this state's pages ("" on its own portal, "/rj" on admin) */
@@ -11,6 +13,8 @@ type Props = {
 
 /** One row of department chips above the map; links keep the filter in the URL. */
 export function DepartmentFilter({ basePath, departments, selected, totalProjects }: Props) {
+  const t = useTranslations("home");
+  const locale = useLocale();
   if (departments.length <= 1) return null; // e.g. a Department Head only has one
   const home = basePath || "/";
 
@@ -31,11 +35,12 @@ export function DepartmentFilter({ basePath, departments, selected, totalProject
   );
 
   return (
-    <nav aria-label="Filter by department" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-      {chip(home, !selected, "All departments", totalProjects)}
-      {departments.map((d) =>
-        chip(`${home}?dept=${d.code.toLowerCase()}`, selected === d.code, d.name, d.projects, d.nameLocal),
-      )}
+    <nav aria-label={t("filterByDepartment")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
+      {chip(home, !selected, t("allDepartments"), totalProjects)}
+      {departments.map((d) => {
+        const n = localNames(locale, d.name, d.nameLocal);
+        return chip(`${home}?dept=${d.code.toLowerCase()}`, selected === d.code, n.primary, d.projects, n.secondary ?? undefined);
+      })}
     </nav>
   );
 }

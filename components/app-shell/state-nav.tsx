@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export type NavItem = {
   key: string;
@@ -22,8 +23,9 @@ export function StateNav({ items }: { items: NavItem[] }) {
 export function NavLinks({ items, pathname }: { items: NavItem[]; pathname: string | null }) {
   const matches = (it: NavItem) => pathname !== null && (pathname === it.href || (it.href !== "/" && pathname.startsWith(`${it.href}/`)));
   const anyMatch = pathname === null || items.some((it) => !it.fallback && matches(it));
+  const t = useTranslations("nav");
   return (
-    <nav aria-label="Sections" className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3">
+    <nav aria-label={t("sections")} className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-3">
       {items.map((it) => {
         const on = it.fallback ? !anyMatch : matches(it);
         return (
@@ -39,7 +41,7 @@ export function NavLinks({ items, pathname }: { items: NavItem[]; pathname: stri
             {it.count != null && it.count > 0 && (
               <span
                 className={`rounded-full px-1.5 text-[11px] leading-5 font-semibold tabular-nums ${it.danger ? "bg-red-600 text-white" : "bg-white/20 text-white"}`}
-                title={it.danger ? `${it.count} overdue` : `${it.count} open`}
+                title={it.danger ? t("overdueCount", { count: it.count }) : t("openCount", { count: it.count })}
               >
                 {it.count}
               </span>

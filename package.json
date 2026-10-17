@@ -14,7 +14,8 @@
     "db:studio": "prisma studio --url \"file://$PWD/dev.db\"",
     "check:scopes": "tsx scripts/check-scopes.ts",
     "geo:build": "tsx scripts/build-geo.ts",
-    "imagery:migrate": "tsx scripts/migrate-imagery-storage.ts"
+    "imagery:migrate": "tsx scripts/migrate-imagery-storage.ts",
+    "check:messages": "tsx scripts/check-messages.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
@@ -28,6 +29,7 @@
     "lucide-react": "^1.57.0",
     "next": "16.4.1",
     "next-auth": "5.0.0-beta.32",
+    "next-intl": "^4.14.9",
     "next-themes": "^0.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -48,6 +50,7 @@
     "dotenv": "^18.0.8",
     "eslint": "^9",
     "eslint-config-next": "16.4.1",
+    "intl-messageformat": "^11.2.15",
     "prisma": "^7.10.0",
     "sharp": "^0.35.5",
     "tailwindcss": "^4",

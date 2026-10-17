@@ -1,3 +1,4 @@
+import { useLocale, useTranslations } from "next-intl";
 import { formatDate } from "@/lib/format";
 
 type Point = { date: Date; percent: number };
@@ -14,8 +15,10 @@ const PLANNED = "#94a3b8";
  * Two series → legend plus direct end labels; values on hover via <title>.
  */
 export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: Props) {
+  const t = useTranslations("chart");
+  const locale = useLocale();
   if (!start && updates.length === 0) {
-    return <p className="py-8 text-center text-sm text-muted-foreground">No progress recorded yet.</p>;
+    return <p className="py-8 text-center text-sm text-muted-foreground">{t("empty")}</p>;
   }
 
   const t0 = (start ?? updates[0].date).getTime();
@@ -48,14 +51,14 @@ export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: 
           <svg width="18" height="6">
             <line x1="0" y1="3" x2="18" y2="3" stroke={ACTUAL} strokeWidth="2" />
           </svg>
-          Actual
+          {t("actual")}
         </li>
         {plannedPath && (
           <li className="flex items-center gap-1.5">
             <svg width="18" height="6">
               <line x1="0" y1="3" x2="18" y2="3" stroke={PLANNED} strokeWidth="2" strokeDasharray="4 3" />
             </svg>
-            Planned
+            {t("planned")}
           </li>
         )}
       </ul>
@@ -64,7 +67,7 @@ export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: 
           viewBox={`0 0 ${W} ${H}`}
           className="w-full min-w-120"
           role="img"
-          aria-label={`Progress over time: ${last.percent}% actual${plannedNow != null ? `, ${Math.round(plannedNow)}% planned today` : ""}`}
+          aria-label={plannedNow != null ? t("ariaWithPlan", { actual: last.percent, planned: Math.round(plannedNow) }) : t("aria", { actual: last.percent })}
         >
           {[0, 25, 50, 75, 100].map((p) => (
             <g key={p}>
@@ -79,13 +82,13 @@ export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: 
             <g>
               <line x1={todayX} x2={todayX} y1={M.top} y2={H - M.bottom} stroke="currentColor" className="text-muted-foreground" strokeDasharray="2 3" />
               <text x={todayX} y={H - M.bottom + 22} textAnchor="middle" fontSize="10" className="fill-muted-foreground">
-                Today
+                {t("today")}
               </text>
             </g>
           )}
 
           <text x={M.left} y={H - M.bottom + 22} fontSize="10" className="fill-muted-foreground">
-            {formatDate(new Date(t0))}
+            {formatDate(new Date(t0), locale)}
           </text>
           {plannedEnd && (
             <text
@@ -95,7 +98,7 @@ export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: 
               fontSize="10"
               className="fill-muted-foreground"
             >
-              Planned end
+              {t("plannedEnd")}
             </text>
           )}
 
@@ -104,16 +107,16 @@ export function ProgressChart({ start, plannedEnd, updates, now = new Date() }: 
 
           {actual.map((p, i) => (
             <circle key={i} cx={x(p.date.getTime())} cy={y(p.percent)} r="4" fill={ACTUAL} stroke="white" strokeWidth="2">
-              <title>{`${formatDate(p.date)}: ${p.percent}%`}</title>
+              <title>{`${formatDate(p.date, locale)}: ${p.percent}%`}</title>
             </circle>
           ))}
 
           <text x={x(last.date.getTime()) + 6} y={actualLabelY} fontSize="11" fontWeight="600" className="fill-foreground">
-            Actual {last.percent}%
+            {t("actualValue", { percent: last.percent })}
           </text>
           {plannedLabelY != null && plannedNow != null && todayX <= W - M.right && (
             <text x={todayX - 6} y={plannedLabelY} textAnchor="end" fontSize="11" className="fill-muted-foreground">
-              Plan {Math.round(plannedNow)}%
+              {t("planValue", { percent: Math.round(plannedNow) })}
             </text>
           )}
         </svg>

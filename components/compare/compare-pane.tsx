@@ -6,6 +6,8 @@ import type { CompareImage } from "@/lib/data/compare";
 import { SOURCE_META } from "@/components/imagery/source-meta";
 import { paintChanges, type DiffMap } from "./change-detection";
 import { isZoomed, panBy, zoomAt, type View } from "./sync-view";
+import { useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
 
 type Props = {
   image: CompareImage;
@@ -37,6 +39,8 @@ export function ComparePane({ image, order, view, setView, diff, showChanges, se
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [natural, setNatural] = useState({ w: image.width ?? 1200, h: image.height ?? 800 });
   const meta = SOURCE_META[image.source];
+  const t = useTranslations("compare");
+  const source = useLabels().source[image.source];
 
   // Track the pane's size.
   useLayoutEffect(() => {
@@ -112,12 +116,12 @@ export function ComparePane({ image, order, view, setView, diff, showChanges, se
         <span className="text-sm font-semibold">{image.dayLabel}</span>
         <span className="flex items-center gap-1 text-white/70">
           <meta.icon className="size-3.5" style={{ color: meta.color }} />
-          {meta.label}
+          {source}
         </span>
-        <span className="text-white/70">Reported progress {image.reportedProgress}%</span>
+        <span className="text-white/70">{t("paneProgress", { progress: image.reportedProgress })}</span>
         {showChanges && baselineLabel && (
           <span className="ml-auto rounded bg-red-500/20 px-1.5 py-0.5 font-medium text-red-200">
-            {changedShare == null ? "Comparing…" : `≈ ${Math.round(changedShare * 100)}% changed since ${baselineLabel}`}
+            {changedShare == null ? t("comparing") : t("changedSince", { percent: Math.round(changedShare * 100), date: baselineLabel })}
           </span>
         )}
       </figcaption>
@@ -141,7 +145,7 @@ export function ComparePane({ image, order, view, setView, diff, showChanges, se
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageryUrl(image.id, "display")}
-                alt={`${meta.label} image, ${image.dayLabel}`}
+                alt={t("imageAlt", { source, date: image.dayLabel })}
                 draggable={false}
                 className="size-full"
                 onLoad={(e) => setNatural({ w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight })}

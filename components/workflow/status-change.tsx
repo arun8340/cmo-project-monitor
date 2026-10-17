@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useState } from "react";
 import { LoaderCircleIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,10 +31,13 @@ export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
   // once a newer successful result arrives, the note box closes by itself.
   const [pick, setPick] = useState<{ t: Transition; base: typeof state } | null>(null);
   const chosen = pick && !(state.ok && state !== pick.base) ? pick.t : null;
+  const tw = useTranslations("workflow");
+  const tc = useTranslations("common");
+  const label = (tr: Transition) => (tw as unknown as (k: string) => string)(`action.${tr.label}`);
 
   useEffect(() => {
-    if (state.ok) toast.success(state.message ?? "Updated");
-  }, [state]);
+    if (state.ok) toast.success(state.message ?? tw("updated"));
+  }, [state, tw]);
 
   if (transitions.length === 0) return null;
 
@@ -42,7 +46,7 @@ export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
       <div className="flex flex-wrap gap-2">
         {transitions.map((t) => (
           <Button key={t.to} type="button" variant={t.to === "RESOLVED" || t.to === "COMPLIED" || t.to === "CLOSED" ? "default" : "outline"} size="sm" onClick={() => setPick({ t, base: state })}>
-            {t.label}
+            {label(t)}
           </Button>
         ))}
       </div>
@@ -56,7 +60,7 @@ export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
       <input type="hidden" name="state" value={stateSlug} />
       <input type="hidden" name="to" value={chosen.to} />
       <label htmlFor={`note-${id}`} className="text-sm font-medium">
-        {chosen.label} — note{chosen.noteRequired ? " (required)" : " (optional)"}
+        {chosen.noteRequired ? tw("noteRequired", { action: label(chosen) }) : tw("noteOptional", { action: label(chosen) })}
       </label>
       <Textarea
         id={`note-${id}`}
@@ -64,17 +68,17 @@ export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
         maxLength={1000}
         autoFocus
         aria-invalid={!!err || undefined}
-        placeholder={chosen.to === "COMPLIED" ? "What action was taken?" : chosen.to === "RESOLVED" ? "How was it resolved?" : "Add context for the record"}
+        placeholder={chosen.to === "COMPLIED" ? tw("placeholderComplied") : chosen.to === "RESOLVED" ? tw("placeholderResolved") : tw("placeholder")}
       />
       {err && <FieldError>{err}</FieldError>}
       {state.message && !state.ok && !err && <p className="text-sm text-destructive">{state.message}</p>}
       <div className="flex gap-2">
         <Button type="submit" size="sm" disabled={pending}>
           {pending && <LoaderCircleIcon className="animate-spin" />}
-          Save
+          {tc("save")}
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={() => setPick(null)} disabled={pending}>
-          Cancel
+          {tc("cancel")}
         </Button>
       </div>
     </form>

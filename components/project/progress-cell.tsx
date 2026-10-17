@@ -1,4 +1,5 @@
 import { TriangleAlertIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { BEHIND_THRESHOLD } from "@/lib/progress";
 
 type Props = { actual: number; planned: number | null; behind: number; className?: string };
@@ -6,16 +7,17 @@ type Props = { actual: number; planned: number | null; behind: number; className
 /** Actual progress bar with a tick at the planned position, and a "behind" flag. */
 export function ProgressCell({ actual, planned, behind, className }: Props) {
   const flagged = behind > BEHIND_THRESHOLD;
+  const t = useTranslations("progress");
   return (
     <div className={`grid min-w-36 gap-1 ${className ?? ""}`}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
         <span className="font-medium tabular-nums">{actual}%</span>
-        {planned != null && <span className="text-muted-foreground tabular-nums">plan {planned}%</span>}
+        {planned != null && <span className="text-muted-foreground tabular-nums">{t("plan", { planned })}</span>}
       </div>
       <div
         className="relative h-1.5 rounded-full bg-muted"
         role="img"
-        aria-label={`${actual}% complete${planned != null ? `, ${planned}% planned` : ""}`}
+        aria-label={planned != null ? t("ariaWithPlan", { actual, planned }) : t("aria", { actual })}
       >
         <div
           className="h-full rounded-full"
@@ -28,7 +30,7 @@ export function ProgressCell({ actual, planned, behind, className }: Props) {
       {flagged && (
         <span className="flex items-center gap-1 text-xs font-medium text-amber-700">
           <TriangleAlertIcon className="size-3" />
-          Behind schedule by {behind} pts
+          {t("behindBy", { behind })}
         </span>
       )}
     </div>

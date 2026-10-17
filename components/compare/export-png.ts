@@ -1,6 +1,5 @@
 import { imageryUrl } from "@/lib/imagery/url";
 import type { CompareImage } from "@/lib/data/compare";
-import { SOURCE_META } from "@/components/imagery/source-meta";
 import { paintChanges, type DiffMap } from "./change-detection";
 import type { View } from "./sync-view";
 
@@ -12,6 +11,8 @@ type Options = {
   diffs: (DiffMap | null)[];
   showChanges: boolean;
   sensitivity: number;
+  /** Text under each image's date, e.g. "Satellite · reported progress 40%" (already translated). */
+  caption: (image: CompareImage) => string;
 };
 
 const CELL_W = 960;
@@ -32,7 +33,7 @@ const load = (src: string) =>
  * Renders the comparison as one PNG, exactly as currently zoomed, with dates,
  * sources and (optionally) the change overlay. Returns a Blob.
  */
-export async function exportComparison({ title, subtitle, images, view, diffs, showChanges, sensitivity }: Options): Promise<Blob> {
+export async function exportComparison({ title, subtitle, images, view, diffs, showChanges, sensitivity, caption }: Options): Promise<Blob> {
   const n = images.length;
   const cols = n === 4 ? 2 : n;
   const rows = Math.ceil(n / cols);
@@ -59,7 +60,6 @@ export async function exportComparison({ title, subtitle, images, view, diffs, s
     const x0 = GAP + col * (CELL_W + GAP);
     const y0 = HEADER + GAP + row * (CELL_H + CAPTION + GAP);
     const im = images[i];
-    const meta = SOURCE_META[im.source];
 
     // Caption
     ctx.fillStyle = "#1e293b";
@@ -69,7 +69,7 @@ export async function exportComparison({ title, subtitle, images, view, diffs, s
     ctx.fillText(`${i + 1}.  ${im.dayLabel}`, x0 + 14, y0 + 28);
     ctx.fillStyle = "#cbd5e1";
     ctx.font = font(400, 15);
-    ctx.fillText(`${meta.label} · reported progress ${im.reportedProgress}%`, x0 + 200, y0 + 28);
+    ctx.fillText(caption(im), x0 + 200, y0 + 28);
 
     // Image, contained in the cell and transformed like the on-screen pane
     const cy = y0 + CAPTION;

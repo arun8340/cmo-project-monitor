@@ -7,6 +7,9 @@ import { departmentScope, directiveScope, districtScope, issueScope, projectScop
 import type { DirectiveStatus } from "@/lib/constants";
 import { districtSlug, geoCodeFromSlug } from "@/lib/district-slug";
 import { OPEN_DIRECTIVE_STATUSES, OPEN_ISSUE_STATUSES } from "@/lib/workflow";
+import { getLocale, getTranslations } from "next-intl/server";
+import { localName } from "@/lib/i18n/names";
+import type { Locale } from "@/lib/i18n/config";
 
 export const DIRECTIVE_TABS = ["open", "overdue", "complied", "closed", "all"] as const;
 export type DirectiveTab = (typeof DIRECTIVE_TABS)[number];
@@ -37,19 +40,26 @@ function tabWhere(tab: DirectiveTab, now: Date): Prisma.DirectiveWhereInput {
 const include = {
   fromUser: { select: { name: true } },
   owner: { select: { id: true, name: true, designation: true } },
-  district: { select: { name: true, geoCode: true } },
-  department: { select: { name: true, code: true } },
-  project: { select: { id: true, name: true } },
+  district: { select: { name: true, nameLocal: true, geoCode: true } },
+  department: { select: { name: true, nameLocal: true, code: true } },
+  project: { select: { id: true, name: true, nameLocal: true } },
 } satisfies Prisma.DirectiveInclude;
 
 type DirectiveWithTargets = Prisma.DirectiveGetPayload<{ include: typeof include }>;
 
+type Names = { locale: Locale; districtLabel: (name: string) => string };
+
+async function names(): Promise<Names> {
+  const [locale, t] = await Promise.all([getLocale(), getTranslations("directives")]);
+  return { locale, districtLabel: (district) => t("districtTarget", { district }) };
+}
+
 /** "Jaipur district · PWD" / "Project: …" — what the directive is aimed at. */
-export function targetLabel(d: DirectiveWithTargets) {
+function targetLabel(d: DirectiveWithTargets, { locale, districtLabel }: Names) {
   const parts: string[] = [];
-  if (d.project) parts.push(d.project.name);
-  if (d.district) parts.push(`${d.district.name} district`);
-  if (d.department) parts.push(d.department.name);
+  if (d.project) parts.push(localName(locale, d.project.name, d.project.nameLocal));
+  if (d.district) parts.push(districtLabel(localName(locale, d.district.name, d.district.nameLocal)));
+  if (d.department) parts.push(localName(locale, d.department.name, d.department.nameLocal));
   return parts.join(" · ") || "—";
 }
 
@@ -75,9 +85,10 @@ export async function listDirectives(user: CurrentUser, state: StateConfig, f: D
   const due = (d: DirectiveWithTargets) => d.dueDate?.getTime() ?? Infinity;
   rows.sort((a, b) => due(a) - due(b) || b.createdAt.getTime() - a.createdAt.getTime());
 
-  const [districts, departments] = await Promise.all([
-    db.district.findMany({ where: districtScope(user, state.code), orderBy: { name: "asc" }, select: { name: true, geoCode: true } }),
-    db.department.findMany({ where: departmentScope(user, state.code), select: { name: true, code: true } }),
+  const [districts, departments, n] = await Promise.all([
+    db.district.findMany({ where: districtScope(user, state.code), orderBy: { name: "asc" }, select: { name: true, nameLocal: true, geoCode: true } }),
+    db.department.findMany({ where: departmentScope(user, state.code), select: { name: true, nameLocal: true, code: true } }),
+    names(),
   ]);
 
   return {
@@ -90,13 +101,13 @@ export async function listDirectives(user: CurrentUser, state: StateConfig, f: D
       createdAt: d.createdAt,
       from: d.fromUser.name,
       owner: d.owner?.name ?? null,
-      target: targetLabel(d),
+      target: targetLabel(d, n),
       projectId: d.project?.id ?? null,
     })),
     counts,
     options: {
-      districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: d.name })),
-      departments: departments.map((d) => ({ code: d.code.toLowerCase(), name: d.name })),
+      districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: localName(n.locale, d.name, d.nameLocal) })),
+      departments: departments.map((d) => ({ code: d.code.toLowerCase(), name: localName(n.locale, d.name, d.nameLocal) })),
     },
   };
 }
@@ -106,17 +117,17 @@ export async function getDirective(user: CurrentUser, state: StateConfig, id: st
     where: { AND: [{ id }, directiveScope(user, state.code)] },
     include: { ...include, updates: { orderBy: { createdAt: "asc" }, include: { user: { select: { name: true } } } } },
   });
-  return d ? { ...d, target: targetLabel(d) } : null;
+  return d ? { ...d, target: targetLabel(d, await names()) } : null;
 }
 
 /** Choices for the "Issue directive" form: targets in scope and the officers who could own them. */
 export async function getDirectiveFormOptions(user: CurrentUser, state: StateConfig) {
-  const [districts, departments, projects, officers] = await Promise.all([
+  const [districts, departments, projects, officers, locale] = await Promise.all([
     db.district.findMany({ where: districtScope(user, state.code), orderBy: { name: "asc" } }),
     db.department.findMany({ where: departmentScope(user, state.code) }),
     db.project.findMany({
       where: projectScope(user, state.code),
-      select: { id: true, name: true, district: { select: { geoCode: true } }, department: { select: { code: true } } },
+      select: { id: true, name: true, nameLocal: true, district: { select: { geoCode: true } }, department: { select: { code: true } } },
       orderBy: { name: "asc" },
     }),
     db.user.findMany({
@@ -124,16 +135,18 @@ export async function getDirectiveFormOptions(user: CurrentUser, state: StateCon
       include: { role: true, district: true, department: true },
       orderBy: { name: "asc" },
     }),
+    getLocale(),
   ]);
+  const ln = (x: { name: string; nameLocal: string | null }) => localName(locale, x.name, x.nameLocal);
   const ORDER = ["PWD", "METRO", "DRAINAGE", "URBAN", "RNB", "RURAL", "MGNREGA"];
   return {
-    districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: d.name })),
-    departments: departments.sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)).map((d) => ({ code: d.code.toLowerCase(), name: d.name })),
-    projects: projects.map((p) => ({ id: p.id, name: p.name, district: districtSlug(p.district.geoCode), dept: p.department.code.toLowerCase() })),
+    districts: districts.map((d) => ({ slug: districtSlug(d.geoCode), name: ln(d) })),
+    departments: departments.sort((a, b) => ORDER.indexOf(a.code) - ORDER.indexOf(b.code)).map((d) => ({ code: d.code.toLowerCase(), name: ln(d) })),
+    projects: projects.map((p) => ({ id: p.id, name: ln(p), district: districtSlug(p.district.geoCode), dept: p.department.code.toLowerCase() })),
     officers: officers.map((o) => ({
       id: o.id,
       name: o.name,
-      role: o.role.name,
+      role: o.role.key,
       district: o.district ? districtSlug(o.district.geoCode) : null,
       dept: o.department?.code.toLowerCase() ?? null,
     })),

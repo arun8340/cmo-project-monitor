@@ -10,7 +10,9 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { addProgressUpdate } from "@/app/actions/project";
-import { PROJECT_STATUS_LABELS, PROJECT_STATUSES, type ProjectStatus } from "@/lib/constants";
+import { PROJECT_STATUSES, type ProjectStatus } from "@/lib/constants";
+import { useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
 import { BEHIND_THRESHOLD } from "@/lib/progress";
 import type { FormState, ProgressFormValues } from "@/lib/validation/project";
 
@@ -30,6 +32,7 @@ const selectClass =
 export function ProgressDialog(props: Props) {
   const [open, setOpen] = useState(false);
   const [formKey, setFormKey] = useState(0);
+  const t = useTranslations("progressDialog");
   return (
     <Dialog
       open={open}
@@ -40,7 +43,7 @@ export function ProgressDialog(props: Props) {
     >
       <DialogTrigger render={<Button />}>
         <TrendingUpIcon />
-        Update progress
+        {t("title")}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <ProgressForm key={formKey} {...props} onDone={() => setOpen(false)} />
@@ -54,32 +57,34 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
   const [progress, setProgress] = useState(String(state.values?.progressPercent ?? current.progress));
   const [status, setStatus] = useState<string>(state.values?.status ?? current.status);
   const err = state.fieldErrors ?? {};
+  const t = useTranslations("progressDialog");
+  const labels = useLabels();
 
   useEffect(() => {
     if (state.ok) {
-      toast.success(state.message ?? "Progress updated");
+      toast.success(state.message ?? t("saved"));
       onDone();
     }
-  }, [state, onDone]);
+  }, [state, onDone, t]);
 
   const p = Number(progress);
   const valid = progress !== "" && Number.isFinite(p);
   const suggestion: { status: ProjectStatus; reason: string } | null = !valid
     ? null
     : p === 100 && status !== "COMPLETED"
-      ? { status: "COMPLETED", reason: "Progress is 100%" }
+      ? { status: "COMPLETED", reason: t("reasonComplete") }
       : plannedToday != null && plannedToday - p > BEHIND_THRESHOLD && status === "ONGOING"
-        ? { status: "DELAYED", reason: `${plannedToday - p} points behind plan (${plannedToday}%)` }
+        ? { status: "DELAYED", reason: t("reasonBehind", { points: plannedToday - p, planned: plannedToday }) }
         : null;
   const goingDown = valid && p < current.progress;
 
   return (
     <form onSubmit={submitKeepingValues(action)} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle>Update progress</DialogTitle>
+        <DialogTitle>{t("title")}</DialogTitle>
         <DialogDescription>
-          Currently {current.progress}% · {PROJECT_STATUS_LABELS[current.status]}
-          {plannedToday != null && <> · planned {plannedToday}% by today</>}
+          {t("currently", { progress: current.progress, status: labels.projectStatus[current.status] })}
+          {plannedToday != null && <> · {t("plannedToday", { planned: plannedToday })}</>}
         </DialogDescription>
       </DialogHeader>
 
@@ -89,7 +94,7 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
       <FieldGroup>
         <div className="grid grid-cols-2 gap-3">
           <Field data-invalid={!!err.date || undefined}>
-            <FieldLabel htmlFor="pu-date">Date</FieldLabel>
+            <FieldLabel htmlFor="pu-date">{t("date")}</FieldLabel>
             <Input
               id="pu-date"
               name="date"
@@ -103,7 +108,7 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
             {err.date && <FieldError>{err.date}</FieldError>}
           </Field>
           <Field data-invalid={!!err.progressPercent || undefined}>
-            <FieldLabel htmlFor="pu-progress">Progress (%)</FieldLabel>
+            <FieldLabel htmlFor="pu-progress">{t("progress")}</FieldLabel>
             <Input
               id="pu-progress"
               name="progressPercent"
@@ -122,7 +127,7 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
         </div>
 
         <Field data-invalid={!!err.status || undefined}>
-          <FieldLabel htmlFor="pu-status">Status</FieldLabel>
+          <FieldLabel htmlFor="pu-status">{t("status")}</FieldLabel>
           <select
             id="pu-status"
             name="status"
@@ -133,15 +138,15 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
           >
             {PROJECT_STATUSES.map((s) => (
               <option key={s} value={s}>
-                {PROJECT_STATUS_LABELS[s]}
+                {labels.projectStatus[s]}
               </option>
             ))}
           </select>
           {suggestion && (
             <FieldDescription>
-              {suggestion.reason} — consider{" "}
+              {suggestion.reason} — {t("consider")}{" "}
               <button type="button" className="font-medium text-foreground underline" onClick={() => setStatus(suggestion.status)}>
-                {PROJECT_STATUS_LABELS[suggestion.status]}
+                {labels.projectStatus[suggestion.status]}
               </button>
               .
             </FieldDescription>
@@ -150,17 +155,17 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
         </Field>
 
         <Field data-invalid={!!err.notes || undefined}>
-          <FieldLabel htmlFor="pu-notes">Notes{goingDown && " (required)"}</FieldLabel>
+          <FieldLabel htmlFor="pu-notes">{goingDown ? t("notesRequired") : t("notes")}</FieldLabel>
           <Textarea
             id="pu-notes"
             name="notes"
             defaultValue={state.values?.notes ?? ""}
-            placeholder={goingDown ? "Why is progress lower than before?" : "What was done since the last update?"}
+            placeholder={goingDown ? t("notesLowerPlaceholder") : t("notesPlaceholder")}
             aria-invalid={!!err.notes || undefined}
             maxLength={1000}
           />
           {goingDown && !err.notes && (
-            <FieldDescription>Progress is lower than the current {current.progress}% — explain the correction.</FieldDescription>
+            <FieldDescription>{t("lowerHint", { progress: current.progress })}</FieldDescription>
           )}
           {err.notes && <FieldError>{err.notes}</FieldError>}
         </Field>
@@ -171,7 +176,7 @@ function ProgressForm({ projectId, stateSlug, current, plannedToday, minDate, to
       <DialogFooter>
         <Button type="submit" disabled={pending}>
           {pending && <LoaderCircleIcon className="animate-spin" />}
-          Save update
+          {t("save")}
         </Button>
       </DialogFooter>
     </form>

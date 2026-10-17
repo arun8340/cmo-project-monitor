@@ -6,13 +6,13 @@ import { findAccessibleProject, getCurrentUser } from "@/lib/auth/dal";
 import { issueScope } from "@/lib/auth/scope";
 import { canRaiseIssue, canUpdateIssue } from "@/lib/auth/project-permissions";
 import { getStateConfig } from "@/config/states";
-import { ISSUE_PRIORITIES, ISSUE_STATUS_LABELS, ISSUE_STATUSES, type IssuePriority, type IssueStatus } from "@/lib/constants";
+import { ISSUE_PRIORITIES, ISSUE_STATUSES, type IssuePriority, type IssueStatus } from "@/lib/constants";
+import { getActionT, getLabels } from "@/lib/i18n/server";
 import { parseDateInput } from "@/lib/dates";
 import { issueTransitions } from "@/lib/workflow";
 
 export type IssueFormState = { ok?: boolean; message?: string; fieldErrors?: Record<string, string> };
 
-const NO_ACCESS = "You don't have permission to do this.";
 
 async function userAndState(formData: FormData) {
   const user = await getCurrentUser();
@@ -24,7 +24,8 @@ async function userAndState(formData: FormData) {
 
 /** Raise an issue on a project the user can access. */
 export async function raiseIssue(_prev: IssueFormState, formData: FormData): Promise<IssueFormState> {
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
+  const NO_ACCESS = t("noAccess");
   if (!ctx || !canRaiseIssue(ctx.user)) return { message: NO_ACCESS };
   const projectId = String(formData.get("projectId") ?? "");
   const access = await findAccessibleProject(ctx.user, projectId);
@@ -37,12 +38,12 @@ export async function raiseIssue(_prev: IssueFormState, formData: FormData): Pro
   const meetingDate = meetingStr ? parseDateInput(meetingStr) : null;
 
   const errors: Record<string, string> = {};
-  if (title.length < 5) errors.title = "Describe the issue in a few words (at least 5 characters)";
-  if (title.length > 200) errors.title = "Keep the title under 200 characters";
-  if (description.length > 2000) errors.description = "Keep the details under 2000 characters";
-  if (!ISSUE_PRIORITIES.includes(priority)) errors.priority = "Choose a priority";
-  if (meetingStr && !meetingDate) errors.meetingDate = "Enter a valid date";
-  if (Object.keys(errors).length) return { message: "Please correct the highlighted fields.", fieldErrors: errors };
+  if (title.length < 5) errors.title = t("v.issueTitle");
+  if (title.length > 200) errors.title = t("v.tooLong", { max: 200 });
+  if (description.length > 2000) errors.description = t("v.tooLong", { max: 2000 });
+  if (!ISSUE_PRIORITIES.includes(priority)) errors.priority = t("v.choosePriority");
+  if (meetingStr && !meetingDate) errors.meetingDate = t("v.validDate");
+  if (Object.keys(errors).length) return { message: t("fixErrors"), fieldErrors: errors };
 
   await db.$transaction(async (tx) => {
     const issue = await tx.issue.create({
@@ -63,12 +64,13 @@ export async function raiseIssue(_prev: IssueFormState, formData: FormData): Pro
   });
 
   refresh();
-  return { ok: true, message: "Issue raised" };
+  return { ok: true, message: t("issueRaised") };
 }
 
 /** Move an issue to another status (note required when resolving or reopening). */
 export async function changeIssueStatus(_prev: IssueFormState, formData: FormData): Promise<IssueFormState> {
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
+  const NO_ACCESS = t("noAccess");
   if (!ctx || !canUpdateIssue(ctx.user)) return { message: NO_ACCESS };
   const id = String(formData.get("id") ?? "");
   const issue = await db.issue.findFirst({ where: { AND: [{ id }, issueScope(ctx.user, ctx.state.code)] } });
@@ -77,11 +79,11 @@ export async function changeIssueStatus(_prev: IssueFormState, formData: FormDat
   const to = String(formData.get("to") ?? "") as IssueStatus;
   const note = String(formData.get("note") ?? "").trim();
   const transition = issueTransitions(issue.status as IssueStatus).find((t) => t.to === to);
-  if (!ISSUE_STATUSES.includes(to) || !transition) return { message: "That status change isn't allowed." };
+  if (!ISSUE_STATUSES.includes(to) || !transition) return { message: t("transitionNotAllowed") };
   if (transition.noteRequired && note.length < 5) {
-    return { message: "Please correct the highlighted fields.", fieldErrors: { note: to === "RESOLVED" ? "Describe how it was resolved" : "Explain why it's being reopened" } };
+    return { message: t("fixErrors"), fieldErrors: { note: to === "RESOLVED" ? t("v.describeResolution") : t("v.explainReopen") } };
   }
-  if (note.length > 1000) return { fieldErrors: { note: "Keep the note under 1000 characters" } };
+  if (note.length > 1000) return { fieldErrors: { note: t("v.tooLong", { max: 1000 }) } };
 
   await db.$transaction([
     db.issue.update({
@@ -101,5 +103,5 @@ export async function changeIssueStatus(_prev: IssueFormState, formData: FormDat
   ]);
 
   refresh();
-  return { ok: true, message: `Issue marked ${ISSUE_STATUS_LABELS[to].toLowerCase()}` };
+  return { ok: true, message: t("issueMarked", { status: (await getLabels()).issueStatus[to].toLocaleLowerCase() }) };
 }

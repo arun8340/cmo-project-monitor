@@ -9,7 +9,8 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/c
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { raiseIssue, type IssueFormState } from "@/app/actions/issues";
-import { ISSUE_PRIORITIES, ISSUE_PRIORITY_LABELS } from "@/lib/constants";
+import { ISSUE_PRIORITIES } from "@/lib/constants";
+import { useTranslations } from "next-intl";
 import { submitKeepingValues } from "@/lib/forms";
 
 type Props = { projectId: string; projectName: string; stateSlug: string; lastMeeting: string | null };
@@ -20,6 +21,7 @@ const selectClass =
 export function RaiseIssueDialog(props: Props) {
   const [open, setOpen] = useState(false);
   const [key, setKey] = useState(0);
+  const t = useTranslations("issues");
   return (
     <Dialog
       open={open}
@@ -30,7 +32,7 @@ export function RaiseIssueDialog(props: Props) {
     >
       <DialogTrigger render={<Button variant="outline" size="sm" />}>
         <CirclePlusIcon />
-        Raise issue
+        {t("raise")}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <RaiseIssueForm key={key} {...props} onDone={() => setOpen(false)} />
@@ -42,48 +44,50 @@ export function RaiseIssueDialog(props: Props) {
 function RaiseIssueForm({ projectId, projectName, stateSlug, lastMeeting, onDone }: Props & { onDone: () => void }) {
   const [state, action, pending] = useActionState<IssueFormState, FormData>(raiseIssue, {});
   const err = state.fieldErrors ?? {};
+  const t = useTranslations("issues");
+  const tp = useTranslations("enums.priority");
   useEffect(() => {
     if (state.ok) {
-      toast.success(state.message ?? "Issue raised");
+      toast.success(state.message ?? t("raised"));
       onDone();
     }
-  }, [state, onDone]);
+  }, [state, onDone, t]);
 
   return (
     <form onSubmit={submitKeepingValues(action)} className="grid gap-4">
       <DialogHeader>
-        <DialogTitle>Raise issue</DialogTitle>
+        <DialogTitle>{t("raise")}</DialogTitle>
         <DialogDescription>{projectName}</DialogDescription>
       </DialogHeader>
       <input type="hidden" name="projectId" value={projectId} />
       <input type="hidden" name="state" value={stateSlug} />
       <FieldGroup>
         <Field data-invalid={!!err.title || undefined}>
-          <FieldLabel htmlFor="ri-title">Issue</FieldLabel>
-          <Input id="ri-title" name="title" maxLength={200} placeholder="e.g. Utility shifting awaited from DISCOM" aria-invalid={!!err.title || undefined} />
+          <FieldLabel htmlFor="ri-title">{t("issue")}</FieldLabel>
+          <Input id="ri-title" name="title" maxLength={200} placeholder={t("titlePlaceholder")} aria-invalid={!!err.title || undefined} />
           {err.title && <FieldError>{err.title}</FieldError>}
         </Field>
         <Field data-invalid={!!err.description || undefined}>
-          <FieldLabel htmlFor="ri-desc">Details (optional)</FieldLabel>
+          <FieldLabel htmlFor="ri-desc">{t("detailsOptional")}</FieldLabel>
           <Textarea id="ri-desc" name="description" maxLength={2000} />
           {err.description && <FieldError>{err.description}</FieldError>}
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field data-invalid={!!err.priority || undefined}>
-            <FieldLabel htmlFor="ri-priority">Priority</FieldLabel>
+            <FieldLabel htmlFor="ri-priority">{t("priority")}</FieldLabel>
             <select id="ri-priority" name="priority" defaultValue="MEDIUM" className={selectClass}>
               {ISSUE_PRIORITIES.map((p) => (
                 <option key={p} value={p}>
-                  {ISSUE_PRIORITY_LABELS[p]}
+                  {tp(p)}
                 </option>
               ))}
             </select>
             {err.priority && <FieldError>{err.priority}</FieldError>}
           </Field>
           <Field data-invalid={!!err.meetingDate || undefined}>
-            <FieldLabel htmlFor="ri-meeting">Review meeting (optional)</FieldLabel>
+            <FieldLabel htmlFor="ri-meeting">{t("meetingOptional")}</FieldLabel>
             <Input id="ri-meeting" name="meetingDate" type="date" defaultValue="" />
-            {lastMeeting && <FieldDescription>Last meeting: {lastMeeting}</FieldDescription>}
+            {lastMeeting && <FieldDescription>{t("lastMeeting", { date: lastMeeting })}</FieldDescription>}
             {err.meetingDate && <FieldError>{err.meetingDate}</FieldError>}
           </Field>
         </div>
@@ -92,7 +96,7 @@ function RaiseIssueForm({ projectId, projectName, stateSlug, lastMeeting, onDone
       <DialogFooter>
         <Button type="submit" disabled={pending}>
           {pending && <LoaderCircleIcon className="animate-spin" />}
-          Raise issue
+          {t("raise")}
         </Button>
       </DialogFooter>
     </form>

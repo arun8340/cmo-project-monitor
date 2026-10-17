@@ -2,6 +2,8 @@ import { IMAGERY_SOURCES, type ImagerySource } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { toDateInput } from "@/lib/dates";
 import { SOURCE_META } from "./source-meta";
+import { useLocale, useTranslations } from "next-intl";
+import { intlLocale } from "@/lib/i18n/config";
 
 type Props = { captures: { captureDate: Date; source: string }[]; start: Date | null; now: Date };
 
@@ -49,16 +51,19 @@ export function AvailabilityTimeline({ captures, start, now }: Props) {
     d.setMonth(d.getMonth() + 1);
   }
   const step = Math.max(1, Math.ceil(ticks.length / 8));
+  const t = useTranslations("gallery");
+  const ts = useTranslations("enums.source");
+  const locale = useLocale();
 
   return (
     <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-150" role="img" aria-label={`Imagery availability: ${captures.length} images on ${groups.size} dates`}>
-        {ticks.map((t, i) => (
-          <g key={t.toISOString()}>
-            <line x1={x(t.getTime())} x2={x(t.getTime())} y1={M.top} y2={H - M.bottom} stroke="currentColor" className="text-border" />
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full min-w-150" role="img" aria-label={t("availabilityAria", { images: captures.length, dates: groups.size })}>
+        {ticks.map((tick, i) => (
+          <g key={tick.toISOString()}>
+            <line x1={x(tick.getTime())} x2={x(tick.getTime())} y1={M.top} y2={H - M.bottom} stroke="currentColor" className="text-border" />
             {i % step === 0 && (
-              <text x={x(t.getTime())} y={H - 8} textAnchor="middle" fontSize="10" className="fill-muted-foreground">
-                {t.toLocaleDateString("en-IN", { month: "short", year: "2-digit", timeZone: "Asia/Kolkata" })}
+              <text x={x(tick.getTime())} y={H - 8} textAnchor="middle" fontSize="10" className="fill-muted-foreground">
+                {tick.toLocaleDateString(intlLocale(locale), { month: "short", year: "2-digit", timeZone: "Asia/Kolkata" })}
               </text>
             )}
           </g>
@@ -66,7 +71,7 @@ export function AvailabilityTimeline({ captures, start, now }: Props) {
         {start && start.getTime() >= t0 && (
           <g>
             <line x1={x(start.getTime())} x2={x(start.getTime())} y1={M.top} y2={H - M.bottom} stroke="currentColor" className="text-foreground/40" strokeDasharray="3 3" />
-            <title>{`Work started ${formatDate(start)}`}</title>
+            <title>{t("workStarted", { date: formatDate(start, locale) })}</title>
           </g>
         )}
         {IMAGERY_SOURCES.map((s, i) => {
@@ -76,13 +81,13 @@ export function AvailabilityTimeline({ captures, start, now }: Props) {
             <g key={s}>
               <line x1={M.left} x2={W - M.right} y1={cy} y2={cy} stroke="currentColor" className="text-border" />
               <text x={M.left - 10} y={cy + 4} textAnchor="end" fontSize="11" className="fill-foreground">
-                {meta.label}
+                {ts(s)}
               </text>
               {[...groups.values()]
                 .filter((g) => g.source === s)
                 .map((g) => (
                   <Mark key={g.day} shape={meta.shape} cx={x(g.t)} cy={cy} color={meta.color}>
-                    <title>{`${meta.label} · ${formatDate(new Date(g.t))} · ${g.n} image${g.n === 1 ? "" : "s"}`}</title>
+                    <title>{`${ts(s)} · ${formatDate(new Date(g.t), locale)} · ${t("images", { count: g.n })}`}</title>
                   </Mark>
                 ))}
             </g>
