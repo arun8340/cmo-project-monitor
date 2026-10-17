@@ -4,7 +4,8 @@ import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { passwordProblem } from "@/lib/password";
+import { passwordProblemCode } from "@/lib/password";
+import { getTranslations } from "next-intl/server";
 
 export type PasswordFormState = { message?: string; fieldErrors?: Record<string, string>; redirectTo?: string };
 
@@ -17,14 +18,15 @@ export async function changeOwnPassword(_prev: PasswordFormState, formData: Form
   const next = String(formData.get("next") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
+  const t = await getTranslations("account");
   const errors: Record<string, string> = {};
   const row = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { passwordHash: true } });
-  if (!current || !(await bcrypt.compare(current, row.passwordHash))) errors.current = "That isn't your current password";
-  const problem = passwordProblem(next);
-  if (problem) errors.next = problem;
-  else if (next === current) errors.next = "Choose a password different from the current one";
-  if (!errors.next && confirm !== next) errors.confirm = "The two passwords don't match";
-  if (Object.keys(errors).length) return { message: "Please correct the highlighted fields.", fieldErrors: errors };
+  if (!current || !(await bcrypt.compare(current, row.passwordHash))) errors.current = t("errorCurrent");
+  const problem = passwordProblemCode(next);
+  if (problem) errors.next = t(`problem.${problem}`);
+  else if (next === current) errors.next = t("errorSame");
+  if (!errors.next && confirm !== next) errors.confirm = t("errorMismatch");
+  if (Object.keys(errors).length) return { message: (await getTranslations("common"))("fixErrors"), fieldErrors: errors };
 
   await db.$transaction([
     db.user.update({

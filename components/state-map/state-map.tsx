@@ -3,12 +3,15 @@
 import "leaflet/dist/leaflet.css";
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useLocale, useTranslations } from "next-intl";
 import L from "leaflet";
 import type { Feature, FeatureCollection } from "geojson";
 import { BASEMAP } from "@/config/map";
 import { HEALTH_STYLE } from "@/lib/district-health";
 import { districtHref } from "@/lib/district-slug";
 import type { DistrictSummary } from "@/lib/data/state-overview";
+import { localNames } from "@/lib/i18n/names";
+import type { Locale } from "@/lib/i18n/config";
 
 type Props = {
   data: FeatureCollection;
@@ -25,20 +28,23 @@ type Props = {
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]!);
 
-function tooltipHtml(d: DistrictSummary) {
-  const head = `<div class="sm-tt-name">${escapeHtml(d.name)} <span>${escapeHtml(d.nameLocal)}</span></div>`;
-  if (!d.accessible) return `${head}<div class="sm-tt-muted">Outside your access</div>`;
+type Text = { t: ReturnType<typeof useTranslations<"map">>; locale: Locale };
+
+function tooltipHtml(d: DistrictSummary, { t, locale }: Text) {
+  const n = localNames(locale, d.name, d.nameLocal);
+  const head = `<div class="sm-tt-name">${escapeHtml(n.primary)}${n.secondary ? ` <span>${escapeHtml(n.secondary)}</span>` : ""}</div>`;
+  if (!d.accessible) return `${head}<div class="sm-tt-muted">${escapeHtml(t("outsideAccess"))}</div>`;
   const c = d.counts;
   const h = HEALTH_STYLE[d.health];
   const rows = [
-    ["Total projects", c.total],
-    ["Completed", c.completed],
-    ["On-going", c.ongoing],
-    ["Delayed / stalled", c.delayed + c.stalled],
+    [t("totalProjects"), c.total],
+    [t("completed"), c.completed],
+    [t("ongoing"), c.ongoing],
+    [t("delayedStalled"), c.delayed + c.stalled],
   ]
-    .map(([label, value]) => `<div class="sm-tt-row"><span>${label}</span><b>${value}</b></div>`)
+    .map(([label, value]) => `<div class="sm-tt-row"><span>${escapeHtml(String(label))}</span><b>${value}</b></div>`)
     .join("");
-  return `${head}<div class="sm-tt-health"><i style="background:${h.color}"></i>${h.label}</div>${rows}<div class="sm-tt-hint">Click to open district</div>`;
+  return `${head}<div class="sm-tt-health"><i style="background:${h.color}"></i>${escapeHtml(t(`health.${d.health}.label`))}</div>${rows}<div class="sm-tt-hint">${escapeHtml(t("clickToOpen"))}</div>`;
 }
 
 /**
@@ -52,11 +58,12 @@ export default function StateMap(props: Props) {
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.GeoJSON | null>(null);
   const router = useRouter();
+  const text: Text = { t: useTranslations("map"), locale: useLocale() };
 
-  // Latest props/router for use inside Leaflet callbacks.
-  const latest = useRef({ props, router });
+  // Latest props/router/text for use inside Leaflet callbacks.
+  const latest = useRef({ props, router, text });
   useEffect(() => {
-    latest.current = { props, router };
+    latest.current = { props, router, text };
   });
 
   const { data, center, zoom, districts, styleKey } = props;
@@ -106,7 +113,7 @@ export default function StateMap(props: Props) {
 function drawDistricts(
   map: L.Map,
   layerRef: { current: L.GeoJSON | null },
-  { props, router }: { props: Props; router: ReturnType<typeof useRouter> },
+  { props, router, text }: { props: Props; router: ReturnType<typeof useRouter>; text: Text },
 ) {
   layerRef.current?.remove();
 
@@ -127,7 +134,7 @@ function drawDistricts(
       const d = districtFor(f);
       if (!d) return;
       const path = layer as L.Path;
-      path.bindTooltip(tooltipHtml(d), { sticky: true, direction: "top", offset: [0, -8], className: "sm-tooltip", opacity: 1 });
+      path.bindTooltip(tooltipHtml(d, text), { sticky: true, direction: "top", offset: [0, -8], className: "sm-tooltip", opacity: 1 });
       if (!d.accessible) return;
       path.on({
         mouseover: () => {

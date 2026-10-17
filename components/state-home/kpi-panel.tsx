@@ -3,19 +3,21 @@ import { AlertTriangleIcon, CheckCircle2Icon, ClipboardListIcon, ScrollTextIcon 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PROJECT_STATUS_COLOR } from "@/lib/district-health";
 import type { StateOverview } from "@/lib/data/state-overview";
-
-const fmtDate = (d: Date) =>
-  d.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
+import { useLocale, useTranslations } from "next-intl";
+import { formatDate } from "@/lib/format";
 
 /** `basePath` prefixes links to the issue / directive lists ("" on a state portal). */
 export function KpiPanel({ overview, basePath }: { overview: StateOverview; basePath: string }) {
   const { totals, issues, directives } = overview;
+  const t = useTranslations("kpi");
+  const ts = useTranslations("enums.projectStatus");
+  const locale = useLocale();
   const breakdown = [
-    { key: "completed", label: "Completed", value: totals.completed },
-    { key: "ongoing", label: "On-going", value: totals.ongoing },
-    { key: "delayed", label: "Delayed", value: totals.delayed },
-    { key: "stalled", label: "Stalled", value: totals.stalled },
-    { key: "notStarted", label: "Not started", value: totals.notStarted },
+    { key: "completed", label: ts("COMPLETED"), value: totals.completed },
+    { key: "ongoing", label: ts("ONGOING"), value: totals.ongoing },
+    { key: "delayed", label: ts("DELAYED"), value: totals.delayed },
+    { key: "stalled", label: ts("STALLED"), value: totals.stalled },
+    { key: "notStarted", label: ts("NOT_STARTED"), value: totals.notStarted },
   ] as const;
 
   return (
@@ -24,14 +26,14 @@ export function KpiPanel({ overview, basePath }: { overview: StateOverview; base
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <ClipboardListIcon className="size-4" />
-            Projects
+            {t("projects")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="text-5xl font-semibold tracking-tight">{totals.total}</div>
 
           {totals.total > 0 && (
-            <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label="Projects by status">
+            <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={t("byStatus")}>
               {breakdown
                 .filter((b) => b.value > 0)
                 .map((b) => (
@@ -63,17 +65,17 @@ export function KpiPanel({ overview, basePath }: { overview: StateOverview; base
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <CheckCircle2Icon className="size-4" />
-            Last review meeting
-            {issues.lastMeetingDate && <span className="ml-auto font-normal">{fmtDate(issues.lastMeetingDate)}</span>}
+            {t("lastMeeting")}
+            {issues.lastMeetingDate && <span className="ml-auto font-normal">{formatDate(issues.lastMeetingDate, locale)}</span>}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid gap-3">
           <div className="grid grid-cols-2 gap-3">
-            <Tile label="Pending issues" value={issues.pendingAtLastMeeting} href={`${basePath}/issues`} />
-            <Tile label="Resolved issues" value={issues.resolvedAtLastMeeting} href={`${basePath}/issues?status=resolved`} />
+            <Tile label={t("pendingIssues")} value={issues.pendingAtLastMeeting} href={`${basePath}/issues`} />
+            <Tile label={t("resolvedIssues")} value={issues.resolvedAtLastMeeting} href={`${basePath}/issues?status=resolved`} />
           </div>
           <p className="text-xs text-muted-foreground">
-            {issues.lastMeetingDate ? `${issues.openTotal} open issues in total` : "No review meetings recorded yet"}
+            {issues.lastMeetingDate ? t("openTotal", { count: issues.openTotal }) : t("noMeetings")}
           </p>
         </CardContent>
       </Card>
@@ -82,12 +84,12 @@ export function KpiPanel({ overview, basePath }: { overview: StateOverview; base
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <ScrollTextIcon className="size-4" />
-            Directives
+            {t("directives")}
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-2 gap-3">
-          <Tile label="Open" value={directives.open} href={`${basePath}/directives`} />
-          <Tile label="Overdue" value={directives.overdue} alert={directives.overdue > 0} href={`${basePath}/directives?tab=overdue`} />
+          <Tile label={t("open")} value={directives.open} href={`${basePath}/directives`} />
+          <Tile label={t("overdue")} value={directives.overdue} alert={directives.overdue > 0} href={`${basePath}/directives?tab=overdue`} />
         </CardContent>
       </Card>
     </div>

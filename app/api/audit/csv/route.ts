@@ -4,6 +4,8 @@ import { parseAuditFilters, queryAudit } from "@/lib/audit";
 import { STATES } from "@/config/states";
 import { toDateInput } from "@/lib/dates";
 import { formatDateTime } from "@/lib/format";
+import { getLocale, getTranslations } from "@/lib/i18n/server";
+import { localName } from "@/lib/i18n/names";
 
 /**
  * The audit log as CSV, with the same filters as the page. The Admin can export
@@ -23,14 +25,15 @@ export async function GET(request: NextRequest) {
   const scopeState = isAdmin ? null : user.stateCode;
   const { rows } = await queryAudit(filters, scopeState, user.portal, { all: true });
 
-  const header = ["Time (IST)", "Who", "Role", "What", "Target", "State", "Action", "Details"];
+  const [t, tc, locale] = await Promise.all([getTranslations("activity.csv"), getTranslations("common"), getLocale()]);
+  const header = [t("time"), t("who"), t("role"), t("what"), t("target"), t("state"), t("action"), t("details")];
   const lines = rows.map((r) => [
-    formatDateTime(r.at),
-    r.actor?.name ?? (r.failed ? "Unknown" : "System"),
+    formatDateTime(r.at, locale),
+    r.actor?.name ?? (r.failed ? tc("unknown") : tc("system")),
     r.actor?.role ?? "",
     r.summary,
     r.target?.label ?? "",
-    r.stateCode ? STATES[r.stateCode].name : "",
+    r.stateCode ? localName(locale, STATES[r.stateCode].name, STATES[r.stateCode].nameLocal) : "",
     r.action,
     Object.keys(r.details).length ? JSON.stringify(r.details) : "",
   ]);

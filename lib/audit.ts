@@ -5,54 +5,40 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
-import {
-  DIRECTIVE_STATUS_LABELS,
-  ISSUE_STATUS_LABELS,
-  PERMISSION_GROUPS,
-  ROLE_DEFINITIONS,
-  VERIFICATION_OUTCOME_LABELS,
-  type DirectiveStatus,
-  type IssueStatus,
-  type RoleKey,
-  type VerificationOutcome,
-} from "@/lib/constants";
+import { PERMISSION_GROUPS, type RoleKey } from "@/lib/constants";
+import { getLabels, getLocale, getTranslations } from "@/lib/i18n/server";
+import { localName } from "@/lib/i18n/names";
 import { STATE_CODES, type StateCode } from "@/config/states";
 import { stateBasePath, type Portal } from "@/config/portals";
 import { parseDateInput } from "@/lib/dates";
 
+/** Filter categories (labels: "activity.category.*" messages). */
 export const AUDIT_CATEGORIES = {
-  signins: { label: "Sign-ins", actions: ["auth.login", "auth.login_failed", "auth.logout", "auth.password_change"] },
-  projects: { label: "Projects", actions: ["project.create", "project.update", "progress.update"] },
-  imagery: { label: "Imagery", actions: ["imagery.upload"] },
-  verifications: { label: "Verifications", actions: ["verification.record"] },
-  issues: { label: "Issues", actions: ["issue.create", "issue.status"] },
-  directives: { label: "Directives", actions: ["directive.issue", "directive.status"] },
-  admin: { label: "User admin", actions: ["user.create", "user.update", "user.activate", "user.deactivate", "user.password_reset", "user.projects", "role.update"] },
+  signins: { actions: ["auth.login", "auth.login_failed", "auth.logout", "auth.password_change"] },
+  projects: { actions: ["project.create", "project.update", "progress.update"] },
+  imagery: { actions: ["imagery.upload"] },
+  verifications: { actions: ["verification.record"] },
+  issues: { actions: ["issue.create", "issue.status"] },
+  directives: { actions: ["directive.issue", "directive.status"] },
+  admin: { actions: ["user.create", "user.update", "user.activate", "user.deactivate", "user.password_reset", "user.projects", "role.update"] },
 } as const;
 export type AuditCategory = keyof typeof AUDIT_CATEGORIES;
 
 const PROJECT_FIELDS: Record<string, string> = {
   name: "name",
-  nameLocal: "local name",
+  nameLocal: "nameLocal",
   description: "description",
   latitude: "location",
   longitude: "location",
   budgetLakhs: "budget",
-  startDate: "start date",
-  plannedEndDate: "planned end date",
+  startDate: "startDate",
+  plannedEndDate: "plannedEndDate",
   district: "district",
   department: "department",
 };
-
-const FAILED_REASONS: Record<string, string> = {
-  unknown_user: "unknown email",
-  inactive: "account deactivated",
-  bad_password: "wrong password",
-  wrong_portal: "not registered on this portal",
-};
+const FAILED_REASONS = new Set(["unknown_user", "inactive", "bad_password", "wrong_portal"]);
 
 const PERMISSION_LABEL = Object.fromEntries(PERMISSION_GROUPS.flatMap((g) => g.items.map((i) => [i.key, i.label])));
-const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
 export function parseDetails(details: string | null): Record<string, unknown> {
   try {
@@ -63,65 +49,75 @@ export function parseDetails(details: string | null): Record<string, unknown> {
   }
 }
 
-/** One-line description of what happened (the target is shown separately). */
-export function summarize(action: string, details: string | null): string {
-  const d = parseDetails(details);
-  switch (action) {
-    case "auth.login":
-      return "Signed in";
-    case "auth.login_failed":
-      return `Failed sign-in${d.email ? ` as ${d.email}` : ""} (${FAILED_REASONS[d.reason as string] ?? d.reason ?? "unknown"})`;
-    case "auth.logout":
-      return "Signed out";
-    case "auth.password_change":
-      return d.forced ? "Chose a new password (required after reset)" : "Changed their password";
-    case "project.create":
-      return "Project created";
-    case "project.update": {
-      const fields = [...new Set(Object.keys((d.changes as object) ?? {}).map((k) => PROJECT_FIELDS[k] ?? k))];
-      return fields.length ? `Edited ${fields.join(", ")}` : "Edited project";
+export type Summarize = (action: string, details: string | null) => string;
+
+/**
+ * Returns a function giving a one-line description of an audit entry in the
+ * current language (the target is shown separately).
+ */
+export async function getSummarizer(): Promise<Summarize> {
+  const [tt, labels] = await Promise.all([getTranslations("audit"), getLabels()]);
+  // Keys are built at runtime from stored action names; the catalogue is checked by check:messages.
+  const t = tt as unknown as (key: string, values?: Record<string, string | number>) => string;
+  const lower = (s: string) => s.charAt(0).toLocaleLowerCase() + s.slice(1);
+  const label = <K extends string>(map: Record<K, string>, key: unknown) => lower(map[key as K] ?? String(key));
+  const list = (items: string[]) => items.join(", ");
+
+  return (action, details) => {
+    const d = parseDetails(details);
+    switch (action) {
+      case "auth.login":
+      case "auth.logout":
+      case "project.create":
+      case "directive.issue":
+      case "user.activate":
+      case "user.deactivate":
+      case "user.password_reset":
+        return t(`action.${action.replace(".", "_")}`);
+      case "auth.login_failed": {
+        const reason = FAILED_REASONS.has(d.reason as string) ? t(`failedReason.${d.reason}`) : String(d.reason ?? t("failedReason.unknown"));
+        return d.email ? t("action.auth_login_failed_as", { email: String(d.email), reason }) : t("action.auth_login_failed", { reason });
+      }
+      case "auth.password_change":
+        return d.forced ? t("action.auth_password_change_forced") : t("action.auth_password_change");
+      case "project.update": {
+        const fields = [...new Set(Object.keys((d.changes as object) ?? {}).map((k) => (PROJECT_FIELDS[k] ? t(`field.${PROJECT_FIELDS[k]}`) : k)))];
+        return fields.length ? t("action.project_update_fields", { fields: list(fields) }) : t("action.project_update");
+      }
+      case "progress.update": {
+        const from = d.from as { progress?: number } | undefined;
+        const to = d.to as { progress?: number } | undefined;
+        return t("action.progress_update", { from: from?.progress ?? "?", to: to?.progress ?? "?" });
+      }
+      case "issue.create":
+        return t("action.issue_create", { title: String(d.title ?? "") });
+      case "issue.status":
+        return t("action.issue_status", { from: label(labels.issueStatus, d.from), to: label(labels.issueStatus, d.to) });
+      case "verification.record":
+        return t("action.verification_record", { outcome: label(labels.outcome, d.outcome) });
+      case "imagery.upload":
+        return t("action.imagery_upload", { count: Number(d.count ?? 0) });
+      case "directive.status":
+        return t("action.directive_status", { from: label(labels.directiveStatus, d.from), to: label(labels.directiveStatus, d.to) });
+      case "user.create":
+        return t("action.user_create", { role: labels.role[d.role as RoleKey] ?? String(d.role) });
+      case "user.update": {
+        const fields = Object.keys((d.changes as object) ?? {});
+        return fields.length ? t("action.user_update_fields", { fields: list(fields) }) : t("action.user_update");
+      }
+      case "user.projects":
+        return t("action.user_projects", { added: Number(d.added ?? 0), removed: Number(d.removed ?? 0) });
+      case "role.update": {
+        const parts = [
+          ...((d.added as string[]) ?? []).map((p) => `+${PERMISSION_LABEL[p] ?? p}`),
+          ...((d.removed as string[]) ?? []).map((p) => `−${PERMISSION_LABEL[p] ?? p}`),
+        ];
+        return parts.length ? t("action.role_update_parts", { parts: list(parts) }) : t("action.role_update");
+      }
+      default:
+        return action;
     }
-    case "progress.update": {
-      const from = d.from as { progress?: number } | undefined;
-      const to = d.to as { progress?: number } | undefined;
-      return `Progress ${from?.progress ?? "?"}% → ${to?.progress ?? "?"}%`;
-    }
-    case "issue.create":
-      return `Issue raised: ${d.title ?? ""}`;
-    case "issue.status":
-      return `Issue ${lower(ISSUE_STATUS_LABELS[d.from as IssueStatus] ?? String(d.from))} → ${lower(ISSUE_STATUS_LABELS[d.to as IssueStatus] ?? String(d.to))}`;
-    case "verification.record":
-      return `Verification recorded: ${lower(VERIFICATION_OUTCOME_LABELS[d.outcome as VerificationOutcome] ?? String(d.outcome))}`;
-    case "imagery.upload":
-      return `Uploaded ${d.count ?? ""} image${d.count === 1 ? "" : "s"}`;
-    case "directive.issue":
-      return "Directive issued";
-    case "directive.status":
-      return `Directive ${lower(DIRECTIVE_STATUS_LABELS[d.from as DirectiveStatus] ?? String(d.from))} → ${lower(DIRECTIVE_STATUS_LABELS[d.to as DirectiveStatus] ?? String(d.to))}`;
-    case "user.create":
-      return `User created as ${ROLE_DEFINITIONS[d.role as RoleKey]?.name ?? d.role}`;
-    case "user.update": {
-      const fields = Object.keys((d.changes as object) ?? {});
-      return fields.length ? `User edited: ${fields.join(", ")}` : "User edited";
-    }
-    case "user.activate":
-      return "User reactivated";
-    case "user.deactivate":
-      return "User deactivated";
-    case "user.password_reset":
-      return "Temporary password set";
-    case "user.projects":
-      return `Project assignments changed (+${d.added ?? 0}, −${d.removed ?? 0})`;
-    case "role.update": {
-      const parts = [
-        ...((d.added as string[]) ?? []).map((p) => `+${PERMISSION_LABEL[p] ?? p}`),
-        ...((d.removed as string[]) ?? []).map((p) => `−${PERMISSION_LABEL[p] ?? p}`),
-      ];
-      return `Permissions changed${parts.length ? `: ${parts.join(", ")}` : ""}`;
-    }
-    default:
-      return action;
-  }
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -222,8 +218,11 @@ export type AuditRow = {
  */
 async function resolveTargets(rows: { entityType: string; entityId: string | null; details: string | null }[], portal: Portal) {
   const ids = (type: string) => [...new Set(rows.filter((r) => r.entityType === type && r.entityId).map((r) => r.entityId!))];
-  const [projects, directives, users] = await Promise.all([
-    db.project.findMany({ where: { id: { in: ids("Project") } }, select: { id: true, name: true, district: { select: { state: { select: { code: true } } } } } }),
+  const [projects, directives, users, labels, locale] = await Promise.all([
+    db.project.findMany({
+      where: { id: { in: ids("Project") } },
+      select: { id: true, name: true, nameLocal: true, district: { select: { state: { select: { code: true } } } } },
+    }),
     db.directive.findMany({
       where: { id: { in: ids("Directive") } },
       select: {
@@ -235,13 +234,15 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
       },
     }),
     db.user.findMany({ where: { id: { in: ids("User") } }, select: { id: true, name: true, email: true, state: { select: { code: true } } } }),
+    getLabels(),
+    getLocale(),
   ]);
-  const roles = await db.role.findMany({ select: { id: true, name: true } });
+  const roles = await db.role.findMany({ select: { id: true, key: true } });
 
   const map = new Map<string, { label: string; href: string | null; stateCode: StateCode | null }>();
   for (const p of projects) {
     const code = p.district.state.code as StateCode;
-    map.set(`Project:${p.id}`, { label: p.name, href: `${stateBasePath(portal, code)}/project/${p.id}`, stateCode: code });
+    map.set(`Project:${p.id}`, { label: localName(locale, p.name, p.nameLocal), href: `${stateBasePath(portal, code)}/project/${p.id}`, stateCode: code });
   }
   for (const d of directives) {
     const code = (d.district?.state.code ?? d.department?.state.code ?? d.project?.district.state.code ?? null) as StateCode | null;
@@ -254,7 +255,7 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
   for (const u of users) {
     map.set(`User:${u.id}`, { label: u.name, href: portal.kind === "admin" ? `/admin/users/${u.id}` : null, stateCode: (u.state?.code as StateCode) ?? null });
   }
-  for (const r of roles) map.set(`Role:${r.id}`, { label: r.name, href: portal.kind === "admin" ? "/admin/roles" : null, stateCode: null });
+  for (const r of roles) map.set(`Role:${r.id}`, { label: labels.role[r.key as RoleKey] ?? r.key, href: portal.kind === "admin" ? "/admin/roles" : null, stateCode: null });
   return map;
 }
 
@@ -264,13 +265,13 @@ export async function queryAudit(f: AuditFilters, scopeState: StateCode | null, 
     db.auditLog.count({ where }),
     db.auditLog.findMany({
       where,
-      include: { user: { select: { id: true, name: true, role: { select: { name: true } } } } },
+      include: { user: { select: { id: true, name: true, role: { select: { key: true } } } } },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: all ? 0 : (f.page - 1) * AUDIT_PAGE_SIZE,
       take: all ? CSV_LIMIT : AUDIT_PAGE_SIZE,
     }),
   ]);
-  const targets = await resolveTargets(entries, portal);
+  const [targets, summarize, labels] = await Promise.all([resolveTargets(entries, portal), getSummarizer(), getLabels()]);
 
   const rows: AuditRow[] = entries.map((e) => {
     const details = parseDetails(e.details);
@@ -284,7 +285,7 @@ export async function queryAudit(f: AuditFilters, scopeState: StateCode | null, 
       at: e.createdAt,
       action: e.action,
       failed: e.action === "auth.login_failed",
-      actor: e.user ? { id: e.user.id, name: e.user.name, role: e.user.role.name } : null,
+      actor: e.user ? { id: e.user.id, name: e.user.name, role: labels.role[e.user.role.key as RoleKey] ?? e.user.role.key } : null,
       summary: summarize(e.action, e.details),
       target: target ? { label: target.label, href } : null,
       stateCode: target?.stateCode ?? portalCode,
@@ -295,10 +296,14 @@ export async function queryAudit(f: AuditFilters, scopeState: StateCode | null, 
 }
 
 /** People to offer in the "who" filter: everyone (admin) or the state's users. */
-export function auditUserOptions(scopeState: StateCode | null) {
-  return db.user.findMany({
-    where: scopeState ? { state: { code: scopeState } } : {},
-    select: { id: true, name: true, role: { select: { name: true } } },
-    orderBy: { name: "asc" },
-  });
+export async function auditUserOptions(scopeState: StateCode | null) {
+  const [users, labels] = await Promise.all([
+    db.user.findMany({
+      where: scopeState ? { state: { code: scopeState } } : {},
+      select: { id: true, name: true, role: { select: { key: true } } },
+      orderBy: { name: "asc" },
+    }),
+    getLabels(),
+  ]);
+  return users.map((u) => ({ id: u.id, name: u.name, role: labels.role[u.role.key as RoleKey] ?? u.role.key }));
 }

@@ -4,6 +4,8 @@ import type { CurrentUser } from "@/lib/auth/dal";
 import { projectScope } from "@/lib/auth/scope";
 import type { StateCode } from "@/config/states";
 import { formatDate } from "@/lib/format";
+import { getLocale } from "next-intl/server";
+import { localName } from "@/lib/i18n/names";
 import { toDateInput } from "@/lib/dates";
 import { districtSlug } from "@/lib/district-slug";
 import { VERIFICATION_OUTCOMES, type ImagerySource, type VerificationOutcome } from "@/lib/constants";
@@ -34,6 +36,7 @@ export const MAX_COMPARE = 4;
 
 /** Everything the comparison screen needs for one project. Call after assertCanAccessProject(). */
 export async function getCompareData(user: CurrentUser, projectId: string, stateCode: StateCode) {
+  const locale = await getLocale();
   const project = await db.project.findUnique({
     where: { id: projectId },
     include: {
@@ -56,7 +59,7 @@ export async function getCompareData(user: CurrentUser, projectId: string, state
   const images: CompareImage[] = project.imagery.map((c) => ({
     id: c.id,
     day: toDateInput(c.captureDate),
-    dayLabel: formatDate(c.captureDate),
+    dayLabel: formatDate(c.captureDate, locale),
     source: c.source as ImagerySource,
     width: c.width,
     height: c.height,
@@ -66,26 +69,27 @@ export async function getCompareData(user: CurrentUser, projectId: string, state
   // Other projects in scope with at least two images, for the project picker.
   const others = await db.project.findMany({
     where: { AND: [projectScope(user, stateCode), { imagery: { some: {} } }] },
-    select: { id: true, name: true, district: { select: { name: true, geoCode: true } }, _count: { select: { imagery: true } } },
+    select: { id: true, name: true, nameLocal: true, district: { select: { name: true, nameLocal: true, geoCode: true } }, _count: { select: { imagery: true } } },
     orderBy: [{ district: { name: "asc" } }, { name: "asc" }],
   });
 
   return {
     project: {
       id: project.id,
-      name: project.name,
-      districtName: project.district.name,
+      name: localName(locale, project.name, project.nameLocal),
+      districtName: localName(locale, project.district.name, project.district.nameLocal),
       districtSlug: districtSlug(project.district.geoCode),
       progressPercent: project.progressPercent,
     },
     images,
     projects: others
       .filter((p) => p._count.imagery >= 2)
-      .map((p) => ({ id: p.id, name: p.name, district: p.district.name })),
+      .map((p) => ({ id: p.id, name: localName(locale, p.name, p.nameLocal), district: localName(locale, p.district.name, p.district.nameLocal) })),
   };
 }
 
 export async function getVerifications(projectId: string): Promise<VerificationRow[]> {
+  const locale = await getLocale();
   const rows = await db.verification.findMany({
     where: { projectId },
     include: { createdBy: { select: { name: true } } },
@@ -101,8 +105,8 @@ export async function getVerifications(projectId: string): Promise<VerificationR
       outcome: (VERIFICATION_OUTCOMES as readonly string[]).includes(v.outcome) ? (v.outcome as VerificationOutcome) : "NO_VISIBLE_CHANGE",
       notes: v.notes,
       imageIds: ids,
-      fromLabel: formatDate(v.fromDate),
-      toLabel: formatDate(v.toDate),
+      fromLabel: formatDate(v.fromDate, locale),
+      toLabel: formatDate(v.toDate, locale),
       byName: v.createdBy.name,
       at: v.createdAt,
     };

@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { createProject, updateProject } from "@/app/actions/project";
 import type { FormState, ProjectFormValues } from "@/lib/validation/project";
 import { LocationMap } from "./site-map";
+import { useLocale, useTranslations } from "next-intl";
+import { localName, localNames } from "@/lib/i18n/names";
 
 export type ProjectFormInitial = Partial<Record<keyof ProjectFormValues | "status", string>>;
 
@@ -20,7 +22,7 @@ type Props = {
   projectId?: string;
   initial: ProjectFormInitial;
   departments: { code: string; name: string; nameLocal: string }[];
-  districts: { slug: string; name: string; center: [number, number] }[];
+  districts: { slug: string; name: string; nameLocal: string; center: [number, number] }[];
   cancelHref: string;
   accent: string;
 };
@@ -34,6 +36,10 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
     {},
   );
   const v = { ...initial, ...state.values };
+  const t = useTranslations("projectForm");
+  const tc = useTranslations("common");
+  const ts = useTranslations("enums.projectStatus");
+  const locale = useLocale();
   const err = state.fieldErrors ?? {};
 
   const [district, setDistrict] = useState(v.district ?? districts[0]?.slug ?? "");
@@ -57,32 +63,32 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
       )}
 
       <FieldSet>
-        <FieldLegend>Project</FieldLegend>
+        <FieldLegend>{t("project")}</FieldLegend>
         <FieldGroup>
           <Field {...field("name")}>
-            <FieldLabel htmlFor="name">Name</FieldLabel>
+            <FieldLabel htmlFor="name">{t("name")}</FieldLabel>
             <Input id="name" name="name" defaultValue={v.name} maxLength={200} required {...invalid("name")} />
             {err.name && <FieldError>{err.name}</FieldError>}
           </Field>
           <Field {...field("nameLocal")}>
-            <FieldLabel htmlFor="nameLocal">Name in local language (optional)</FieldLabel>
+            <FieldLabel htmlFor="nameLocal">{t("nameLocal")}</FieldLabel>
             <Input id="nameLocal" name="nameLocal" defaultValue={v.nameLocal} maxLength={200} {...invalid("nameLocal")} />
             {err.nameLocal && <FieldError>{err.nameLocal}</FieldError>}
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field {...field("department")}>
-              <FieldLabel htmlFor="department">Department</FieldLabel>
+              <FieldLabel htmlFor="department">{t("department")}</FieldLabel>
               <select id="department" name="department" defaultValue={v.department} className={selectClass} {...invalid("department")}>
                 {departments.map((d) => (
                   <option key={d.code} value={d.code.toLowerCase()}>
-                    {d.name} — {d.nameLocal}
+                    {(({ primary, secondary }) => (secondary ? `${primary} — ${secondary}` : primary))(localNames(locale, d.name, d.nameLocal))}
                   </option>
                 ))}
               </select>
               {err.department && <FieldError>{err.department}</FieldError>}
             </Field>
             <Field {...field("district")}>
-              <FieldLabel htmlFor="district">District</FieldLabel>
+              <FieldLabel htmlFor="district">{t("district")}</FieldLabel>
               <select
                 id="district"
                 name="district"
@@ -94,7 +100,7 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
               >
                 {districts.map((d) => (
                   <option key={d.slug} value={d.slug}>
-                    {d.name}
+                    {localName(locale, d.name, d.nameLocal)}
                   </option>
                 ))}
               </select>
@@ -104,7 +110,7 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
             </Field>
           </div>
           <Field {...field("description")}>
-            <FieldLabel htmlFor="description">Description (optional)</FieldLabel>
+            <FieldLabel htmlFor="description">{t("description")}</FieldLabel>
             <Textarea id="description" name="description" defaultValue={v.description} maxLength={2000} rows={3} {...invalid("description")} />
             {err.description && <FieldError>{err.description}</FieldError>}
           </Field>
@@ -112,8 +118,8 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>Site location</FieldLegend>
-        <FieldDescription>Click the map to place the project site, or type the coordinates.</FieldDescription>
+        <FieldLegend>{t("siteLocation")}</FieldLegend>
+        <FieldDescription>{t("siteHint")}</FieldDescription>
         <div className="relative isolate h-72 overflow-hidden rounded-lg border sm:h-80">
           <LocationMap
             value={point}
@@ -127,12 +133,12 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
         </div>
         <div className="grid grid-cols-2 gap-4">
           <Field {...field("latitude")}>
-            <FieldLabel htmlFor="latitude">Latitude</FieldLabel>
+            <FieldLabel htmlFor="latitude">{t("latitude")}</FieldLabel>
             <Input id="latitude" name="latitude" inputMode="decimal" value={lat} onChange={(e) => setLat(e.target.value)} {...invalid("latitude")} />
             {err.latitude && <FieldError>{err.latitude}</FieldError>}
           </Field>
           <Field {...field("longitude")}>
-            <FieldLabel htmlFor="longitude">Longitude</FieldLabel>
+            <FieldLabel htmlFor="longitude">{t("longitude")}</FieldLabel>
             <Input id="longitude" name="longitude" inputMode="decimal" value={lng} onChange={(e) => setLng(e.target.value)} {...invalid("longitude")} />
             {err.longitude && <FieldError>{err.longitude}</FieldError>}
           </Field>
@@ -140,39 +146,39 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
         {!point && (
           <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPinIcon className="size-3.5" />
-            No site chosen yet
+            {t("noSite")}
           </p>
         )}
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>Budget and schedule</FieldLegend>
+        <FieldLegend>{t("budgetSchedule")}</FieldLegend>
         <FieldGroup>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field {...field("budgetLakhs")}>
-              <FieldLabel htmlFor="budgetLakhs">Budget (₹ lakh)</FieldLabel>
-              <Input id="budgetLakhs" name="budgetLakhs" inputMode="decimal" defaultValue={v.budgetLakhs} placeholder="e.g. 250" {...invalid("budgetLakhs")} />
+              <FieldLabel htmlFor="budgetLakhs">{t("budget")}</FieldLabel>
+              <Input id="budgetLakhs" name="budgetLakhs" inputMode="decimal" defaultValue={v.budgetLakhs} placeholder={t("budgetPlaceholder")} {...invalid("budgetLakhs")} />
               {err.budgetLakhs && <FieldError>{err.budgetLakhs}</FieldError>}
             </Field>
             <Field {...field("startDate")}>
-              <FieldLabel htmlFor="startDate">Start date</FieldLabel>
+              <FieldLabel htmlFor="startDate">{t("startDate")}</FieldLabel>
               <Input id="startDate" name="startDate" type="date" defaultValue={v.startDate} {...invalid("startDate")} />
               {err.startDate && <FieldError>{err.startDate}</FieldError>}
             </Field>
             <Field {...field("plannedEndDate")}>
-              <FieldLabel htmlFor="plannedEndDate">Planned end date</FieldLabel>
+              <FieldLabel htmlFor="plannedEndDate">{t("plannedEndDate")}</FieldLabel>
               <Input id="plannedEndDate" name="plannedEndDate" type="date" defaultValue={v.plannedEndDate} {...invalid("plannedEndDate")} />
               {err.plannedEndDate && <FieldError>{err.plannedEndDate}</FieldError>}
             </Field>
           </div>
           {mode === "create" && (
             <Field {...field("status")} className="sm:max-w-xs">
-              <FieldLabel htmlFor="status">Starting status</FieldLabel>
+              <FieldLabel htmlFor="status">{t("startingStatus")}</FieldLabel>
               <select id="status" name="status" defaultValue={v.status ?? "NOT_STARTED"} className={selectClass} {...invalid("status")}>
-                <option value="NOT_STARTED">Not started</option>
-                <option value="ONGOING">On-going</option>
+                <option value="NOT_STARTED">{ts("NOT_STARTED")}</option>
+                <option value="ONGOING">{ts("ONGOING")}</option>
               </select>
-              <FieldDescription>Later changes to status and progress are made with “Update progress”.</FieldDescription>
+              <FieldDescription>{t("statusHint")}</FieldDescription>
               {err.status && <FieldError>{err.status}</FieldError>}
             </Field>
           )}
@@ -181,11 +187,11 @@ export function ProjectForm({ mode, stateSlug, projectId, initial, departments, 
 
       <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button variant="outline" nativeButton={false} render={<Link href={cancelHref} />}>
-          Cancel
+          {tc("cancel")}
         </Button>
         <Button type="submit" disabled={pending}>
           {pending && <LoaderCircleIcon className="animate-spin" />}
-          {mode === "create" ? "Create project" : "Save changes"}
+          {mode === "create" ? t("create") : t("saveChanges")}
         </Button>
       </div>
     </form>

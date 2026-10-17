@@ -12,16 +12,20 @@ import { IMAGERY_SOURCES, type ImagerySource } from "@/lib/constants";
 import { distanceKm, FAR_FROM_SITE_KM, formatDistance } from "@/lib/geo";
 import { formatBytes } from "@/lib/format";
 import { SOURCE_META } from "./source-meta";
+import { useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
 
 const MAX_FILES = 10;
 const MAX_BYTES = 20 * 1024 * 1024;
 const ACCEPT = "image/jpeg,image/png,image/webp";
 
+type FileProblem = { code: "heic" | "type" | "size"; mb?: string };
+
 type Picked = {
   id: string;
   file: File;
   url: string;
-  error: string | null;
+  error: FileProblem | null;
   exifDate: string | null;
   gps: [number, number] | null;
 };
@@ -40,13 +44,11 @@ const EXIF_TAGS = ["DateTimeOriginal", "CreateDate", "GPSLatitude", "GPSLatitude
 
 const ymd = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(d);
 
-function checkFile(file: File): string | null {
+function checkFile(file: File): FileProblem | null {
   const name = file.name.toLowerCase();
-  if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/.test(name)) {
-    return "iPhone HEIC photos aren't supported — set Camera › Formats › Most Compatible, or upload a JPEG.";
-  }
-  if (!ACCEPT.split(",").includes(file.type)) return "Only JPEG, PNG or WebP images";
-  if (file.size > MAX_BYTES) return `Larger than 20 MB (${(file.size / 1024 / 1024).toFixed(1)} MB)`;
+  if (file.type === "image/heic" || file.type === "image/heif" || /\.(heic|heif)$/.test(name)) return { code: "heic" };
+  if (!ACCEPT.split(",").includes(file.type)) return { code: "type" };
+  if (file.size > MAX_BYTES) return { code: "size", mb: (file.size / 1024 / 1024).toFixed(1) };
   return null;
 }
 
@@ -73,6 +75,9 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
   const fileInput = useRef<HTMLInputElement>(null);
   const cameraInput = useRef<HTMLInputElement>(null);
   const err = state.fieldErrors ?? {};
+  const t = useTranslations("upload");
+  const tc = useTranslations("common");
+  const labels = useLabels();
 
   // Release preview object URLs.
   const urls = useRef<string[]>([]);
@@ -129,10 +134,11 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
       )}
 
       <FieldSet>
-        <FieldLegend>Source</FieldLegend>
-        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Imagery source">
+        <FieldLegend>{t("source")}</FieldLegend>
+        <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label={t("sourceLabel")}>
           {IMAGERY_SOURCES.map((s) => {
-            const { label, icon: Icon, color } = SOURCE_META[s];
+            const { icon: Icon, color } = SOURCE_META[s];
+            const label = labels.source[s];
             const active = source === s;
             return (
               <button
@@ -155,17 +161,17 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>Images</FieldLegend>
-        <FieldDescription>Up to {MAX_FILES} JPEG, PNG or WebP images, 20 MB each.</FieldDescription>
+        <FieldLegend>{t("images")}</FieldLegend>
+        <FieldDescription>{t("imagesHint", { max: MAX_FILES })}</FieldDescription>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="outline" onClick={() => fileInput.current?.click()} disabled={picked.length >= MAX_FILES}>
             <ImagePlusIcon />
-            Choose images
+            {t("choose")}
           </Button>
           {source === "FIELD_PHOTO" && (
             <Button type="button" variant="outline" onClick={() => cameraInput.current?.click()} disabled={picked.length >= MAX_FILES}>
               <CameraIcon />
-              Take photo
+              {t("takePhoto")}
             </Button>
           )}
           <input
@@ -205,21 +211,21 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
                   <div className="min-w-0 flex-1 text-sm">
                     <div className="truncate font-medium">{p.file.name}</div>
                     {p.error ? (
-                      <div className="text-xs text-destructive">{p.error}</div>
+                      <div className="text-xs text-destructive">{t(`problem.${p.error.code}`, { mb: p.error.mb ?? "" })}</div>
                     ) : (
                       <div className="flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                         <span>{formatBytes(p.file.size)}</span>
-                        {p.exifDate && <span>Taken {p.exifDate}</span>}
+                        {p.exifDate && <span>{t("taken", { date: p.exifDate })}</span>}
                         {km != null && (
                           <span className={`flex items-center gap-1 ${km > FAR_FROM_SITE_KM ? "font-medium text-amber-700" : ""}`}>
                             {km > FAR_FROM_SITE_KM ? <TriangleAlertIcon className="size-3" /> : <MapPinIcon className="size-3" />}
-                            {formatDistance(km)} from site
+                            {t("fromSite", { distance: formatDistance(km) })}
                           </span>
                         )}
                       </div>
                     )}
                   </div>
-                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => remove(p.id)} aria-label={`Remove ${p.file.name}`}>
+                  <Button type="button" variant="ghost" size="icon-sm" onClick={() => remove(p.id)} aria-label={t("remove", { name: p.file.name })}>
                     <XIcon />
                   </Button>
                 </li>
@@ -227,14 +233,14 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
             })}
           </ul>
         )}
-        {hasInvalid && <FieldError>Remove the files marked in red to continue.</FieldError>}
+        {hasInvalid && <FieldError>{t("removeInvalid")}</FieldError>}
         {err.files && <FieldError className="whitespace-pre-line">{err.files}</FieldError>}
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>Details</FieldLegend>
+        <FieldLegend>{t("details")}</FieldLegend>
         <Field data-invalid={!!err.captureDate || undefined} className="sm:max-w-xs">
-          <FieldLabel htmlFor="captureDate">Capture date</FieldLabel>
+          <FieldLabel htmlFor="captureDate">{t("captureDate")}</FieldLabel>
           <Input
             id="captureDate"
             type="date"
@@ -245,31 +251,33 @@ export function UploadForm({ projectId, stateSlug, site, today, defaultSource, c
             required
           />
           <FieldDescription>
-            {source === "SATELLITE" ? "The date the satellite image was taken (not today's date)." : "Filled in from the photo when it has a date."}
+            {source === "SATELLITE" ? t("captureHintSatellite") : t("captureHintPhoto")}
           </FieldDescription>
           {err.captureDate && <FieldError>{err.captureDate}</FieldError>}
         </Field>
         {source !== "SATELLITE" && (
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={useExifDate} onChange={(e) => setUseExifDate(e.target.checked)} className="size-4" />
-            Use each photo&apos;s own date when it has one
+            {t("useExifDate")}
           </label>
         )}
         <Field>
-          <FieldLabel htmlFor="notes">Notes (optional)</FieldLabel>
-          <Textarea id="notes" name="notes" maxLength={1000} placeholder="e.g. North boundary wall, view from main road" />
+          <FieldLabel htmlFor="notes">{t("notes")}</FieldLabel>
+          <Textarea id="notes" name="notes" maxLength={1000} placeholder={t("notesPlaceholder")} />
         </Field>
       </FieldSet>
 
       <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:items-center sm:justify-end">
         <Button variant="outline" nativeButton={false} render={<Link href={cancelHref} />}>
-          Cancel
+          {tc("cancel")}
         </Button>
         <Button type="submit" disabled={!canSubmit}>
           {pending && <LoaderCircleIcon className="animate-spin" />}
           {pending
-            ? `Uploading ${valid.length} image${valid.length === 1 ? "" : "s"}…`
-            : `Upload ${valid.length || ""} image${valid.length === 1 ? "" : "s"}${totalBytes ? ` (${formatBytes(totalBytes)})` : ""}`}
+            ? t("uploading", { count: valid.length })
+            : valid.length
+              ? `${t("uploadCount", { count: valid.length })}${totalBytes ? ` (${formatBytes(totalBytes)})` : ""}`
+              : t("uploadNone")}
         </Button>
       </div>
     </form>

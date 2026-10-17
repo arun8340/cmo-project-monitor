@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { ArrowLeftRightIcon, ChevronDownIcon, KeyRoundIcon, LogOutIcon } from "lucide-react";
 import {
@@ -13,12 +14,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOutAction } from "@/app/actions/auth";
+import { LanguageSwitcher } from "@/components/i18n/language-switcher";
+import type { Locale } from "@/lib/i18n/config";
 
 type Props = {
   name: string;
   roleName: string;
   scopeLabel: string;
   isAdmin: boolean;
+  /** Languages offered on this portal (the switcher sits in the menu on phones). */
+  locales: Locale[];
 };
 
 function initials(name: string) {
@@ -30,8 +35,9 @@ function initials(name: string) {
     .join("");
 }
 
-export function UserMenu({ name, roleName, scopeLabel, isAdmin }: Props) {
+export function UserMenu({ name, roleName, scopeLabel, isAdmin, locales }: Props) {
   const router = useRouter();
+  const t = useTranslations("header");
   const [pending, startTransition] = useTransition();
 
   return (
@@ -54,15 +60,20 @@ export function UserMenu({ name, roleName, scopeLabel, isAdmin }: Props) {
             <span className="block font-normal">{scopeLabel}</span>
           </DropdownMenuLabel>
         </DropdownMenuGroup>
+        {locales.length > 1 && (
+          <div className="px-1.5 py-1 sm:hidden">
+            <LanguageSwitcher locales={locales} tone="light" />
+          </div>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/change-password")}>
           <KeyRoundIcon />
-          Change password
+          {t("changePassword")}
         </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={() => router.push("/select-state")}>
             <ArrowLeftRightIcon />
-            Switch state
+            {t("switchState")}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem
@@ -71,7 +82,7 @@ export function UserMenu({ name, roleName, scopeLabel, isAdmin }: Props) {
           onClick={() => startTransition(() => signOutAction())}
         >
           <LogOutIcon />
-          {pending ? "Signing out…" : "Sign out"}
+          {pending ? t("signingOut") : t("signOut")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

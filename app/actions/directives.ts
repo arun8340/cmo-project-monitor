@@ -8,14 +8,14 @@ import { departmentScope, directiveScope, districtScope, projectScope } from "@/
 import { canIssueDirective } from "@/lib/auth/project-permissions";
 import { getStateConfig } from "@/config/states";
 import { stateBasePath } from "@/config/portals";
-import { DIRECTIVE_STATUS_LABELS, DIRECTIVE_STATUSES, type DirectiveStatus } from "@/lib/constants";
+import { DIRECTIVE_STATUSES, type DirectiveStatus } from "@/lib/constants";
+import { getActionT, getLabels } from "@/lib/i18n/server";
 import { geoCodeFromSlug } from "@/lib/district-slug";
 import { parseDateInput, todayIST } from "@/lib/dates";
 import { directiveTransitions } from "@/lib/workflow";
 
 export type DirectiveFormState = { ok?: boolean; message?: string; fieldErrors?: Record<string, string>; values?: Record<string, string> };
 
-const NO_ACCESS = "You don't have permission to do this.";
 
 async function userAndState(formData: FormData) {
   const user = await getCurrentUser();
@@ -27,7 +27,8 @@ async function userAndState(formData: FormData) {
 
 /** CMO / Admin: issue a directive to a district, department and/or project, with an owner and due date. */
 export async function issueDirective(_prev: DirectiveFormState, formData: FormData): Promise<DirectiveFormState> {
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
+  const NO_ACCESS = t("noAccess");
   if (!ctx || !canIssueDirective(ctx.user)) return { message: NO_ACCESS };
   const { user, state } = ctx;
   const values = Object.fromEntries([...formData.entries()].filter(([, v]) => typeof v === "string")) as Record<string, string>;
@@ -41,12 +42,12 @@ export async function issueDirective(_prev: DirectiveFormState, formData: FormDa
   const dueDate = parseDateInput(dueStr);
 
   const errors: Record<string, string> = {};
-  if (text.length < 10) errors.text = "Write the instruction (at least 10 characters)";
-  if (text.length > 2000) errors.text = "Keep the instruction under 2000 characters";
-  if (!dueDate) errors.dueDate = "Choose a due date";
-  else if (dueStr < todayIST()) errors.dueDate = "The due date can't be in the past";
-  if (!districtSlugValue && !deptCode && !projectId) errors.target = "Choose a district, department or project";
-  if (!ownerId) errors.owner = "Choose the responsible officer";
+  if (text.length < 10) errors.text = t("v.directiveText");
+  if (text.length > 2000) errors.text = t("v.tooLong", { max: 2000 });
+  if (!dueDate) errors.dueDate = t("v.chooseDueDate");
+  else if (dueStr < todayIST()) errors.dueDate = t("v.duePast");
+  if (!districtSlugValue && !deptCode && !projectId) errors.target = t("v.chooseTarget");
+  if (!ownerId) errors.owner = t("v.chooseOwner");
 
   // Targets must be inside the issuer's scope.
   const [district, department, project] = await Promise.all([
@@ -56,11 +57,11 @@ export async function issueDirective(_prev: DirectiveFormState, formData: FormDa
     deptCode ? db.department.findFirst({ where: { AND: [departmentScope(user, state.code), { code: deptCode }] } }) : null,
     projectId ? db.project.findFirst({ where: { AND: [projectScope(user, state.code), { id: projectId }] } }) : null,
   ]);
-  if (districtSlugValue && !district) errors.target = "Choose a district in this state";
-  if (deptCode && !department) errors.target = "Choose a department in this state";
-  if (projectId && !project) errors.target = "Choose a project in this state";
-  if (project && district && project.districtId !== district.id) errors.target = "That project isn't in the chosen district";
-  if (project && department && project.departmentId !== department.id) errors.target = "That project isn't in the chosen department";
+  if (districtSlugValue && !district) errors.target = t("v.districtInState");
+  if (deptCode && !department) errors.target = t("v.departmentInState");
+  if (projectId && !project) errors.target = t("v.projectInState");
+  if (project && district && project.districtId !== district.id) errors.target = t("v.projectNotInDistrict");
+  if (project && department && project.departmentId !== department.id) errors.target = t("v.projectNotInDepartment");
 
   // Owner: an active Collector of the target district, or Department Head of the target department.
   const targetDistrictId = district?.id ?? project?.districtId ?? null;
@@ -71,9 +72,9 @@ export async function issueDirective(_prev: DirectiveFormState, formData: FormDa
       owner &&
       ((owner.role.key === "DISTRICT_COLLECTOR" && targetDistrictId && owner.districtId === targetDistrictId) ||
         (owner.role.key === "DEPARTMENT_HEAD" && targetDeptId && owner.departmentId === targetDeptId));
-    if (!fits) errors.owner = "Choose an officer responsible for the chosen district or department";
+    if (!fits) errors.owner = t("v.ownerFits");
   }
-  if (Object.keys(errors).length) return { message: "Please correct the highlighted fields.", fieldErrors: errors, values };
+  if (Object.keys(errors).length) return { message: t("fixErrors"), fieldErrors: errors, values };
 
   const directive = await db.$transaction(async (tx) => {
     const d = await tx.directive.create({
@@ -100,7 +101,8 @@ export async function issueDirective(_prev: DirectiveFormState, formData: FormDa
 
 /** Respond to (in progress / complied) or close / reopen a directive, per lib/workflow. */
 export async function changeDirectiveStatus(_prev: DirectiveFormState, formData: FormData): Promise<DirectiveFormState> {
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
+  const NO_ACCESS = t("noAccess");
   if (!ctx) return { message: NO_ACCESS };
   const id = String(formData.get("id") ?? "");
   const d = await db.directive.findFirst({ where: { AND: [{ id }, directiveScope(ctx.user, ctx.state.code)] } });
@@ -109,11 +111,11 @@ export async function changeDirectiveStatus(_prev: DirectiveFormState, formData:
   const to = String(formData.get("to") ?? "") as DirectiveStatus;
   const note = String(formData.get("note") ?? "").trim();
   const transition = directiveTransitions(ctx.user, d.status as DirectiveStatus, d.ownerId).find((t) => t.to === to);
-  if (!DIRECTIVE_STATUSES.includes(to) || !transition) return { message: "You can't make that change to this directive." };
+  if (!DIRECTIVE_STATUSES.includes(to) || !transition) return { message: t("directiveTransitionNotAllowed") };
   if (transition.noteRequired && note.length < 5) {
-    return { message: "Please correct the highlighted fields.", fieldErrors: { note: to === "COMPLIED" ? "Describe the action taken" : "Add a note explaining this" } };
+    return { message: t("fixErrors"), fieldErrors: { note: to === "COMPLIED" ? t("v.describeAction") : t("v.explainNote") } };
   }
-  if (note.length > 1000) return { fieldErrors: { note: "Keep the note under 1000 characters" } };
+  if (note.length > 1000) return { fieldErrors: { note: t("v.tooLong", { max: 1000 }) } };
 
   await db.$transaction([
     db.directive.update({ where: { id }, data: { status: to } }),
@@ -124,5 +126,5 @@ export async function changeDirectiveStatus(_prev: DirectiveFormState, formData:
   ]);
 
   refresh();
-  return { ok: true, message: `Directive ${DIRECTIVE_STATUS_LABELS[to].toLowerCase()}` };
+  return { ok: true, message: t("directiveMarked", { status: (await getLabels()).directiveStatus[to].toLocaleLowerCase() }) };
 }

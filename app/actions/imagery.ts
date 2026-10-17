@@ -12,17 +12,17 @@ import { IMAGERY_SOURCES, type ImagerySource } from "@/lib/constants";
 import { parseDateInput, toDateInput, todayIST } from "@/lib/dates";
 import { storage, variantKeys } from "@/lib/storage";
 import { ImageError, MAX_FILES, processImage, type ProcessedImage } from "@/lib/imagery/process";
+import { getActionT } from "@/lib/i18n/server";
 
 export type UploadState = { message?: string; fieldErrors?: Record<string, string> };
-
-const NO_ACCESS = "You don't have permission to do this.";
 
 /**
  * Uploads 1–10 images to a project. Imagery is an evidence trail: there is
  * deliberately no update or delete action.
  */
 export async function uploadImagery(_prev: UploadState, formData: FormData): Promise<UploadState> {
-  const user = await getCurrentUser();
+  const [user, t] = await Promise.all([getCurrentUser(), getActionT()]);
+  const NO_ACCESS = t("noAccess");
   const state = getStateConfig(String(formData.get("state") ?? "").toUpperCase());
   const projectId = String(formData.get("id") ?? "");
   if (!user || !state || !canUploadImagery(user)) return { message: NO_ACCESS };
@@ -32,20 +32,20 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
   // --- fields
   const errors: Record<string, string> = {};
   const source = String(formData.get("source") ?? "") as ImagerySource;
-  if (!IMAGERY_SOURCES.includes(source)) errors.source = "Choose where the imagery came from";
+  if (!IMAGERY_SOURCES.includes(source)) errors.source = t("v.chooseSource");
 
   const dateStr = String(formData.get("captureDate") ?? "");
   const captureDate = parseDateInput(dateStr);
-  if (!captureDate) errors.captureDate = "Enter the capture date";
-  else if (dateStr > todayIST()) errors.captureDate = "The capture date can't be in the future";
+  if (!captureDate) errors.captureDate = t("v.captureDate");
+  else if (dateStr > todayIST()) errors.captureDate = t("v.captureFuture");
 
   const useExifDate = formData.get("useExifDate") === "on";
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 1000) || null;
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
-  if (files.length === 0) errors.files = "Choose at least one image";
-  else if (files.length > MAX_FILES) errors.files = `Upload at most ${MAX_FILES} images at a time`;
-  if (Object.keys(errors).length) return { message: "Please correct the highlighted fields.", fieldErrors: errors };
+  if (files.length === 0) errors.files = t("v.chooseImage");
+  else if (files.length > MAX_FILES) errors.files = t("v.tooManyFiles", { max: MAX_FILES });
+  if (Object.keys(errors).length) return { message: t("fixErrors"), fieldErrors: errors };
 
   // --- validate & process every file before storing anything
   const processed: { file: File; img: ProcessedImage }[] = [];
@@ -54,10 +54,10 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
     try {
       processed.push({ file, img: await processImage(Buffer.from(await file.arrayBuffer()), file.name) });
     } catch (e) {
-      fileErrors.push(e instanceof ImageError ? e.message : `${file.name}: could not be processed`);
+      fileErrors.push(`${file.name}: ${t(`image.${e instanceof ImageError ? e.code : "failed"}`)}`);
     }
   }
-  if (fileErrors.length) return { message: "Some files couldn't be accepted. Nothing was uploaded.", fieldErrors: { files: fileErrors.join("\n") } };
+  if (fileErrors.length) return { message: t("filesRejected"), fieldErrors: { files: fileErrors.join("\n") } };
 
   // --- store files, then records (all or nothing)
   const written: string[] = [];
@@ -106,7 +106,7 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
   } catch (e) {
     await Promise.all(written.map((dir) => storage.removePrefix(dir).catch(() => {})));
     console.error("Imagery upload failed", e);
-    return { message: "The upload failed. Please try again." };
+    return { message: t("uploadFailed") };
   }
 
   redirect(`${stateBasePath(user.portal, state.code)}/project/${projectId}/imagery?uploaded=${processed.length}`);

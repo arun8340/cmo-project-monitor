@@ -15,7 +15,8 @@ import { getStateConfig, type StateConfig } from "@/config/states";
 import { stateBasePath } from "@/config/portals";
 import { geoCodeFromSlug } from "@/lib/district-slug";
 import { toDateInput, todayIST } from "@/lib/dates";
-import { PROJECT_STATUS_LABELS, type ProjectStatus } from "@/lib/constants";
+import type { ProjectStatus } from "@/lib/constants";
+import { getActionT, getLabels } from "@/lib/i18n/server";
 import {
   createStatusSchema,
   fieldErrors,
@@ -29,7 +30,6 @@ import {
 type ProjectFormState = FormState<ProjectFormValues & { status: string }>;
 type ProgressFormState = FormState<ProgressFormValues>;
 
-const NO_ACCESS = "You don't have permission to do this.";
 
 /** Signed-in user + the state named by the form, if this portal serves it and the user may access it. */
 async function userAndState(formData: FormData): Promise<{ user: CurrentUser; state: StateConfig } | null> {
@@ -56,15 +56,15 @@ async function resolveDistrictAndDepartment(user: CurrentUser, state: StateConfi
 
 export async function createProject(_prev: ProjectFormState, formData: FormData): Promise<ProjectFormState> {
   const values = formValues(formData);
-  const ctx = await userAndState(formData);
-  if (!ctx || !canCreateProject(ctx.user)) return { message: NO_ACCESS, values };
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
+  if (!ctx || !canCreateProject(ctx.user)) return { message: t("noAccess"), values };
   const { user, state } = ctx;
 
-  const parsed = projectSchema.safeParse(values);
-  const status = createStatusSchema.safeParse(values.status);
+  const parsed = projectSchema(t).safeParse(values);
+  const status = createStatusSchema(t).safeParse(values.status);
   if (!parsed.success || !status.success) {
     return {
-      message: "Please correct the highlighted fields.",
+      message: t("fixErrors"),
       fieldErrors: { ...(parsed.success ? {} : fieldErrors(parsed.error)), ...(status.success ? {} : { status: status.error.issues[0].message }) },
       values,
     };
@@ -73,8 +73,8 @@ export async function createProject(_prev: ProjectFormState, formData: FormData)
   const { district, department } = await resolveDistrictAndDepartment(user, state, v.district, v.department);
   if (!district || !department) {
     return {
-      message: "Please correct the highlighted fields.",
-      fieldErrors: { ...(district ? {} : { district: "Choose a district you manage" }), ...(department ? {} : { department: "Choose a department you manage" }) },
+      message: t("fixErrors"),
+      fieldErrors: { ...(district ? {} : { district: t("v.districtYouManage") }), ...(department ? {} : { department: t("v.departmentYouManage") }) },
       values,
     };
   }
@@ -110,21 +110,21 @@ const EDITABLE = ["name", "nameLocal", "description", "latitude", "longitude", "
 
 export async function updateProject(_prev: ProjectFormState, formData: FormData): Promise<ProjectFormState> {
   const values = formValues(formData);
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
   const projectId = String(formData.get("id") ?? "");
   const access = ctx ? await findAccessibleProject(ctx.user, projectId) : null;
-  if (!ctx || !access || access.stateCode !== ctx.state.code || !canEditProject(ctx.user)) return { message: NO_ACCESS, values };
+  if (!ctx || !access || access.stateCode !== ctx.state.code || !canEditProject(ctx.user)) return { message: t("noAccess"), values };
   const { user, state } = ctx;
 
-  const parsed = projectSchema.safeParse(values);
-  if (!parsed.success) return { message: "Please correct the highlighted fields.", fieldErrors: fieldErrors(parsed.error), values };
+  const parsed = projectSchema(t).safeParse(values);
+  if (!parsed.success) return { message: t("fixErrors"), fieldErrors: fieldErrors(parsed.error), values };
   const v = parsed.data;
 
   const { district, department } = await resolveDistrictAndDepartment(user, state, v.district, v.department);
   if (!district || !department) {
     return {
-      message: "Please correct the highlighted fields.",
-      fieldErrors: { ...(district ? {} : { district: "Choose a district you manage" }), ...(department ? {} : { department: "Choose a department you manage" }) },
+      message: t("fixErrors"),
+      fieldErrors: { ...(district ? {} : { district: t("v.districtYouManage") }), ...(department ? {} : { department: t("v.departmentYouManage") }) },
       values,
     };
   }
@@ -169,14 +169,14 @@ export async function updateProject(_prev: ProjectFormState, formData: FormData)
 
 export async function addProgressUpdate(_prev: ProgressFormState, formData: FormData): Promise<ProgressFormState> {
   const values = formValues(formData);
-  const ctx = await userAndState(formData);
+  const [ctx, t] = await Promise.all([userAndState(formData), getActionT()]);
   const projectId = String(formData.get("id") ?? "");
   const access = ctx ? await findAccessibleProject(ctx.user, projectId) : null;
-  if (!ctx || !access || access.stateCode !== ctx.state.code || !canUpdateProgress(ctx.user)) return { message: NO_ACCESS, values };
+  if (!ctx || !access || access.stateCode !== ctx.state.code || !canUpdateProgress(ctx.user)) return { message: t("noAccess"), values };
   const { user } = ctx;
 
-  const parsed = progressSchema.safeParse(values);
-  if (!parsed.success) return { message: "Please correct the highlighted fields.", fieldErrors: fieldErrors(parsed.error), values };
+  const parsed = progressSchema(t).safeParse(values);
+  if (!parsed.success) return { message: t("fixErrors"), fieldErrors: fieldErrors(parsed.error), values };
   const v = parsed.data;
 
   const [project, last] = await Promise.all([
@@ -186,14 +186,14 @@ export async function addProgressUpdate(_prev: ProgressFormState, formData: Form
 
   const errors: Record<string, string> = {};
   const day = toDateInput(v.date);
-  if (day > todayIST()) errors.date = "The date can't be in the future";
-  else if (last && day < toDateInput(last.date)) errors.date = `The date can't be before the last update (${toDateInput(last.date)})`;
-  if (v.status === "COMPLETED" && v.progressPercent !== 100) errors.status = "A completed project must be at 100%";
-  if (v.status === "NOT_STARTED" && v.progressPercent !== 0) errors.status = "A project that hasn't started must be at 0%";
+  if (day > todayIST()) errors.date = t("v.dateFuture");
+  else if (last && day < toDateInput(last.date)) errors.date = t("v.dateBeforeLast", { date: toDateInput(last.date) });
+  if (v.status === "COMPLETED" && v.progressPercent !== 100) errors.status = t("v.completedAt100");
+  if (v.status === "NOT_STARTED" && v.progressPercent !== 0) errors.status = t("v.notStartedAt0");
   if (v.progressPercent < project.progressPercent && (v.notes?.length ?? 0) < 5) {
-    errors.notes = `Progress is going down from ${project.progressPercent}% — add a note explaining why`;
+    errors.notes = t("v.progressDown", { progress: project.progressPercent });
   }
-  if (Object.keys(errors).length) return { message: "Please correct the highlighted fields.", fieldErrors: errors, values };
+  if (Object.keys(errors).length) return { message: t("fixErrors"), fieldErrors: errors, values };
 
   await db.$transaction([
     db.progressUpdate.create({
@@ -216,8 +216,6 @@ export async function addProgressUpdate(_prev: ProgressFormState, formData: Form
   ]);
 
   refresh();
-  return {
-    ok: true,
-    message: `Progress updated to ${v.progressPercent}% (${PROJECT_STATUS_LABELS[v.status as ProjectStatus]}).`,
-  };
+  const labels = await getLabels();
+  return { ok: true, message: t("progressSaved", { progress: v.progressPercent, status: labels.projectStatus[v.status as ProjectStatus] }) };
 }

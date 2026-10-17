@@ -7,7 +7,7 @@ import type { StateCode, StateConfig } from "@/config/states";
 import { districtSlug } from "@/lib/district-slug";
 import type { ProjectStatus } from "@/lib/constants";
 import { behindBy, plannedPercent } from "@/lib/progress";
-import { summarize } from "@/lib/audit";
+import { getSummarizer } from "@/lib/audit";
 
 export type ActivityItem = { id: string; action: string; at: Date; userName: string | null; summary: string };
 
@@ -27,7 +27,7 @@ export async function getProjectDetail(user: CurrentUser, projectId: string, sta
   });
   if (!project) return null;
 
-  const [directives, audit] = await Promise.all([
+  const [directives, audit, summarize] = await Promise.all([
     db.directive.findMany({
       where: { AND: [directiveScope(user, stateCode), { projectId }] },
       include: { fromUser: { select: { name: true } }, owner: { select: { name: true } } },
@@ -39,6 +39,7 @@ export async function getProjectDetail(user: CurrentUser, projectId: string, sta
       orderBy: { createdAt: "desc" },
       take: 8,
     }),
+    getSummarizer(),
   ]);
 
   const status = project.status as ProjectStatus;
@@ -74,6 +75,7 @@ export async function getProjectFormOptions(user: CurrentUser, state: StateConfi
     districts: districts.map((d) => ({
       slug: districtSlug(d.geoCode),
       name: d.name,
+      nameLocal: d.nameLocal,
       center: [d.latitude ?? state.mapCenter[0], d.longitude ?? state.mapCenter[1]] as [number, number],
     })),
     departments: departments

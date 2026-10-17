@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { issueDirective, type DirectiveFormState } from "@/app/actions/directives";
 import { submitKeepingValues } from "@/lib/forms";
+import { useTranslations } from "next-intl";
+import type { RoleKey } from "@/lib/constants";
 
 type Options = {
   districts: { slug: string; name: string }[];
@@ -29,6 +31,9 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
   const [dept, setDept] = useState(initial.department ?? "");
   const [project, setProject] = useState(initial.project ?? "");
   const [owner, setOwner] = useState("");
+  const t = useTranslations("directives");
+  const tc = useTranslations("common");
+  const tr = useTranslations("enums.role");
 
   // Projects narrow to the chosen district / department.
   const projects = useMemo(
@@ -59,11 +64,11 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
       )}
 
       <FieldSet>
-        <FieldLegend>Directed to</FieldLegend>
-        <FieldDescription>Choose a district, a department, a specific project — or a combination.</FieldDescription>
+        <FieldLegend>{t("directedTo")}</FieldLegend>
+        <FieldDescription>{t("directedToHint")}</FieldDescription>
         <div className="grid gap-3 sm:grid-cols-2">
           <Field>
-            <FieldLabel htmlFor="d-district">District</FieldLabel>
+            <FieldLabel htmlFor="d-district">{t("district")}</FieldLabel>
             <select
               id="d-district"
               name="district"
@@ -74,7 +79,7 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
               }}
               className={selectClass}
             >
-              <option value="">Any / not specific</option>
+              <option value="">{t("anyTarget")}</option>
               {options.districts.map((d) => (
                 <option key={d.slug} value={d.slug}>
                   {d.name}
@@ -83,7 +88,7 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
             </select>
           </Field>
           <Field>
-            <FieldLabel htmlFor="d-dept">Department</FieldLabel>
+            <FieldLabel htmlFor="d-dept">{t("department")}</FieldLabel>
             <select
               id="d-dept"
               name="department"
@@ -94,7 +99,7 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
               }}
               className={selectClass}
             >
-              <option value="">Any / not specific</option>
+              <option value="">{t("anyTarget")}</option>
               {options.departments.map((d) => (
                 <option key={d.code} value={d.code}>
                   {d.name}
@@ -104,9 +109,9 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
           </Field>
         </div>
         <Field>
-          <FieldLabel htmlFor="d-project">Project (optional)</FieldLabel>
+          <FieldLabel htmlFor="d-project">{t("projectOptional")}</FieldLabel>
           <select id="d-project" name="project" value={project} onChange={(e) => setProject(e.target.value)} className={selectClass}>
-            <option value="">{projects.length ? "Not a specific project" : "No projects match"}</option>
+            <option value="">{projects.length ? t("notSpecificProject") : t("noProjectsMatch")}</option>
             {projects.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
@@ -118,24 +123,24 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
       </FieldSet>
 
       <FieldSet>
-        <FieldLegend>Directive</FieldLegend>
+        <FieldLegend>{t("directive")}</FieldLegend>
         <FieldGroup>
           <Field data-invalid={!!err.text || undefined}>
-            <FieldLabel htmlFor="d-text">Instruction</FieldLabel>
+            <FieldLabel htmlFor="d-text">{t("instruction")}</FieldLabel>
             <Textarea
               id="d-text"
               name="text"
               rows={4}
               maxLength={2000}
               defaultValue={state.values?.text}
-              placeholder="e.g. Submit a recovery plan with weekly milestones and restart work within 15 days."
+              placeholder={t("instructionPlaceholder")}
               aria-invalid={!!err.text || undefined}
             />
             {err.text && <FieldError>{err.text}</FieldError>}
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
             <Field data-invalid={!!err.owner || undefined}>
-              <FieldLabel htmlFor="d-owner">Responsible officer</FieldLabel>
+              <FieldLabel htmlFor="d-owner">{t("owner")}</FieldLabel>
               <select
                 id="d-owner"
                 name="owner"
@@ -145,17 +150,17 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
                 aria-invalid={!!err.owner || undefined}
                 disabled={owners.length === 0}
               >
-                <option value="">{owners.length ? "Choose an officer" : "Choose a district or department first"}</option>
+                <option value="">{owners.length ? t("chooseOfficer") : t("chooseTargetFirst")}</option>
                 {owners.map((o) => (
                   <option key={o.id} value={o.id}>
-                    {o.name} — {o.role}
+                    {o.name} — {tr(o.role as RoleKey)}
                   </option>
                 ))}
               </select>
               {err.owner && <FieldError>{err.owner}</FieldError>}
             </Field>
             <Field data-invalid={!!err.dueDate || undefined}>
-              <FieldLabel htmlFor="d-due">Due date</FieldLabel>
+              <FieldLabel htmlFor="d-due">{t("dueDate")}</FieldLabel>
               <Input id="d-due" name="dueDate" type="date" min={today} defaultValue={state.values?.dueDate} aria-invalid={!!err.dueDate || undefined} />
               {err.dueDate && <FieldError>{err.dueDate}</FieldError>}
             </Field>
@@ -165,11 +170,11 @@ export function DirectiveForm({ stateSlug, options, initial, today, cancelHref }
 
       <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
         <Button variant="outline" nativeButton={false} render={<Link href={cancelHref} />}>
-          Cancel
+          {tc("cancel")}
         </Button>
         <Button type="submit" disabled={pending}>
           {pending ? <LoaderCircleIcon className="animate-spin" /> : <SendIcon />}
-          Issue directive
+          {t("issue")}
         </Button>
       </div>
     </form>

@@ -19,7 +19,17 @@ export type ProcessedImage = {
   exif: { latitude: number | null; longitude: number | null; takenAt: Date | null };
 };
 
-export class ImageError extends Error {}
+export type ImageProblem = "empty" | "tooLarge" | "heic" | "unreadable" | "format";
+
+/** A file that can't be accepted; `code` is translated by the caller ("actions.image.*"). */
+export class ImageError extends Error {
+  constructor(
+    readonly code: ImageProblem,
+    readonly fileName: string,
+  ) {
+    super(`${fileName}: ${code}`);
+  }
+}
 
 /** Raw GPS tags must be picked too: exifr computes `latitude`/`longitude` from them. */
 const EXIF_TAGS = ["DateTimeOriginal", "CreateDate", "GPSLatitude", "GPSLatitudeRef", "GPSLongitude", "GPSLongitudeRef"];
@@ -36,22 +46,18 @@ function isHeic(buf: Buffer) {
  * WebP variants. The original bytes are kept unchanged as evidence.
  */
 export async function processImage(buf: Buffer, fileName: string): Promise<ProcessedImage> {
-  if (buf.length === 0) throw new ImageError(`${fileName}: the file is empty`);
-  if (buf.length > MAX_FILE_BYTES) throw new ImageError(`${fileName}: larger than 20 MB`);
-  if (isHeic(buf)) {
-    throw new ImageError(
-      `${fileName}: iPhone HEIC photos aren't supported. Upload a JPEG instead (iPhone: Settings › Camera › Formats › Most Compatible).`,
-    );
-  }
+  if (buf.length === 0) throw new ImageError("empty", fileName);
+  if (buf.length > MAX_FILE_BYTES) throw new ImageError("tooLarge", fileName);
+  if (isHeic(buf)) throw new ImageError("heic", fileName);
 
   let meta: Metadata;
   try {
     meta = await sharp(buf).metadata();
   } catch {
-    throw new ImageError(`${fileName}: not a readable image`);
+    throw new ImageError("unreadable", fileName);
   }
   const format = FORMATS[meta.format as keyof typeof FORMATS];
-  if (!format) throw new ImageError(`${fileName}: only JPEG, PNG or WebP images are accepted`);
+  if (!format) throw new ImageError("format", fileName);
 
   const { display, thumb } = await makeVariants(buf);
 

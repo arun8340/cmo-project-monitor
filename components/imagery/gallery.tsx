@@ -10,6 +10,8 @@ import { formatBytes } from "@/lib/format";
 import { FAR_FROM_SITE_KM, formatDistance } from "@/lib/geo";
 import type { ImagerySource } from "@/lib/constants";
 import { SOURCE_META } from "./source-meta";
+import { useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
 
 export type GalleryItem = {
   id: string;
@@ -43,6 +45,8 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
   });
 
   const current = index != null ? items[index] : null;
+  const t = useTranslations("gallery");
+  const labels = useLabels();
 
   return (
     <>
@@ -50,7 +54,7 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
         {groups.map((g) => (
           <section key={g.key} aria-labelledby={`year-${g.key}`}>
             <h3 id={`year-${g.key}`} className="mb-2 text-sm font-medium">
-              {g.label} <span className="font-normal text-muted-foreground">· {g.items.length} image{g.items.length === 1 ? "" : "s"}</span>
+              {g.label} <span className="font-normal text-muted-foreground">· {t("images", { count: g.items.length })}</span>
             </h3>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {g.items.map(({ item, i }) => {
@@ -65,17 +69,17 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
                     >
                       {/* Access-checked API image; the browser sends the session cookie. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imageryUrl(item.id, "thumb")} alt={`${meta.label} image, ${item.dayLabel}`} loading="lazy" className="aspect-4/3 w-full bg-muted object-cover" />
+                      <img src={imageryUrl(item.id, "thumb")} alt={t("imageAlt", { source: labels.source[item.source], date: item.dayLabel })} loading="lazy" className="aspect-4/3 w-full bg-muted object-cover" />
                       <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
                         <span className="min-w-0">
                           <span className="block font-medium">{item.dayLabel}</span>
                           <span className="flex items-center gap-1.5 text-muted-foreground">
                             <meta.icon className="size-3.5" style={{ color: meta.color }} />
-                            {meta.label}
+                            {labels.source[item.source]}
                           </span>
                         </span>
                         {far && (
-                          <span className="flex items-center gap-1 font-medium text-amber-700" title="Photo location is far from the project site">
+                          <span className="flex items-center gap-1 font-medium text-amber-700" title={t("farTitle")}>
                             <TriangleAlertIcon className="size-3" />
                             {formatDistance(item.distanceKm!)}
                           </span>
@@ -102,7 +106,7 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
           {current && (
             <LargeView
               item={current}
-              position={`${index! + 1} of ${items.length}`}
+              position={t("position", { n: index! + 1, total: items.length })}
               onPrev={() => step(-1)}
               onNext={() => step(1)}
               compareHref={
@@ -131,15 +135,17 @@ function LargeView({
 }) {
   const meta = SOURCE_META[item.source];
   const far = item.distanceKm != null && item.distanceKm > FAR_FROM_SITE_KM;
+  const t = useTranslations("gallery");
+  const source = useLabels().source[item.source];
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="relative flex items-center justify-center bg-slate-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img key={item.id} src={imageryUrl(item.id, "display")} alt={`${meta.label} image, ${item.dayLabel}`} className="max-h-[70svh] w-full object-contain" />
-        <Button variant="secondary" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 opacity-90" onClick={onPrev} aria-label="Previous image">
+        <img key={item.id} src={imageryUrl(item.id, "display")} alt={t("imageAlt", { source, date: item.dayLabel })} className="max-h-[70svh] w-full object-contain" />
+        <Button variant="secondary" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 opacity-90" onClick={onPrev} aria-label={t("previous")}>
           <ChevronLeftIcon />
         </Button>
-        <Button variant="secondary" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 opacity-90" onClick={onNext} aria-label="Next image">
+        <Button variant="secondary" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 opacity-90" onClick={onNext} aria-label={t("next")}>
           <ChevronRightIcon />
         </Button>
       </div>
@@ -147,34 +153,34 @@ function LargeView({
         <div className="pr-8">
           <DialogTitle className="flex items-center gap-2">
             <meta.icon className="size-4" style={{ color: meta.color }} />
-            {meta.label} · {item.dayLabel}
+            {source} · {item.dayLabel}
           </DialogTitle>
           <DialogDescription className="mt-1">{position}</DialogDescription>
         </div>
         {item.notes && <p>{item.notes}</p>}
         <dl className="grid gap-2">
-          <Row label="Uploaded" value={`${item.uploadedOn}${item.uploader ? ` by ${item.uploader}` : ""}`} />
-          {item.width && item.height && <Row label="Size" value={`${item.width} × ${item.height}${item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ""}`} />}
-          {item.takenAt && <Row label="Photo taken" value={item.takenAt} />}
+          <Row label={t("uploaded")} value={item.uploader ? t("uploadedBy", { date: item.uploadedOn, name: item.uploader }) : item.uploadedOn} />
+          {item.width && item.height && <Row label={t("size")} value={`${item.width} × ${item.height}${item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ""}`} />}
+          {item.takenAt && <Row label={t("photoTaken")} value={item.takenAt} />}
           {item.gps ? (
             <div>
-              <dt className="text-xs text-muted-foreground">Photo location</dt>
+              <dt className="text-xs text-muted-foreground">{t("photoLocation")}</dt>
               <dd className="font-mono text-xs">{item.gps[0].toFixed(5)}, {item.gps[1].toFixed(5)}</dd>
               {item.distanceKm != null && (
                 <dd className={`mt-0.5 flex items-center gap-1 text-xs ${far ? "font-medium text-amber-700" : "text-muted-foreground"}`}>
                   {far ? <TriangleAlertIcon className="size-3" /> : <MapPinIcon className="size-3" />}
-                  {formatDistance(item.distanceKm)} from the project site{far && " — check this photo"}
+                  {far ? t("fromSiteCheck", { distance: formatDistance(item.distanceKm) }) : t("fromSite", { distance: formatDistance(item.distanceKm) })}
                 </dd>
               )}
             </div>
           ) : (
-            <Row label="Photo location" value="Not recorded" />
+            <Row label={t("photoLocation")} value={t("notRecorded")} />
           )}
         </dl>
         {compareHref && (
           <Link href={compareHref} className="flex w-fit items-center gap-1.5 text-sm font-medium hover:underline">
             <ColumnsIcon className="size-3.5" />
-            Compare with latest image
+            {t("compareLatest")}
           </Link>
         )}
         <a
@@ -184,7 +190,7 @@ function LargeView({
           className="flex w-fit items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
         >
           <ExternalLinkIcon className="size-3.5" />
-          Open original file
+          {t("openOriginal")}
         </a>
       </div>
     </div>

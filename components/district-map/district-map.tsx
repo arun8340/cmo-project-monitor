@@ -7,7 +7,8 @@ import L from "leaflet";
 import type { FeatureCollection } from "geojson";
 import { BASEMAP } from "@/config/map";
 import { STATUS_COLOR } from "@/lib/district-health";
-import { PROJECT_STATUS_LABELS } from "@/lib/constants";
+import { useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
 import type { ProjectPin } from "@/lib/data/district";
 
 type Props = {
@@ -32,8 +33,13 @@ export default function DistrictMap({ geojsonUrl, geoCodeProperty, geoCode, cent
   const hostRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const routerRef = useRef(router);
+  const labels = useLabels();
+  const hint = useTranslations("map")("clickToOpenProject");
+  // Read inside the map effect, so a language change doesn't rebuild the map.
+  const textRef = useRef({ labels, hint });
   useEffect(() => {
     routerRef.current = router;
+    textRef.current = { labels, hint };
   });
   const [lat, lng] = center;
 
@@ -50,6 +56,7 @@ export default function DistrictMap({ geojsonUrl, geoCodeProperty, geoCode, cent
     L.tileLayer(BASEMAP.url, { attribution: BASEMAP.attribution, maxZoom: BASEMAP.maxZoom }).addTo(map);
 
     const markers = L.featureGroup().addTo(map);
+    const text = textRef.current;
     for (const p of pins) {
       L.circleMarker([p.latitude, p.longitude], {
         radius: 8,
@@ -60,9 +67,9 @@ export default function DistrictMap({ geojsonUrl, geoCodeProperty, geoCode, cent
       })
         .bindTooltip(
           `<div class="sm-tt-name">${escapeHtml(p.name)}</div>` +
-            `<div class="sm-tt-health"><i style="background:${STATUS_COLOR[p.status]}"></i>${PROJECT_STATUS_LABELS[p.status]} · ${p.progressPercent}%</div>` +
+            `<div class="sm-tt-health"><i style="background:${STATUS_COLOR[p.status]}"></i>${escapeHtml(text.labels.projectStatus[p.status])} · ${p.progressPercent}%</div>` +
             `<div class="sm-tt-muted">${escapeHtml(p.departmentName)}</div>` +
-            `<div class="sm-tt-hint">Click to open project</div>`,
+            `<div class="sm-tt-hint">${escapeHtml(text.hint)}</div>`,
           { direction: "top", offset: [0, -8], className: "sm-tooltip", opacity: 1 },
         )
         .on("click", () => routerRef.current.push(`${basePath}/project/${p.id}`))

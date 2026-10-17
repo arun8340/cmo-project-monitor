@@ -2,6 +2,9 @@ import { z } from "zod";
 import { PROJECT_STATUSES } from "@/lib/constants";
 import { parseDateInput } from "@/lib/dates";
 
+/** Translator for the "actions" messages (see getActionT in lib/i18n/server.ts). */
+type T = (key: string, values?: Record<string, string | number>) => string;
+
 /** Shape returned by form actions to `useActionState`. */
 export type FormState<Values = Record<string, string>> = {
   ok?: boolean;
@@ -10,87 +13,89 @@ export type FormState<Values = Record<string, string>> = {
   values?: Partial<Values>;
 };
 
-const optionalText = (max: number) =>
+const optionalText = (t: T, max: number) =>
   z
     .string()
     .trim()
-    .max(max, `Keep this under ${max} characters`)
+    .max(max, t("v.tooLong", { max }))
     .transform((v) => (v === "" ? null : v));
 
-const dateField = (label: string) =>
+const dateField = (t: T, field: string) =>
   z
     .string()
     .trim()
     .transform((v, ctx) => {
       if (v === "") return null;
       const d = parseDateInput(v);
-      if (!d) ctx.addIssue({ code: "custom", message: `Enter a valid ${label}` });
+      if (!d) ctx.addIssue({ code: "custom", message: t("v.invalidDate", { field: t(`v.field.${field}`) }) });
       return d;
     });
 
-const number = (label: string, min: number, max: number) =>
+const number = (t: T, field: string, min: number, max: number) =>
   z
     .string()
     .trim()
-    .min(1, `Enter the ${label}`)
+    .min(1, t("v.enter", { field: t(`v.field.${field}`) }))
     .transform(Number)
-    .refine((n) => Number.isFinite(n), `Enter a number for ${label}`)
-    .refine((n) => n >= min && n <= max, `${label[0].toUpperCase()}${label.slice(1)} must be between ${min} and ${max}`);
+    .refine((n) => Number.isFinite(n), t("v.notNumber", { field: t(`v.field.${field}`) }))
+    .refine((n) => n >= min && n <= max, t("v.range", { field: t(`v.field.${field}`), min, max }));
 
 /** Add / edit project. Status and progress are changed through progress updates, not here. */
-export const projectSchema = z
-  .object({
-    name: z.string().trim().min(3, "Enter the project name (at least 3 characters)").max(200),
-    nameLocal: optionalText(200),
-    description: optionalText(2000),
-    department: z.string().trim().min(1, "Choose a department"),
-    district: z.string().trim().min(1, "Choose a district"),
-    // Roughly the extent of India; the map picker keeps it inside the district in practice.
-    latitude: number("latitude", 6, 37),
-    longitude: number("longitude", 68, 98),
-    budgetLakhs: z
+export const projectSchema = (t: T) =>
+  z
+    .object({
+      name: z.string().trim().min(3, t("v.projectName")).max(200),
+      nameLocal: optionalText(t, 200),
+      description: optionalText(t, 2000),
+      department: z.string().trim().min(1, t("v.chooseDepartment")),
+      district: z.string().trim().min(1, t("v.chooseDistrict")),
+      // Roughly the extent of India; the map picker keeps it inside the district in practice.
+      latitude: number(t, "latitude", 6, 37),
+      longitude: number(t, "longitude", 68, 98),
+      budgetLakhs: z
+        .string()
+        .trim()
+        .transform((v, ctx) => {
+          if (v === "") return null;
+          const n = Number(v);
+          if (!Number.isFinite(n) || n < 0 || n > 10_000_000) {
+            ctx.addIssue({ code: "custom", message: t("v.budget") });
+          }
+          return n;
+        }),
+      startDate: dateField(t, "startDate"),
+      plannedEndDate: dateField(t, "plannedEndDate"),
+    })
+    .superRefine((v, ctx) => {
+      if (v.startDate && v.plannedEndDate && v.plannedEndDate <= v.startDate) {
+        ctx.addIssue({ code: "custom", path: ["plannedEndDate"], message: t("v.endAfterStart") });
+      }
+    });
+export type ProjectFormValues = z.input<ReturnType<typeof projectSchema>>;
+
+/** Initial status when creating a project. */
+export const createStatusSchema = (t: T) => z.enum(["NOT_STARTED", "ONGOING"], { message: t("v.startingStatus") });
+
+export const progressSchema = (t: T) =>
+  z.object({
+    date: z
       .string()
       .trim()
       .transform((v, ctx) => {
-        if (v === "") return null;
-        const n = Number(v);
-        if (!Number.isFinite(n) || n < 0 || n > 10_000_000) {
-          ctx.addIssue({ code: "custom", message: "Enter the budget in ₹ lakh (0 or more)" });
-        }
-        return n;
+        const d = parseDateInput(v);
+        if (!d) ctx.addIssue({ code: "custom", message: t("v.validDate") });
+        return d!;
       }),
-    startDate: dateField("start date"),
-    plannedEndDate: dateField("planned end date"),
-  })
-  .superRefine((v, ctx) => {
-    if (v.startDate && v.plannedEndDate && v.plannedEndDate <= v.startDate) {
-      ctx.addIssue({ code: "custom", path: ["plannedEndDate"], message: "Planned end must be after the start date" });
-    }
+    progressPercent: z
+      .string()
+      .trim()
+      .min(1, t("v.enterProgress"))
+      .transform(Number)
+      .refine((n) => Number.isInteger(n) && n >= 0 && n <= 100, t("v.progressRange")),
+    status: z.enum(PROJECT_STATUSES, { message: t("v.chooseStatus") }),
+    notes: optionalText(t, 1000),
   });
-export type ProjectFormValues = z.input<typeof projectSchema>;
-
-/** Initial status when creating a project. */
-export const createStatusSchema = z.enum(["NOT_STARTED", "ONGOING"], { message: "Choose a starting status" });
-
-export const progressSchema = z.object({
-  date: z
-    .string()
-    .trim()
-    .transform((v, ctx) => {
-      const d = parseDateInput(v);
-      if (!d) ctx.addIssue({ code: "custom", message: "Enter a valid date" });
-      return d!;
-    }),
-  progressPercent: z
-    .string()
-    .trim()
-    .min(1, "Enter progress")
-    .transform(Number)
-    .refine((n) => Number.isInteger(n) && n >= 0 && n <= 100, "Progress must be a whole number from 0 to 100"),
-  status: z.enum(PROJECT_STATUSES, { message: "Choose a status" }),
-  notes: optionalText(1000),
-});
-export type ProgressFormValues = z.input<typeof progressSchema>;
+export type ProgressFormValues = z.input<ReturnType<typeof progressSchema>>;
 
 /** First error message per field, for showing next to inputs. */
 export function fieldErrors(error: z.ZodError) {

@@ -3,6 +3,7 @@ import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import { isDevPortalChooserHost, portalFromHeaders } from "./config/portals";
 import { STATE_CODES } from "./config/states";
+import { LOCALE_COOKIE, resolveLocale } from "./lib/i18n/config";
 
 /**
  * Request routing per portal (see config/portals.ts). Cookie-only checks —
@@ -12,10 +13,14 @@ import { STATE_CODES } from "./config/states";
  *   /<state>/...; other states' paths and admin pages are "not found".
  * - Admin portal: state picker plus /rj, /mh, ...
  * - Unknown host: not found (in development, plain localhost lists the portals).
+ *
+ * Every page is also served under a hidden language segment (app/[locale]),
+ * chosen from the portal's language cookie — so /district/jaipur on the
+ * Rajasthan portal in Hindi renders /hi/rj/district/jaipur.
  */
 const { auth } = NextAuth(authConfig);
 
-// Deep enough that no route (including /[state]/...) matches → app/not-found.tsx with a 404.
+// Deep enough that no route (including /[locale]/[state]/...) matches → app/global-not-found.tsx with a 404.
 const NOT_FOUND = "/__not-found/__/__/__";
 const STATE_PREFIXES = STATE_CODES.map((c) => `/${c.toLowerCase()}`);
 const ADMIN_ONLY = ["/select-state", "/admin"];
@@ -25,7 +30,8 @@ export default auth((req) => {
   const { pathname, search } = req.nextUrl;
   const host = req.headers.get("host");
   const portal = portalFromHeaders(req.headers);
-  const rewriteTo = (path: string) => NextResponse.rewrite(new URL(path + search, req.url));
+  const locale = resolveLocale(portal, req.cookies.get(LOCALE_COOKIE)?.value);
+  const rewriteTo = (path: string) => NextResponse.rewrite(new URL(`/${locale}${path === "/" ? "" : path}${search}`, req.url));
 
   if (!portal) {
     if (isDevPortalChooserHost(host) && pathname === "/") return rewriteTo("/portals");
@@ -41,7 +47,7 @@ export default auth((req) => {
   const signedIn = !!user?.id && user.portal === portal.id;
   const home = portal.kind === "admin" ? "/select-state" : "/";
 
-  if (pathname === "/login") return signedIn ? redirectTo(home) : NextResponse.next();
+  if (pathname === "/login") return signedIn ? redirectTo(home) : rewriteTo(pathname);
   if (!signedIn) {
     const login = portalUrl("/login");
     if (pathname !== "/") login.searchParams.set("callbackUrl", pathname + search);
@@ -49,10 +55,10 @@ export default auth((req) => {
   }
 
   // Same page on every portal (also where users are sent when a new password is required).
-  if (pathname === "/change-password") return NextResponse.next();
+  if (pathname === "/change-password") return rewriteTo(pathname);
 
   if (portal.kind === "admin") {
-    return pathname === "/" ? redirectTo(home) : NextResponse.next();
+    return pathname === "/" ? redirectTo(home) : rewriteTo(pathname);
   }
 
   // State portal: never expose internal state prefixes or admin pages.

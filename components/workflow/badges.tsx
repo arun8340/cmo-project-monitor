@@ -1,8 +1,6 @@
 import { ArchiveIcon, CircleCheckIcon, CircleDotIcon, CircleIcon, ClockAlertIcon, LockIcon } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
-  DIRECTIVE_STATUS_LABELS,
-  ISSUE_PRIORITY_LABELS,
-  ISSUE_STATUS_LABELS,
   type DirectiveStatus,
   type IssuePriority,
   type IssueStatus,
@@ -18,7 +16,8 @@ export const PRIORITY_STYLE: Record<IssuePriority, string> = {
 };
 
 export function PriorityBadge({ priority }: { priority: IssuePriority }) {
-  return <span className={`${base} ${PRIORITY_STYLE[priority]}`}>{ISSUE_PRIORITY_LABELS[priority]}</span>;
+  const t = useTranslations("enums.priority");
+  return <span className={`${base} ${PRIORITY_STYLE[priority]}`}>{t(priority)}</span>;
 }
 
 const ISSUE_ICON: Record<IssueStatus, { icon: typeof CircleIcon; className: string }> = {
@@ -30,10 +29,11 @@ const ISSUE_ICON: Record<IssueStatus, { icon: typeof CircleIcon; className: stri
 
 export function IssueStatusBadge({ status }: { status: IssueStatus }) {
   const { icon: Icon, className } = ISSUE_ICON[status];
+  const t = useTranslations("enums.issueStatus");
   return (
     <span className={`${base} bg-background`}>
       <Icon className={`size-3 ${className}`} />
-      {ISSUE_STATUS_LABELS[status]}
+      {t(status)}
     </span>
   );
 }
@@ -47,16 +47,18 @@ const DIRECTIVE_ICON: Record<DirectiveStatus, { icon: typeof CircleIcon; classNa
 
 export function DirectiveStatusBadge({ status, overdue }: { status: DirectiveStatus; overdue?: boolean }) {
   const { icon: Icon, className } = DIRECTIVE_ICON[status];
+  const t = useTranslations("enums.directiveStatus");
+  const tw = useTranslations("workflow");
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       <span className={`${base} bg-background`}>
         <Icon className={`size-3 ${className}`} />
-        {DIRECTIVE_STATUS_LABELS[status]}
+        {t(status)}
       </span>
       {overdue && (
         <span className={`${base} border-red-300 bg-red-50 text-red-800`}>
           <ClockAlertIcon className="size-3" />
-          Overdue
+          {tw("overdue")}
         </span>
       )}
     </span>

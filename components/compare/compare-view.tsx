@@ -23,6 +23,9 @@ import { exportComparison } from "./export-png";
 import { ComparePane } from "./compare-pane";
 import { IDENTITY, MAX_SCALE, panBy, zoomAt, type View } from "./sync-view";
 import { VerificationDialog } from "./verification-dialog";
+import { useLocale, useTranslations } from "next-intl";
+import { useLabels } from "@/lib/i18n/client";
+import { intlLocale } from "@/lib/i18n/config";
 
 const MAX = 4;
 
@@ -47,6 +50,10 @@ const iconBtn = "inline-flex size-8 items-center justify-center rounded-md text-
  */
 export function CompareView({ project, stateSlug, basePath, images, initialSelection, projects, previousVerifications, canVerify, closeHref }: Props) {
   const router = useRouter();
+  const t = useTranslations("compare");
+  const tApp = useTranslations("app");
+  const labels = useLabels();
+  const locale = useLocale();
   const rootRef = useRef<HTMLDivElement>(null);
   const [selected, setSelected] = useState<string[]>(initialSelection);
   const [view, setViewState] = useState<View>(IDENTITY);
@@ -82,12 +89,12 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
       if (diffs[key]) continue;
       computeDiff(imageryUrl(baseline.id, "display"), imageryUrl(p.id, "display"))
         .then((d) => !cancelled && setDiffs((m) => ({ ...m, [key]: d })))
-        .catch(() => toast.error("Couldn't compare these images"));
+        .catch(() => toast.error(t("diffFailed")));
     }
     return () => {
       cancelled = true;
     };
-  }, [showChanges, baseline, panes, diffs]);
+  }, [showChanges, baseline, panes, diffs, t]);
 
   const shareSetters = useMemo(
     () => Object.fromEntries(panes.map((p) => [p.id, (s: number | null) => setShares((m) => (m[p.id] === s ? m : { ...m, [p.id]: s }))])),
@@ -129,13 +136,13 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
     setSelected((cur) => {
       if (cur.includes(id)) {
         if (cur.length <= 2) {
-          toast.info("Compare at least two images");
+          toast.info(t("minImages"));
           return cur;
         }
         return cur.filter((x) => x !== id);
       }
       if (cur.length >= MAX) {
-        toast.info(`Compare up to ${MAX} images — remove one first`);
+        toast.info(t("maxImages", { max: MAX }));
         return cur;
       }
       return [...cur, id];
@@ -147,7 +154,14 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
     try {
       const blob = await exportComparison({
         title: project.name,
-        subtitle: `${project.districtName} district · ${panes[0].dayLabel} → ${panes.at(-1)!.dayLabel} · exported ${new Date().toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })} · CM Project Monitor`,
+        subtitle: t("exportSubtitle", {
+          district: project.districtName,
+          from: panes[0].dayLabel,
+          to: panes.at(-1)!.dayLabel,
+          date: new Date().toLocaleDateString(intlLocale(locale), { timeZone: "Asia/Kolkata" }),
+          app: tApp("name"),
+        }),
+        caption: (im) => t("exportCaption", { source: labels.source[im.source], progress: im.reportedProgress }),
         images: panes,
         view,
         diffs: panes.map((p, i) => (i === 0 ? null : diffs[`${baseline.id}>${p.id}`] ?? null)),
@@ -160,7 +174,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     } catch {
-      toast.error("Couldn't create the image");
+      toast.error(t("exportFailed"));
     } finally {
       setExporting(false);
     }
@@ -180,14 +194,14 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
       ref={rootRef}
       role="dialog"
       aria-modal="true"
-      aria-label={`Compare imagery — ${project.name}`}
+      aria-label={t("dialogLabel", { project: project.name })}
       className="fixed inset-0 z-[45] flex flex-col bg-slate-950 text-white"
     >
       {/* Top bar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-3 py-2">
         <div className="min-w-0 basis-full sm:flex-1 sm:basis-auto">
           <select
-            aria-label="Project"
+            aria-label={t("project")}
             value={project.id}
             onChange={(e) => router.push(`${basePath}/project/${e.target.value}/compare`)}
             className="w-full truncate rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-sm font-semibold text-white sm:w-auto sm:max-w-full"
@@ -205,23 +219,23 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
           {baseline && (
             <div className="mt-0.5 truncate text-xs text-white/60">
               {project.districtName} · {baseline.dayLabel} → {panes.at(-1)!.dayLabel}
-              {gapMonths > 0 && ` · ${gapMonths} month${gapMonths === 1 ? "" : "s"} apart`} · reported progress {baseline.reportedProgress}% →{" "}
-              {panes.at(-1)!.reportedProgress}%
+              {gapMonths > 0 && ` · ${t("monthsApart", { count: gapMonths })}`} ·{" "}
+              {t("reportedProgress", { from: baseline.reportedProgress, to: panes.at(-1)!.reportedProgress })}
             </div>
           )}
         </div>
 
-        <div className="flex items-center gap-0.5 rounded-lg bg-white/5 p-0.5" role="group" aria-label="Zoom">
-          <button type="button" className={iconBtn} onClick={() => setView((v) => zoomAt(v, 0.5, 0.5, 1 / 1.4))} disabled={view.s <= 1} aria-label="Zoom out">
+        <div className="flex items-center gap-0.5 rounded-lg bg-white/5 p-0.5" role="group" aria-label={t("zoom")}>
+          <button type="button" className={iconBtn} onClick={() => setView((v) => zoomAt(v, 0.5, 0.5, 1 / 1.4))} disabled={view.s <= 1} aria-label={t("zoomOut")}>
             <MinusIcon className="size-4" />
           </button>
           <span className="w-12 text-center text-xs tabular-nums text-white/80" aria-live="polite">
             {Math.round(view.s * 100)}%
           </span>
-          <button type="button" className={iconBtn} onClick={() => setView((v) => zoomAt(v, 0.5, 0.5, 1.4))} disabled={view.s >= MAX_SCALE} aria-label="Zoom in">
+          <button type="button" className={iconBtn} onClick={() => setView((v) => zoomAt(v, 0.5, 0.5, 1.4))} disabled={view.s >= MAX_SCALE} aria-label={t("zoomIn")}>
             <PlusIcon className="size-4" />
           </button>
-          <button type="button" className={iconBtn} onClick={() => setView(() => IDENTITY)} disabled={view.s === 1} aria-label="Reset zoom">
+          <button type="button" className={iconBtn} onClick={() => setView(() => IDENTITY)} disabled={view.s === 1} aria-label={t("resetZoom")}>
             <RotateCcwIcon className="size-4" />
           </button>
         </div>
@@ -230,11 +244,11 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
           <label className="flex cursor-pointer items-center gap-2 text-sm">
             <input type="checkbox" checked={showChanges} onChange={(e) => setShowChanges(e.target.checked)} className="size-4 accent-red-500" />
             <ScanEyeIcon className="size-4 text-red-300" />
-            Show changes
+            {t("showChanges")}
           </label>
           {showChanges && (
             <label className="flex items-center gap-1.5 text-xs text-white/70">
-              Sensitivity
+              {t("sensitivity")}
               <input
                 type="range"
                 min={0}
@@ -242,7 +256,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
                 value={sensitivity}
                 onChange={(e) => setSensitivity(Number(e.target.value))}
                 className="w-20 accent-red-500"
-                aria-label="Change sensitivity"
+                aria-label={t("sensitivityLabel")}
               />
             </label>
           )}
@@ -251,7 +265,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
         <div className="flex items-center gap-1">
           <button type="button" className={btn} onClick={download} disabled={exporting || panes.length < 2}>
             {exporting ? <LoaderCircleIcon className="size-4 animate-spin" /> : <DownloadIcon className="size-4" />}
-            <span className="hidden lg:inline">Download</span>
+            <span className="hidden lg:inline">{t("download")}</span>
           </button>
           {canVerify && panes.length >= 2 && (
             <VerificationDialog projectId={project.id} stateSlug={stateSlug} images={panes} previous={previousVerifications} />
@@ -260,11 +274,11 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
             type="button"
             className={iconBtn}
             onClick={() => (document.fullscreenElement ? document.exitFullscreen() : rootRef.current?.requestFullscreen())}
-            aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+            aria-label={fullscreen ? t("exitFullscreen") : t("fullscreen")}
           >
             {fullscreen ? <MinimizeIcon className="size-4" /> : <MaximizeIcon className="size-4" />}
           </button>
-          <button type="button" className={iconBtn} onClick={close} aria-label="Close comparison">
+          <button type="button" className={iconBtn} onClick={close} aria-label={t("close")}>
             <XIcon className="size-5" />
           </button>
         </div>
@@ -291,16 +305,15 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
 
       {showChanges && (
         <p className="px-3 pb-1 text-center text-[11px] text-white/50">
-          Red marks pixels that differ from the earliest image. It&apos;s a simple pixel comparison — different zoom, angle,
-          season or lighting also show as change, so it works best with captures of the same framing.
+          {t("changesNote")}
         </p>
       )}
 
       {/* Image picker */}
       <div className="border-t border-white/10 px-3 py-2">
         <div className="mb-1.5 flex items-center justify-between text-xs text-white/60">
-          <span>Choose 2–{MAX} images to compare · scroll or pinch to zoom, drag to move · double-click to zoom in/out</span>
-          <span className="hidden sm:inline">{selected.length} selected</span>
+          <span>{t("pickerHint", { max: MAX })}</span>
+          <span className="hidden sm:inline">{t("selected", { count: selected.length })}</span>
         </div>
         <ul className="flex gap-2 overflow-x-auto pb-1">
           {images.map((im) => {
@@ -329,7 +342,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
                     <span className="block font-medium">{im.dayLabel}</span>
                     <span className="flex items-center gap-1 text-white/60">
                       <meta.icon className="size-3" style={{ color: meta.color }} />
-                      {meta.label}
+                      {labels.source[im.source]}
                     </span>
                   </span>
                 </button>

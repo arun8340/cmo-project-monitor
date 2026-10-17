@@ -33,12 +33,12 @@ export function classifyHealth(c: StatusCounts): Health {
   return "good";
 }
 
-/** Status colours (fixed; always shown with a text label, never colour alone). */
-export const HEALTH_STYLE: Record<Health, { color: string; label: string; description: string }> = {
-  good: { color: "#0ca30c", label: "On track", description: "No delayed or stalled projects" },
-  warning: { color: "#fab219", label: "Some delays", description: "At least one project delayed" },
-  critical: { color: "#d03b3b", label: "Needs attention", description: "Stalled work, or several projects behind schedule" },
-  none: { color: "#cbd5e1", label: "No projects", description: "No projects in view" },
+/** Status colours (fixed; always shown with a text label — "map.health.*" messages — never colour alone). */
+export const HEALTH_STYLE: Record<Health, { color: string }> = {
+  good: { color: "#0ca30c" },
+  warning: { color: "#fab219" },
+  critical: { color: "#d03b3b" },
+  none: { color: "#cbd5e1" },
 };
 
 /** Colours for project-status breakdowns (status colours + neutrals). */
