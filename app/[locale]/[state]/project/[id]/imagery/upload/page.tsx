@@ -52,7 +52,7 @@ async function Upload({ params }: { params: Params["params"] }) {
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {projectName}. {t("permanent")}
         </p>

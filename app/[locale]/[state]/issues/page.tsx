@@ -62,7 +62,7 @@ async function Issues({ params, searchParams }: { params: Params["params"]; sear
     <div className="grid gap-5">
       <Breadcrumbs items={[{ label: localName(locale, state.name, state.nameLocal), href: basePath || "/" }, { label: t("title") }]} />
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
           <CircleAlertIcon className="size-6 text-muted-foreground" />
           {t("title")}
         </h1>
@@ -155,27 +155,27 @@ async function Issues({ params, searchParams }: { params: Params["params"]; sear
         <>
           <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <table className="w-full text-sm">
-              <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
+              <thead className="border-b bg-[#faf8f3] text-left text-[13px] text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">{t("issue")}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("project")}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("priority")}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("status")}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("raisedCol")}</th>
-                  <th className="px-4 py-2.5 font-medium">{t("meeting")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("issue")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("project")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("priority")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("status")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("raisedCol")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("meeting")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {rows.map((r) => (
-                  <tr key={r.id} className="align-top hover:bg-muted/30">
+                  <tr key={r.id} className="align-top hover:bg-[#faf8f3]">
                     <td className="max-w-80 px-4 py-3">
-                      <Link href={`${listPath}/${r.id}`} className="font-medium hover:underline">
+                      <Link href={`${listPath}/${r.id}`} className="font-semibold text-navy hover:underline">
                         {r.title}
                       </Link>
                       {r.raisedBy && <div className="text-xs text-muted-foreground">{tc("by", { name: r.raisedBy })}</div>}
                     </td>
                     <td className="max-w-72 px-4 py-3">
-                      <Link href={`${basePath}/project/${r.project.id}`} className="hover:underline">
+                      <Link href={`${basePath}/project/${r.project.id}`} className="font-semibold text-link hover:text-navy hover:underline">
                         {r.project.name}
                       </Link>
                       <div className="text-xs text-muted-foreground">

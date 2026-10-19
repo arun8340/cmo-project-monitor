@@ -195,7 +195,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
       role="dialog"
       aria-modal="true"
       aria-label={t("dialogLabel", { project: project.name })}
-      className="fixed inset-0 z-[45] flex flex-col bg-slate-950 text-white"
+      className="fixed inset-0 z-[45] flex flex-col bg-navy text-white"
     >
       {/* Top bar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-white/10 px-3 py-2">
@@ -204,7 +204,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
             aria-label={t("project")}
             value={project.id}
             onChange={(e) => router.push(`${basePath}/project/${e.target.value}/compare`)}
-            className="w-full truncate rounded-md border border-white/15 bg-slate-900 px-2 py-1 text-sm font-semibold text-white sm:w-auto sm:max-w-full"
+            className="w-full truncate rounded-md border border-white/15 bg-navy-soft px-2 py-1 text-sm font-semibold text-white sm:w-auto sm:max-w-full"
           >
             {byDistrict.map(([district, list]) => (
               <optgroup key={district} label={district}>
@@ -299,6 +299,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
             changedShare={shares[p.id] ?? null}
             onChangedShare={shareSetters[p.id]}
             baselineLabel={i === 0 ? null : baseline.dayLabel}
+            role={i === 0 ? "before" : i === panes.length - 1 ? "after" : null}
           />
         ))}
       </div>
@@ -338,7 +339,7 @@ export function CompareView({ project, stateSlug, basePath, images, initialSelec
                     </span>
                   )}
                   {on && <CheckIcon className="absolute top-1 right-1 size-4 rounded-full bg-white p-0.5 text-slate-900" />}
-                  <span className="block bg-slate-900 px-1.5 py-1 text-[11px] leading-tight">
+                  <span className="block bg-navy-soft px-1.5 py-1 text-[11px] leading-tight">
                     <span className="block font-medium">{im.dayLabel}</span>
                     <span className="flex items-center gap-1 text-white/60">
                       <meta.icon className="size-3" style={{ color: meta.color }} />

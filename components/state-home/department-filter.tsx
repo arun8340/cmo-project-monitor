@@ -26,11 +26,11 @@ export function DepartmentFilter({ basePath, departments, selected, totalProject
       title={title}
       aria-current={active ? "page" : undefined}
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-        active ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted"
+        active ? "border-navy bg-navy font-semibold text-white" : "bg-card text-foreground hover:bg-muted"
       }`}
     >
       {label}
-      <span className={active ? "text-background/70" : "text-muted-foreground"}>{count}</span>
+      <span className={active ? "text-white/70" : "text-muted-foreground"}>{count}</span>
     </Link>
   );
 

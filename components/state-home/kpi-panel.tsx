@@ -1,112 +1,135 @@
 import Link from "next/link";
-import { AlertTriangleIcon, CheckCircle2Icon, ClipboardListIcon, ScrollTextIcon } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PROJECT_STATUS_COLOR } from "@/lib/district-health";
-import type { StateOverview } from "@/lib/data/state-overview";
 import { useLocale, useTranslations } from "next-intl";
+import { Panel, PanelLink, StatCard } from "@/components/app-shell/page-parts";
+import { IssueStatusBadge, pill, TONE_PILL } from "@/components/workflow/badges";
+import type { StateOverview } from "@/lib/data/state-overview";
+import type { IssueStatus } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
+import { localName } from "@/lib/i18n/names";
 
-/** `basePath` prefixes links to the issue / directive lists ("" on a state portal). */
-export function KpiPanel({ overview, basePath }: { overview: StateOverview; basePath: string }) {
-  const { totals, issues, directives } = overview;
+const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
+
+/** The headline numbers across the top of the state dashboard. */
+export function KpiRow({ overview, basePath }: { overview: StateOverview; basePath: string }) {
   const t = useTranslations("kpi");
-  const ts = useTranslations("enums.projectStatus");
-  const locale = useLocale();
-  const breakdown = [
-    { key: "completed", label: ts("COMPLETED"), value: totals.completed },
-    { key: "ongoing", label: ts("ONGOING"), value: totals.ongoing },
-    { key: "delayed", label: ts("DELAYED"), value: totals.delayed },
-    { key: "stalled", label: ts("STALLED"), value: totals.stalled },
-    { key: "notStarted", label: ts("NOT_STARTED"), value: totals.notStarted },
-  ] as const;
-
+  const { totals, issues } = overview;
+  const behind = totals.delayed + totals.stalled;
   return (
-    <div className="grid content-start gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <ClipboardListIcon className="size-4" />
-            {t("projects")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="text-5xl font-semibold tracking-tight">{totals.total}</div>
-
-          {totals.total > 0 && (
-            <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={t("byStatus")}>
-              {breakdown
-                .filter((b) => b.value > 0)
-                .map((b) => (
-                  <span
-                    key={b.key}
-                    className="h-full first:rounded-l-full last:rounded-r-full"
-                    style={{ flexGrow: b.value, backgroundColor: PROJECT_STATUS_COLOR[b.key] }}
-                    title={`${b.label}: ${b.value}`}
-                  />
-                ))}
-            </div>
-          )}
-
-          <ul className="grid gap-1.5 text-sm">
-            {breakdown.map((b) => (
-              <li key={b.key} className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <span className="size-2.5 rounded-sm" style={{ backgroundColor: PROJECT_STATUS_COLOR[b.key] }} />
-                  {b.label}
-                </span>
-                <span className="font-medium tabular-nums">{b.value}</span>
-              </li>
-            ))}
-          </ul>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <CheckCircle2Icon className="size-4" />
-            {t("lastMeeting")}
-            {issues.lastMeetingDate && <span className="ml-auto font-normal">{formatDate(issues.lastMeetingDate, locale)}</span>}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3">
-          <div className="grid grid-cols-2 gap-3">
-            <Tile label={t("pendingIssues")} value={issues.pendingAtLastMeeting} href={`${basePath}/issues`} />
-            <Tile label={t("resolvedIssues")} value={issues.resolvedAtLastMeeting} href={`${basePath}/issues?status=resolved`} />
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {issues.lastMeetingDate ? t("openTotal", { count: issues.openTotal }) : t("noMeetings")}
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <ScrollTextIcon className="size-4" />
-            {t("directives")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-3">
-          <Tile label={t("open")} value={directives.open} href={`${basePath}/directives`} />
-          <Tile label={t("overdue")} value={directives.overdue} alert={directives.overdue > 0} href={`${basePath}/directives?tab=overdue`} />
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+      <StatCard label={t("totalProjects")} value={totals.total} hint={t("acrossDepartments", { count: overview.departments.length })} />
+      <StatCard label={t("completed")} value={totals.completed} tone="ok" hint={t("ofTotal", { percent: pct(totals.completed, totals.total) })} />
+      <StatCard label={t("ongoing")} value={totals.ongoing} tone="info" hint={t("ofTotal", { percent: pct(totals.ongoing, totals.total) })} />
+      <StatCard label={t("delayedStalled")} value={behind} tone="bad" hint={t("behindSchedule")} />
+      <StatCard
+        label={t("openIssues")}
+        value={issues.openTotal}
+        tone="warn"
+        hint={issues.lastMeetingDate ? t("pendingAtMeeting", { count: issues.pendingAtLastMeeting }) : t("noMeetings")}
+        href={`${basePath}/issues`}
+      />
     </div>
   );
 }
 
-function Tile({ label, value, alert, href }: { label: string; value: number; alert?: boolean; href: string }) {
+/** Right-hand column: last review meeting, projects by department, latest directives. */
+export function DashboardSide({ overview, basePath }: { overview: StateOverview; basePath: string }) {
+  const t = useTranslations("kpi");
+  const locale = useLocale();
+  const ln = (n: { name: string; nameLocal: string | null } | null) => (n ? localName(locale, n.name, n.nameLocal) : "");
+  const { issues, directives, recentIssues, recentDirectives } = overview;
+  const maxDept = Math.max(1, ...overview.departments.map((d) => d.projects));
+  const departments = [...overview.departments].sort((a, b) => b.projects - a.projects);
+
   return (
-    <Link
-      href={href}
-      className={`block rounded-lg border p-3 transition hover:shadow-sm ${alert ? "border-red-200 bg-red-50 hover:bg-red-100/70" : "bg-muted/30 hover:bg-muted/60"}`}
-    >
-      <div className="text-2xl font-semibold">{value}</div>
-      <div className={`flex items-center gap-1 text-xs ${alert ? "text-red-700" : "text-muted-foreground"}`}>
-        {alert && <AlertTriangleIcon className="size-3.5" />}
-        {label}
-      </div>
-    </Link>
+    <div className="grid content-start gap-4">
+      <Panel
+        title={t("lastMeeting")}
+        action={issues.lastMeetingDate && <span className="text-sm text-muted-foreground">{formatDate(issues.lastMeetingDate, locale)}</span>}
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <Link href={`${basePath}/issues`} className="rounded-lg bg-warn-soft p-3 transition hover:brightness-[0.98]">
+            <div className="text-[28px] leading-none font-bold text-warn">{issues.pendingAtLastMeeting}</div>
+            <div className="mt-1.5 text-[13px] font-semibold text-warn">{t("pendingIssues")}</div>
+          </Link>
+          <Link href={`${basePath}/issues?status=resolved`} className="rounded-lg bg-ok-soft p-3 transition hover:brightness-[0.98]">
+            <div className="text-[28px] leading-none font-bold text-ok">{issues.resolvedAtLastMeeting}</div>
+            <div className="mt-1.5 text-[13px] font-semibold text-ok">{t("resolvedIssues")}</div>
+          </Link>
+        </div>
+        {!issues.lastMeetingDate && <p className="mt-3 text-[13px] text-muted-foreground">{t("noMeetings")}</p>}
+        {recentIssues.length > 0 && (
+          <ul className="mt-3 divide-y border-t">
+            {recentIssues.map((i) => (
+              <li key={i.id} className="py-2.5">
+                <Link href={`${basePath}/issues/${i.id}`} className="text-sm leading-snug font-semibold text-navy hover:underline">
+                  {i.title} – {ln(i.project)}
+                </Link>
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted-foreground">
+                  {ln(i.department)} · {ln(i.district)} · <IssueStatusBadge status={i.status as IssueStatus} />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-1">
+          <PanelLink href={`${basePath}/issues`}>{t("viewAll")}</PanelLink>
+        </div>
+      </Panel>
+
+      {departments.length > 1 && (
+        <Panel title={t("byDepartment")}>
+          <ul className="grid gap-3">
+            {departments.map((d) => (
+              <li key={d.code}>
+                <Link href={`${basePath || "/"}?dept=${d.code.toLowerCase()}`} className="group block" scroll={false}>
+                  <div className="flex items-baseline justify-between text-sm">
+                    <span className="group-hover:underline">{localName(locale, d.name, d.nameLocal)}</span>
+                    <span className="font-bold text-navy tabular-nums">{d.projects}</span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                    <div className="h-full rounded-full bg-info" style={{ width: `${(d.projects / maxDept) * 100}%` }} />
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Panel>
+      )}
+
+      <Panel title={t("directivesTitle")}>
+        {recentDirectives.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t("noOpenDirectives")}</p>
+        ) : (
+          <ul className="divide-y border-t">
+            {recentDirectives.map((d) => {
+              const target = [ln(d.district), ln(d.department)].filter(Boolean).join(" · ");
+              return (
+                <li key={d.id} className="flex items-start justify-between gap-3 py-2.5">
+                  <div className="min-w-0">
+                    <Link href={`${basePath}/directives/${d.id}`} className="line-clamp-2 text-sm leading-snug font-semibold text-navy hover:underline">
+                      {d.text}
+                    </Link>
+                    <div className="mt-0.5 text-[13px] text-muted-foreground">{[d.owner, target].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  {d.dueDate && (
+                    <span className={`${pill} shrink-0 ${d.overdue ? TONE_PILL.bad : TONE_PILL.info}`}>
+                      {d.overdue ? t("overdueOn", { date: formatDate(d.dueDate, locale) }) : t("dueOn", { date: formatDate(d.dueDate, locale) })}
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+        <div className="mt-1 flex items-center justify-between">
+          <PanelLink href={`${basePath}/directives`}>{t("viewAll")}</PanelLink>
+          {directives.overdue > 0 && (
+            <Link href={`${basePath}/directives?tab=overdue`} className={`${pill} ${TONE_PILL.bad}`}>
+              {t("overdueCount", { count: directives.overdue })}
+            </Link>
+          )}
+        </div>
+      </Panel>
+    </div>
   );
 }

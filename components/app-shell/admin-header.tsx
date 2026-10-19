@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { AppHeader } from "./app-header";
 import { NavLinks, StateNav, type NavItem } from "./state-nav";
 
@@ -17,9 +18,18 @@ export function AdminHeader() {
       nav={
         // The highlight depends on the URL, which dynamic pages only know at request time.
         <Suspense fallback={<NavLinks items={ITEMS} pathname={null} />}>
-          <StateNav items={ITEMS} />
+          <RequestNav />
         </Suspense>
       }
     />
   );
+}
+
+/**
+ * Rendered per request: in the static shell the tabs can't know the current
+ * page, so without this the highlight never appears.
+ */
+async function RequestNav() {
+  await connection();
+  return <StateNav items={ITEMS} />;
 }

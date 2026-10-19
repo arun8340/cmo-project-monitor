@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { LandmarkIcon, SatelliteIcon, ClipboardCheckIcon, MapIcon, ShieldIcon } from "lucide-react";
+import { SatelliteIcon, ClipboardCheckIcon, MapIcon, ShieldIcon } from "lucide-react";
+import { APP_NAMES, BrandMark } from "@/components/app-shell/brand";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
@@ -40,76 +41,52 @@ async function PortalLogin() {
   const [t, locale] = await Promise.all([getTranslations("login"), getLocale()]);
   const state = portal.kind === "state" ? STATES[portal.stateCode] : null;
   const stateName = state ? localName(locale, state.name, state.nameLocal) : "";
-  const accent = state?.theme.primary ?? "#0f172a";
   const demoAccounts = DEMO_ACCOUNTS.filter((a) => a.portal === portal.id);
 
   return (
     <>
-      <section className="relative hidden flex-col justify-between overflow-hidden bg-slate-900 p-10 text-slate-100 lg:flex">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "linear-gradient(to right, white 1px, transparent 1px), linear-gradient(to bottom, white 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-          }}
-        />
-        <span aria-hidden className="absolute inset-x-0 top-0 h-1.5" style={{ backgroundColor: accent }} />
-        <div className="relative flex items-center gap-2.5 text-sm font-medium tracking-wide">
-          <LandmarkIcon className="size-5" />
-          {state ? (
-            <>
-              {t("cmOffice", { state: stateName })}
-              {locale === "en" && <span className="font-normal text-slate-400">{state.nameLocal}</span>}
-            </>
-          ) : (
-            t("adminOffice")
-          )}
+      <section className="relative hidden flex-col justify-between overflow-hidden bg-navy p-12 text-white lg:flex">
+        <div className="relative flex items-center gap-3">
+          <BrandMark className="size-10" />
+          <span className="text-lg font-bold">{state ? t("cmOffice", { state: stateName }) : t("adminOffice")}</span>
         </div>
 
-        <div className="relative max-w-md">
-          <h1 className="text-3xl font-semibold leading-tight">{state ? t("headlineState", { state: stateName }) : t("headline")}</h1>
-          <p className="mt-3 text-slate-300">{t("tagline")}</p>
-          <ul className="mt-8 grid gap-4">
+        <div className="relative max-w-xl">
+          <h1 className="text-[44px] leading-[1.1] font-bold tracking-tight text-[#f3f1ea]">{t("heroTitle")}</h1>
+          <p className="mt-5 text-lg leading-relaxed text-white/80">{t("heroBody")}</p>
+          <p className="mt-4 font-semibold text-amber">{state ? `${APP_NAMES[state.locale]} · ${APP_NAMES.en}` : `${APP_NAMES.hi} · ${APP_NAMES.mr}`}</p>
+          <ul className="mt-8 grid gap-3">
             {FEATURES.map(({ icon: Icon, key }) => (
-              <li key={key} className="flex items-start gap-3 text-sm text-slate-200">
-                <Icon className="mt-0.5 size-4 shrink-0 text-slate-400" />
+              <li key={key} className="flex items-start gap-3 text-[15px] text-white/85">
+                <Icon className="mt-0.5 size-4 shrink-0 text-amber" />
                 {t(key)}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="relative flex gap-6 text-sm text-slate-400">
-          {state ? (
-            <span className="flex items-center gap-2">
-              <span className="size-2 rounded-full" style={{ backgroundColor: accent }} />
-              {state.name} · {state.nameLocal}
-            </span>
-          ) : (
-            STATE_CODES.map((code) => (
-              <span key={code} className="flex items-center gap-2">
-                <span className="size-2 rounded-full" style={{ backgroundColor: STATES[code].theme.primary }} />
-                {STATES[code].name}
-              </span>
-            ))
-          )}
+        <div className="relative flex gap-10">
+          {(state ? [state] : STATE_CODES.map((c) => STATES[c])).map((st) => (
+            <div key={st.code}>
+              <div className="font-bold">{st.government.name}</div>
+              <div className="text-sm text-white/70">{st.government.nameLocal}</div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <section className="flex flex-col px-4 py-6 sm:px-8">
+      <section className="flex flex-col bg-background px-4 py-6 sm:px-8">
         <div className="flex min-h-7 justify-end">
           <LanguageSwitcher locales={portalLocales(portal)} tone="light" />
         </div>
         <div className="flex flex-1 items-center justify-center py-6">
           <div className="w-full max-w-sm">
             <div className="mb-8">
-              <div className="mb-6 flex items-center gap-2 text-sm font-medium lg:hidden" style={{ color: accent }}>
-                <LandmarkIcon className="size-4" />
-                {state ? t("brandState", { state: stateName }) : t("brandAdmin")}
+              <div className="mb-8 flex items-center gap-3 rounded-xl bg-navy p-3 text-white lg:hidden">
+                <BrandMark className="size-9" />
+                <span className="text-sm font-bold">{state ? t("brandState", { state: stateName }) : t("brandAdmin")}</span>
               </div>
-              <h2 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <h2 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
                 {!state && <ShieldIcon className="size-5 text-muted-foreground" />}
                 {state ? t("signIn") : t("adminSignIn")}
               </h2>
@@ -128,7 +105,7 @@ async function PortalLogin() {
 function LoginSkeleton() {
   return (
     <>
-      <section className="hidden bg-slate-900 lg:block" />
+      <section className="hidden bg-navy lg:block" />
       <section className="flex items-center justify-center px-4 py-10 sm:px-8">
         <div className="grid w-full max-w-sm gap-4">
           <Skeleton className="h-8 w-32" />

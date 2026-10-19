@@ -28,9 +28,9 @@ async function ChangePassword() {
   return (
     <>
       <AppHeader state={state} homeHref={home} />
-      <main className="flex flex-1 justify-center bg-muted/30 px-4 py-10">
+      <main className="flex flex-1 justify-center bg-background px-4 py-10">
         <div className="w-full max-w-md">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
             <KeyRoundIcon className="size-6 text-muted-foreground" />
             {user.mustChangePassword ? t("chooseTitle") : t("changeTitle")}
           </h1>

@@ -38,7 +38,7 @@ async function Activity({ params, searchParams }: { params: Params["params"]; se
     <div className="grid gap-5">
       <Breadcrumbs items={[{ label: stateName, href: basePath || "/" }, { label: t("title") }]} />
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
           <ScrollTextIcon className="size-6 text-muted-foreground" />
           {t("title")}
         </h1>

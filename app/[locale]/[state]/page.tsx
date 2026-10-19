@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordChangedToast } from "@/components/account/password-changed-toast";
 import { StateMapPanel } from "@/components/state-map/state-map-panel";
-import { KpiPanel } from "@/components/state-home/kpi-panel";
+import { DashboardSide, KpiRow } from "@/components/state-home/kpi-panel";
+import { PageHeader } from "@/components/app-shell/page-parts";
 import { DepartmentFilter } from "@/components/state-home/department-filter";
 import { requireStateAccess, type CurrentUser } from "@/lib/auth/dal";
 import { getStateOverview } from "@/lib/data/state-overview";
@@ -12,7 +13,7 @@ import type { Locale } from "@/lib/i18n/config";
 
 export default function StateHomePage({ params, searchParams }: PageProps<"/[locale]/[state]">) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+    <main className="mx-auto w-full max-w-7xl px-4 py-7">
       <Suspense>
         <PasswordChangedToast />
       </Suspense>
@@ -51,23 +52,24 @@ async function StateHome({
   const title = localNames(locale, state.name, state.nameLocal);
 
   return (
-    <div className="grid gap-4">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {title.primary} {title.secondary && <span className="font-normal text-muted-foreground">{title.secondary}</span>}
-          </h1>
-          <p className="text-sm text-muted-foreground">
+    <div className="grid gap-5">
+      <PageHeader
+        title={title.primary}
+        titleSecondary={title.secondary}
+        subtitle={
+          <>
             {scopeText(user, title.primary, t)}
             {overview.department && (
               <>
                 {" "}· {t("showing")}{" "}
-                <span className="font-medium text-foreground">{localName(locale, overview.department.name, overview.department.nameLocal)}</span>
+                <span className="font-semibold text-foreground">{localName(locale, overview.department.name, overview.department.nameLocal)}</span>
               </>
             )}
-          </p>
-        </div>
-      </div>
+          </>
+        }
+      />
+
+      <KpiRow overview={overview} basePath={basePath} />
 
       <DepartmentFilter
         basePath={basePath}
@@ -76,7 +78,7 @@ async function StateHome({
         totalProjects={allProjects}
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
         <StateMapPanel
           geojsonUrl={state.geojson}
           geoCodeProperty={state.geoCodeProperty}
@@ -86,7 +88,7 @@ async function StateHome({
           districts={overview.districts}
           styleKey={overview.department?.code ?? "all"}
         />
-        <KpiPanel overview={overview} basePath={basePath} />
+        <DashboardSide overview={overview} basePath={basePath} />
       </div>
     </div>
   );

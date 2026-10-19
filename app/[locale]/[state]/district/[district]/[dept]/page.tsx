@@ -5,6 +5,7 @@ import { CircleAlertIcon, PlusIcon, SearchXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
+import { PageHeader } from "@/components/app-shell/page-parts";
 import { StatusBadge } from "@/components/project/status-badge";
 import { ProgressCell } from "@/components/project/progress-cell";
 import { ListControls } from "@/components/project/list-controls";
@@ -78,29 +79,29 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
         ]}
       />
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {title}
-            {deptName?.secondary && <span className="ml-2 font-normal text-muted-foreground">{deptName.secondary}</span>}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+      <PageHeader
+        title={title}
+        titleSecondary={deptName?.secondary}
+        subtitle={
+          <>
             {t("summary", { district: districtName, count: counts.total })}
             {filters.q && <> {t("matching", { q: filters.q })}</>}
-          </p>
-        </div>
-        {canCreateProject(user) && (
-          <Button
-            nativeButton={false}
-            render={
-              <Link href={`${basePath}/project/new?district=${districtSlug}${department ? `&dept=${department.code.toLowerCase()}` : ""}`} />
-            }
-          >
-            <PlusIcon />
-            {t("addProject")}
-          </Button>
-        )}
-      </div>
+          </>
+        }
+        actions={
+          canCreateProject(user) && (
+            <Button
+              nativeButton={false}
+              render={
+                <Link href={`${basePath}/project/new?district=${districtSlug}${department ? `&dept=${department.code.toLowerCase()}` : ""}`} />
+              }
+            >
+              <PlusIcon />
+              {t("addProject")}
+            </Button>
+          )
+        }
+      />
 
       <div className="grid gap-3">
         <nav aria-label={t("filterByStatus")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
@@ -138,12 +139,12 @@ function Chip({ href, active, label, count, color }: { href: string; active: boo
       scroll={false}
       aria-current={active ? "page" : undefined}
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-        active ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted"
+        active ? "border-navy bg-navy font-semibold text-white" : "bg-card text-foreground hover:bg-muted"
       } ${count === 0 && !active ? "opacity-50" : ""}`}
     >
       {color && <span className="size-2 rounded-full" style={{ backgroundColor: color }} />}
       {label}
-      <span className={active ? "text-background/70" : "text-muted-foreground"}>{count}</span>
+      <span className={active ? "text-white/70" : "text-muted-foreground"}>{count}</span>
     </Link>
   );
 }
@@ -152,7 +153,7 @@ function ProjectName({ row, basePath, showDepartment }: { row: ProjectRow; baseP
   const name = localNames(useLocale(), row.name, row.nameLocal);
   return (
     <div className="min-w-0">
-      <Link href={`${basePath}/project/${row.id}`} className="font-medium hover:underline">
+      <Link href={`${basePath}/project/${row.id}`} className="font-semibold text-link hover:text-navy hover:underline">
         {name.primary}
       </Link>
       {name.secondary && <div className="truncate text-xs text-muted-foreground">{name.secondary}</div>}
@@ -167,20 +168,20 @@ function ProjectTable({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
   return (
     <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
       <table className="w-full text-sm">
-        <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
+        <thead className="border-b bg-[#faf8f3] text-left text-[13px] text-muted-foreground">
           <tr>
-            <th className="px-4 py-2.5 font-medium">{t("colProject")}</th>
-            <th className="px-4 py-2.5 font-medium">{t("colStatus")}</th>
-            <th className="px-4 py-2.5 font-medium">{t("colProgress")}</th>
-            <th className="px-4 py-2.5 text-right font-medium">{t("colBudget")}</th>
-            <th className="px-4 py-2.5 font-medium">{t("colTimeline")}</th>
-            <th className="px-4 py-2.5 font-medium">{t("colImagery")}</th>
-            <th className="px-4 py-2.5 text-right font-medium">{t("colIssues")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colProject")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colStatus")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colProgress")}</th>
+            <th className="px-4 py-3 text-right font-semibold">{t("colBudget")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colTimeline")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colImagery")}</th>
+            <th className="px-4 py-3 text-right font-semibold">{t("colIssues")}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {rows.map((r) => (
-            <tr key={r.id} className="align-top hover:bg-muted/30">
+            <tr key={r.id} className="align-top hover:bg-[#faf8f3]">
               <td className="max-w-80 px-4 py-3">
                 <ProjectName row={r} basePath={basePath} showDepartment={showDepartment} />
               </td>

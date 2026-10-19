@@ -57,7 +57,7 @@ async function Issue({ params }: { params: Params["params"] }) {
           <PriorityBadge priority={issue.priority as IssuePriority} />
           <IssueStatusBadge status={status} />
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">{issue.title}</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">{issue.title}</h1>
         <p className="text-sm text-muted-foreground">
           <Link href={`${basePath}/project/${p.id}`} className="font-medium text-foreground hover:underline">
             {localName(locale, p.name, p.nameLocal)}
@@ -87,7 +87,7 @@ async function Issue({ params }: { params: Params["params"] }) {
       </section>
 
       <section className="rounded-xl border bg-card p-5" aria-labelledby="history-heading">
-        <h2 id="history-heading" className="mb-4 font-medium">
+        <h2 id="history-heading" className="mb-4 text-lg font-bold text-navy">
           {t("history")}
         </h2>
         <Timeline entries={issue.updates} labels={labels.issueStatus} createdVerb={t("raised")} />

@@ -33,21 +33,25 @@ export function classifyHealth(c: StatusCounts): Health {
   return "good";
 }
 
-/** Status colours (fixed; always shown with a text label — "map.health.*" messages — never colour alone). */
-export const HEALTH_STYLE: Record<Health, { color: string }> = {
-  good: { color: "#0ca30c" },
-  warning: { color: "#fab219" },
-  critical: { color: "#d03b3b" },
-  none: { color: "#cbd5e1" },
+/**
+ * Health colours (always shown with a text label — "map.health.*" messages —
+ * never colour alone): `color` for dots and swatches, `fill` / `stroke` for the
+ * pastel map, `pill` for badges.
+ */
+export const HEALTH_STYLE: Record<Health, { color: string; fill: string; stroke: string; pill: string }> = {
+  good: { color: "#2f7a4b", fill: "#cfe8d7", stroke: "#8cc3a0", pill: "bg-ok-soft text-ok" },
+  warning: { color: "#e9a23b", fill: "#f7e2bc", stroke: "#e2bd7c", pill: "bg-warn-soft text-warn" },
+  critical: { color: "#a93232", fill: "#f4cfcf", stroke: "#dea0a0", pill: "bg-bad-soft text-bad" },
+  none: { color: "#cfc9bb", fill: "#ebe7dd", stroke: "#d6d0c2", pill: "bg-muted text-muted-foreground" },
 };
 
-/** Colours for project-status breakdowns (status colours + neutrals). */
+/** Colours for project-status breakdowns (bars, dots). */
 export const PROJECT_STATUS_COLOR = {
-  completed: "#0ca30c",
-  ongoing: "#475569",
-  delayed: "#fab219",
-  stalled: "#d03b3b",
-  notStarted: "#cbd5e1",
+  completed: "#2f7a4b",
+  ongoing: "#2c4f7c",
+  delayed: "#e9a23b",
+  stalled: "#a93232",
+  notStarted: "#d6d0c2",
 } as const;
 
 /** Same colours keyed by the stored project status. */

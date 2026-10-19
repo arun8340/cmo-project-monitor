@@ -14,13 +14,13 @@ export const metadata: Metadata = { title: "Portals" };
  */
 export default function PortalsPage() {
   return (
-    <main className="flex flex-1 items-center justify-center bg-muted/30 px-4 py-16">
+    <main className="flex flex-1 items-center justify-center bg-background px-4 py-16">
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <LandmarkIcon className="size-4" />
           CM Project Monitor · development
         </div>
-        <h1 className="text-2xl font-semibold tracking-tight">Choose a portal</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">Choose a portal</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Each state has its own address. Users can only sign in on their own state&apos;s portal.
         </p>

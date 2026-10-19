@@ -18,9 +18,9 @@ export default function SelectStatePage() {
       <Suspense>
         <PasswordChangedToast />
       </Suspense>
-      <main className="flex-1 bg-muted/30">
+      <main className="flex-1 bg-background">
         <div className="mx-auto w-full max-w-3xl px-4 py-12">
-          <h1 className="text-2xl font-semibold tracking-tight">Select a state</h1>
+          <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">Select a state</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             As an administrator you can work in any state. You can switch later from the user menu.
           </p>

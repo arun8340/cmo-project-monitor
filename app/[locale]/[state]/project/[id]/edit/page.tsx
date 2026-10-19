@@ -56,7 +56,7 @@ async function EditProject({ params }: { params: Params["params"] }) {
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("editTitle")}</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">{t("editTitle")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("editIntro")}</p>
       </div>
       <div className="rounded-xl border bg-card p-5">

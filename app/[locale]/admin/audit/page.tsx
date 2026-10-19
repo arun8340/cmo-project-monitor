@@ -12,7 +12,7 @@ export default function AuditPage({ searchParams }: PageProps<"/[locale]/admin/a
   return (
     <main className="mx-auto grid w-full max-w-6xl gap-5 px-4 py-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
           <ScrollTextIcon className="size-6 text-muted-foreground" />
           Audit log
         </h1>

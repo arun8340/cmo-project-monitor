@@ -72,7 +72,7 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
                       <img src={imageryUrl(item.id, "thumb")} alt={t("imageAlt", { source: labels.source[item.source], date: item.dayLabel })} loading="lazy" className="aspect-4/3 w-full bg-muted object-cover" />
                       <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
                         <span className="min-w-0">
-                          <span className="block font-medium">{item.dayLabel}</span>
+                          <span className="block font-bold text-navy">{item.dayLabel}</span>
                           <span className="flex items-center gap-1.5 text-muted-foreground">
                             <meta.icon className="size-3.5" style={{ color: meta.color }} />
                             {labels.source[item.source]}

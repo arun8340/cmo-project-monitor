@@ -105,7 +105,7 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
 
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
             <ImagesIcon className="size-6 text-muted-foreground" />
             {t("title")}
           </h1>
@@ -130,7 +130,7 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
       </div>
 
       <section className="rounded-xl border bg-card p-4" aria-labelledby="availability-heading">
-        <h2 id="availability-heading" className="mb-1 font-medium">
+        <h2 id="availability-heading" className="mb-1 text-lg font-bold text-navy">
           {t("availability")}
         </h2>
         <p className="mb-3 text-xs text-muted-foreground">{t("availabilityHint")}</p>
@@ -167,12 +167,12 @@ function Chip({ href, active, label, count, source }: { href: string; active: bo
       scroll={false}
       aria-current={active ? "page" : undefined}
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm transition-colors ${
-        active ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted"
+        active ? "border-navy bg-navy font-semibold text-white" : "bg-card text-foreground hover:bg-muted"
       } ${count === 0 && !active ? "opacity-50" : ""}`}
     >
       {Icon && <Icon className="size-3.5" style={{ color: active ? undefined : SOURCE_META[source!].color }} />}
       {label}
-      <span className={active ? "text-background/70" : "text-muted-foreground"}>{count}</span>
+      <span className={active ? "text-white/70" : "text-muted-foreground"}>{count}</span>
     </Link>
   );
 }

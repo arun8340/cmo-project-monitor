@@ -118,7 +118,9 @@
     "sessionEnded": "आपका खाता बदला गया है, इसलिए आपको साइन आउट कर दिया गया है। जारी रखने के लिए फिर से साइन इन करें।",
     "errorMissing": "अपना ईमेल और पासवर्ड दर्ज करें।",
     "errorInvalid": "ईमेल या पासवर्ड गलत है।",
-    "errorFailed": "साइन इन नहीं हो सका। कृपया फिर से प्रयास करें।"
+    "errorFailed": "साइन इन नहीं हो सका। कृपया फिर से प्रयास करें।",
+    "heroTitle": "हर परियोजना स्थल को देखें, केवल उसकी स्थिति रिपोर्ट नहीं।",
+    "heroBody": "मुख्यमंत्री कार्यालय के लिए जिलेवार परियोजना निगरानी, तारीख़वार उपग्रह, ड्रोन और स्थल चित्रों से सत्यापित।"
   },
   "account": {
     "changeTitle": "पासवर्ड बदलें",
@@ -159,7 +161,23 @@
     "noMeetings": "अभी तक कोई समीक्षा बैठक दर्ज नहीं है",
     "directives": "निर्देश",
     "open": "खुले",
-    "overdue": "समय-सीमा पार"
+    "overdue": "समय-सीमा पार",
+    "totalProjects": "कुल परियोजनाएँ",
+    "acrossDepartments": "{count, plural, one {# विभाग में} other {# विभागों में}}",
+    "completed": "पूर्ण",
+    "ofTotal": "कुल का {percent}%",
+    "ongoing": "प्रगति पर",
+    "delayedStalled": "विलंबित या रुकी हुई",
+    "behindSchedule": "नियोजित समय से पीछे",
+    "openIssues": "खुली समस्याएँ",
+    "pendingAtMeeting": "पिछली समीक्षा में {count} लंबित",
+    "viewAll": "सभी देखें",
+    "byDepartment": "विभाग अनुसार परियोजनाएँ",
+    "directivesTitle": "मुख्यमंत्री कार्यालय / मुख्य सचिव के निर्देश",
+    "noOpenDirectives": "कोई खुला निर्देश नहीं।",
+    "overdueOn": "समय-सीमा पार · {date}",
+    "dueOn": "नियत {date}",
+    "overdueCount": "{count} समय-सीमा पार"
   },
   "map": {
     "loading": "मानचित्र लोड हो रहा है…",
@@ -193,7 +211,9 @@
     },
     "clickToOpenProject": "परियोजना खोलने के लिए क्लिक करें",
     "siteStatus": "परियोजना स्थल की स्थिति",
-    "noSites": "आपके दृश्य में कोई परियोजना स्थल नहीं"
+    "noSites": "आपके दृश्य में कोई परियोजना स्थल नहीं",
+    "panelTitle": "जिले",
+    "panelHint": "रंग विलंबित या रुकी हुई परियोजनाओं का अनुपात दिखाता है। संख्या देखने के लिए होवर करें, खोलने के लिए क्लिक करें।"
   },
   "district": {
     "inView": "{count, plural, one {आपके दृश्य में # परियोजना} other {आपके दृश्य में # परियोजनाएँ}}",
@@ -205,7 +225,11 @@
     "projectSites": "परियोजना स्थल",
     "completedOngoing": "{completed} पूर्ण · {ongoing} प्रगति पर",
     "byStatus": "स्थिति के अनुसार परियोजनाएँ",
-    "behindCount": "{count} विलंबित / रुकी हुई"
+    "behindCount": "{count} विलंबित / रुकी हुई",
+    "title": "जिला {district}",
+    "collector": "कलेक्टर: {name}",
+    "projectsAcross": "{departments, plural, one {# विभाग} other {# विभागों}} में {count, plural, one {# परियोजना} other {# परियोजनाएँ}}",
+    "deptMeta": "{count, plural, one {# परियोजना} other {# परियोजनाएँ}}"
   },
   "projectList": {
     "allDepartments": "सभी विभाग",
@@ -325,7 +349,16 @@
     "owner": "उत्तरदायी {name}",
     "due": "नियत तिथि {date}",
     "recentActivity": "हाल की गतिविधि",
-    "noActivity": "कोई गतिविधि दर्ज नहीं।"
+    "noActivity": "कोई गतिविधि दर्ज नहीं।",
+    "behindBadge": "समय से पीछे",
+    "lastUpdateLabel": "अंतिम प्रगति अद्यतन",
+    "plannedVsReported": "नियोजित बनाम रिपोर्ट की गई प्रगति",
+    "planned": "नियोजित",
+    "reported": "रिपोर्ट की गई",
+    "pointsBehind": "नियोजित समय-सारणी से {points} अंक पीछे",
+    "siteImagery": "तिथि अनुसार स्थल चित्र",
+    "captures": "{count, plural, one {# चित्र} other {# चित्र}}",
+    "compareShort": "तुलना"
   },
   "chart": {
     "empty": "अभी तक कोई प्रगति दर्ज नहीं।",
@@ -563,7 +596,9 @@
     "paneProgress": "रिपोर्ट की गई प्रगति {progress}%",
     "comparing": "तुलना हो रही है…",
     "changedSince": "{date} से ≈ {percent}% परिवर्तन",
-    "imageAlt": "{source} चित्र, {date}"
+    "imageAlt": "{source} चित्र, {date}",
+    "before": "पहले",
+    "after": "बाद में"
   },
   "workflow": {
     "updated": "अद्यतन किया गया",

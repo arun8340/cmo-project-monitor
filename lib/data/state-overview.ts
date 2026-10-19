@@ -20,6 +20,19 @@ export type DistrictSummary = {
 
 export type DepartmentChip = { code: string; name: string; nameLocal: string; projects: number };
 
+type Named = { name: string; nameLocal: string | null };
+
+export type OverviewIssue = { id: string; title: string; status: string; priority: string; project: Named; district: Named; department: Named };
+export type OverviewDirective = {
+  id: string;
+  text: string;
+  dueDate: Date | null;
+  overdue: boolean;
+  owner: string | null;
+  district: Named | null;
+  department: Named | null;
+};
+
 export type StateOverview = {
   department: DepartmentChip | null;
   departments: DepartmentChip[];
@@ -27,6 +40,9 @@ export type StateOverview = {
   districts: DistrictSummary[];
   issues: { lastMeetingDate: Date | null; pendingAtLastMeeting: number; resolvedAtLastMeeting: number; openTotal: number };
   directives: { open: number; overdue: number };
+  /** A few open issues (highest priority first) and open directives (soonest due first) for the dashboard. */
+  recentIssues: OverviewIssue[];
+  recentDirectives: OverviewDirective[];
 };
 
 const COUNT_KEY: Record<ProjectStatus, keyof Omit<StatusCounts, "total">> = {
@@ -71,7 +87,8 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
     : directiveScope(user, code);
 
   const now = new Date();
-  const [districtRows, accessibleRows, grouped, lastMeeting, openIssues, openDirectives, overdueDirectives] = await Promise.all([
+  const named = { select: { name: true, nameLocal: true } } as const;
+  const [districtRows, accessibleRows, grouped, lastMeeting, openIssues, openDirectives, overdueDirectives, issueRows, directiveRows] = await Promise.all([
     db.district.findMany({ where: { state: { code } }, orderBy: { name: "asc" } }),
     db.district.findMany({ where: districtScope(user, code), select: { id: true } }),
     db.project.groupBy({ by: ["districtId", "status"], where: projectWhere, _count: true }),
@@ -83,7 +100,48 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
     db.issue.count({ where: { AND: [issueWhere, { status: OPEN_ISSUE }] } }),
     db.directive.count({ where: { AND: [directiveWhere, { status: OPEN_DIRECTIVE }] } }),
     db.directive.count({ where: { AND: [directiveWhere, { status: OPEN_DIRECTIVE }, { dueDate: { lt: now } }] } }),
+    db.issue.findMany({
+      where: { AND: [issueWhere, { status: OPEN_ISSUE }] },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        priority: true,
+        createdAt: true,
+        project: { select: { name: true, nameLocal: true, district: named, department: named } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
+    db.directive.findMany({
+      where: { AND: [directiveWhere, { status: OPEN_DIRECTIVE }] },
+      select: { id: true, text: true, dueDate: true, owner: { select: { name: true } }, district: named, department: named },
+      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
+      take: 3,
+    }),
   ]);
+  const PRIORITY_RANK: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+  const recentIssues: OverviewIssue[] = issueRows
+    .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9) || b.createdAt.getTime() - a.createdAt.getTime())
+    .slice(0, 3)
+    .map((i) => ({
+      id: i.id,
+      title: i.title,
+      status: i.status,
+      priority: i.priority,
+      project: { name: i.project.name, nameLocal: i.project.nameLocal },
+      district: i.project.district,
+      department: i.project.department,
+    }));
+  const recentDirectives: OverviewDirective[] = directiveRows.map((d) => ({
+    id: d.id,
+    text: d.text,
+    dueDate: d.dueDate,
+    overdue: !!d.dueDate && d.dueDate < now,
+    owner: d.owner?.name ?? null,
+    district: d.district,
+    department: d.department,
+  }));
 
   // "Pending issues of last meeting": raised at or before the last review
   // meeting and still open. "Resolved": closed on the day of that meeting.
@@ -137,5 +195,7 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
     districts,
     issues: { lastMeetingDate, pendingAtLastMeeting, resolvedAtLastMeeting, openTotal: openIssues },
     directives: { open: openDirectives, overdue: overdueDirectives },
+    recentIssues,
+    recentDirectives,
   };
 }

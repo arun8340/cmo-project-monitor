@@ -1,26 +1,33 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { ArrowRightIcon, ListIcon } from "lucide-react";
+import { ListIcon } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
+import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
+import { PageHeader, Panel, StatCard } from "@/components/app-shell/page-parts";
+import { pill } from "@/components/workflow/badges";
 import { DistrictMapPanel } from "@/components/district-map/district-map-panel";
 import { requireStateAccess } from "@/lib/auth/dal";
 import { getDistrictView, type DepartmentCard } from "@/lib/data/district";
 import { HEALTH_STYLE, PROJECT_STATUS_COLOR, type StatusCounts } from "@/lib/district-health";
-import { getLocale, getTranslations } from "next-intl/server";
-import { useLocale, useTranslations } from "next-intl";
+import { formatBudget } from "@/lib/format";
 import { localName, localNames } from "@/lib/i18n/names";
 
 export default function DistrictPage({ params }: PageProps<"/[locale]/[state]/district/[district]">) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+    <main className="mx-auto w-full max-w-7xl px-4 py-7">
       <Suspense fallback={<DistrictSkeleton />}>
         <District params={params} />
       </Suspense>
     </main>
   );
 }
+
+/** Short codes shown in the department tiles. */
+const DEPT_SHORT: Record<string, string> = { PWD: "PWD", METRO: "MET", DRAINAGE: "D&S", URBAN: "URB", RNB: "R&B", RURAL: "RUR", MGNREGA: "MGN" };
 
 async function District({ params }: { params: PageProps<"/[locale]/[state]/district/[district]">["params"] }) {
   const { state: stateParam, district: slug } = await params;
@@ -30,93 +37,68 @@ async function District({ params }: { params: PageProps<"/[locale]/[state]/distr
 
   const { district, totals } = view;
   const districtPath = `${basePath}/district/${slug}`;
-  const health = HEALTH_STYLE[view.health];
-  const [t, tm, locale] = await Promise.all([getTranslations("district"), getTranslations("map"), getLocale()]);
+  const [t, tm, tk, locale] = await Promise.all([getTranslations("district"), getTranslations("map"), getTranslations("kpi"), getLocale()]);
   const name = localNames(locale, district.name, district.nameLocal);
+  const withProjects = view.departments.filter((d) => d.counts.total > 0).length;
+  const pct = (n: number) => (totals.total ? Math.round((n / totals.total) * 100) : 0);
 
   return (
     <div className="grid gap-5">
       <Breadcrumbs items={[{ label: localName(locale, state.name, state.nameLocal), href: basePath || "/" }, { label: name.primary }]} />
 
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {name.primary} {name.secondary && <span className="font-normal text-muted-foreground">{name.secondary}</span>}
-          </h1>
-          <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="size-2.5 rounded-sm" style={{ backgroundColor: health.color }} />
-            {tm(`health.${view.health}.label`)} · {t("inView", { count: totals.total })}
-          </p>
+      <PageHeader
+        title={t("title", { district: name.primary })}
+        titleSecondary={name.secondary}
+        badges={<span className={`${pill} ${HEALTH_STYLE[view.health].pill}`}>{tm(`health.${view.health}.label`)}</span>}
+        subtitle={
+          <>
+            {view.collector && <>{t("collector", { name: view.collector })} · </>}
+            {t("projectsAcross", { count: totals.total, departments: withProjects })}
+          </>
+        }
+        actions={
+          <Button variant="outline" nativeButton={false} render={<Link href={`${districtPath}/all`} />}>
+            <ListIcon />
+            {t("allProjects")}
+          </Button>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <StatCard label={t("total")} value={totals.total} />
+        <StatCard label={tk("completed")} value={totals.completed} tone="ok" hint={tk("ofTotal", { percent: pct(totals.completed) })} />
+        <StatCard label={tk("ongoing")} value={totals.ongoing} tone="info" hint={tk("ofTotal", { percent: pct(totals.ongoing) })} />
+        <StatCard label={tk("delayedStalled")} value={totals.delayed + totals.stalled} tone="bad" />
+        <StatCard label={t("openIssues")} value={view.openIssues} tone="warn" href={`${basePath}/issues?district=${slug}`} />
+        <StatCard label={t("openDirectives")} value={view.openDirectives} href={`${basePath}/directives?district=${slug}`} />
+      </div>
+
+      <section aria-labelledby="departments-heading">
+        <h2 id="departments-heading" className="mb-3 text-lg font-bold text-navy">
+          {t("departments")}
+        </h2>
+        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {view.departments.map((d) => (
+            <li key={d.code}>
+              <DepartmentCardLink dept={d} href={`${districtPath}/${d.slug}`} />
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <Panel title={t("projectSites")} id="sites-heading">
+        <div className="h-96">
+          <DistrictMapPanel
+            geojsonUrl={state.geojson}
+            geoCodeProperty={state.geoCodeProperty}
+            geoCode={district.geoCode}
+            center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
+            pins={view.pins}
+            basePath={basePath}
+          />
         </div>
-        <Link
-          href={`${districtPath}/all`}
-          className="flex items-center gap-1.5 rounded-lg border bg-background px-3 py-1.5 text-sm hover:bg-muted"
-        >
-          <ListIcon className="size-4" />
-          {t("allProjects")}
-        </Link>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <Stat label={t("total")} value={totals.total} />
-        <Stat label={tm("completed")} value={totals.completed} color={PROJECT_STATUS_COLOR.completed} />
-        <Stat label={tm("ongoing")} value={totals.ongoing} color={PROJECT_STATUS_COLOR.ongoing} />
-        <Stat label={tm("delayedStalled")} value={totals.delayed + totals.stalled} color={PROJECT_STATUS_COLOR.stalled} />
-        <Stat label={t("openIssues")} value={view.openIssues} href={`${basePath}/issues?district=${slug}`} />
-        <Stat label={t("openDirectives")} value={view.openDirectives} href={`${basePath}/directives?district=${slug}`} />
-      </dl>
-
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
-        <section aria-labelledby="departments-heading">
-          <h2 id="departments-heading" className="mb-3 text-sm font-medium text-muted-foreground">
-            {t("departments")}
-          </h2>
-          <ul className="grid gap-3 sm:grid-cols-2">
-            {view.departments.map((d) => (
-              <li key={d.code}>
-                <DepartmentCardLink dept={d} href={`${districtPath}/${d.slug}`} />
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="sites-heading" className="flex min-h-96 flex-col">
-          <h2 id="sites-heading" className="mb-3 text-sm font-medium text-muted-foreground">
-            {t("projectSites")}
-          </h2>
-          <div className="flex-1">
-            <DistrictMapPanel
-              geojsonUrl={state.geojson}
-              geoCodeProperty={state.geoCodeProperty}
-              geoCode={district.geoCode}
-              center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
-              pins={view.pins}
-              basePath={basePath}
-            />
-          </div>
-        </section>
-      </div>
+      </Panel>
     </div>
-  );
-}
-
-function Stat({ label, value, color, href }: { label: string; value: number; color?: string; href?: string }) {
-  const body = (
-    <>
-      <dt className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        {color && <span className="size-2 rounded-full" style={{ backgroundColor: color }} />}
-        {label}
-      </dt>
-      <dd className="text-2xl font-semibold">{value}</dd>
-    </>
-  );
-  const cls = "flex flex-col-reverse rounded-lg border bg-background p-3";
-  return href ? (
-    <Link href={href} className={`${cls} transition hover:bg-muted/50 hover:shadow-sm`}>
-      {body}
-    </Link>
-  ) : (
-    <div className={cls}>{body}</div>
   );
 }
 
@@ -131,58 +113,58 @@ const SEGMENTS = [
 function DepartmentCardLink({ dept, href }: { dept: DepartmentCard; href: string }) {
   const c = dept.counts;
   const empty = c.total === 0;
-  const health = HEALTH_STYLE[dept.health];
   const t = useTranslations("district");
   const tm = useTranslations("map");
   const ts = useTranslations("enums.projectStatus");
-  const name = localNames(useLocale(), dept.name, dept.nameLocal);
+  const locale = useLocale();
+  const name = localNames(locale, dept.name, dept.nameLocal);
   return (
     <Link
       href={href}
       className={`group flex h-full flex-col gap-3 rounded-xl border bg-card p-4 transition focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none ${
-        empty ? "opacity-60 hover:opacity-80" : "shadow-xs hover:shadow-md"
+        empty ? "opacity-70 hover:opacity-90" : "hover:border-input hover:shadow-md"
       }`}
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
-          <div className="truncate font-medium">{name.primary}</div>
-          {name.secondary && <div className="truncate text-xs text-muted-foreground">{name.secondary}</div>}
+      <div className="flex items-start gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-info-soft text-[13px] font-bold text-info">
+          {DEPT_SHORT[dept.code] ?? dept.code.slice(0, 3)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="leading-snug font-bold text-navy group-hover:underline">{name.primary}</div>
+          <div className="text-[13px] text-muted-foreground">
+            {t("deptMeta", { count: c.total })}
+            {dept.budgetLakhs > 0 && <> · {formatBudget(dept.budgetLakhs, locale)}</>}
+          </div>
         </div>
-        <ArrowRightIcon className="size-4 shrink-0 text-muted-foreground transition group-hover:translate-x-0.5 group-hover:text-foreground" />
+        {!empty && <span className={`${pill} shrink-0 ${HEALTH_STYLE[dept.health].pill}`}>{tm(`health.${dept.health}.label`)}</span>}
       </div>
 
       {empty ? (
         <p className="text-sm text-muted-foreground">{tm("health.none.label")}</p>
       ) : (
         <>
-          <div className="flex items-baseline gap-4">
-            <span className="text-3xl font-semibold">{c.total}</span>
-            <span className="text-xs text-muted-foreground">
-              {t("completedOngoing", { completed: c.completed, ongoing: c.ongoing })}
-            </span>
-          </div>
-          <div className="flex h-1.5 gap-0.5 overflow-hidden rounded-full" role="img" aria-label={t("byStatus")}>
+          <div className="flex h-2 overflow-hidden rounded-full bg-muted" role="img" aria-label={t("byStatus")}>
             {SEGMENTS.filter((s) => c[s.key] > 0).map((s) => (
-              <span
-                key={s.key}
-                className="h-full first:rounded-l-full last:rounded-r-full"
-                style={{ flexGrow: c[s.key], backgroundColor: PROJECT_STATUS_COLOR[s.key] }}
-                title={`${ts(s.status)}: ${c[s.key]}`}
-              />
+              <span key={s.key} className="h-full" style={{ flexGrow: c[s.key], backgroundColor: PROJECT_STATUS_COLOR[s.key] }} title={`${ts(s.status)}: ${c[s.key]}`} />
             ))}
           </div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="size-2 rounded-sm" style={{ backgroundColor: health.color }} />
-              {tm(`health.${dept.health}.label`)}
-            </span>
-            {c.delayed + c.stalled > 0 && (
-              <span className="font-medium text-red-700">{t("behindCount", { count: c.delayed + c.stalled })}</span>
-            )}
-          </div>
+          <dl className="grid grid-cols-3 gap-2">
+            <Count label={ts("COMPLETED")} value={c.completed} className="text-ok" />
+            <Count label={ts("ONGOING")} value={c.ongoing} className="text-info" />
+            <Count label={ts("DELAYED")} value={c.delayed + c.stalled} className="text-bad" />
+          </dl>
         </>
       )}
     </Link>
+  );
+}
+
+function Count({ label, value, className }: { label: string; value: number; className: string }) {
+  return (
+    <div className="flex flex-col-reverse">
+      <dt className="truncate text-[13px] text-muted-foreground">{label}</dt>
+      <dd className={`text-lg leading-tight font-bold ${className}`}>{value}</dd>
+    </div>
   );
 }
 
@@ -193,12 +175,13 @@ function DistrictSkeleton() {
       <Skeleton className="h-12 w-72" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {Array.from({ length: 6 }, (_, i) => (
-          <Skeleton key={i} className="h-18" />
+          <Skeleton key={i} className="h-24" />
         ))}
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Skeleton className="h-96" />
-        <Skeleton className="h-96" />
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 8 }, (_, i) => (
+          <Skeleton key={i} className="h-40" />
+        ))}
       </div>
     </div>
   );

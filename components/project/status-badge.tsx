@@ -1,14 +1,17 @@
 import { useTranslations } from "next-intl";
 import type { ProjectStatus } from "@/lib/constants";
-import { STATUS_COLOR } from "@/lib/district-health";
+import { pill, TONE_PILL } from "@/components/workflow/badges";
 
-/** Status label in ink colour with a coloured dot — colour never carries meaning alone. */
+const STYLE: Record<ProjectStatus, string> = {
+  COMPLETED: TONE_PILL.ok,
+  ONGOING: TONE_PILL.info,
+  DELAYED: TONE_PILL.bad,
+  STALLED: TONE_PILL.stall,
+  NOT_STARTED: TONE_PILL.muted,
+};
+
+/** Project status as a soft pill with its label. */
 export function StatusBadge({ status }: { status: ProjectStatus }) {
   const t = useTranslations("enums.projectStatus");
-  return (
-    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border bg-background px-2 py-0.5 text-xs font-medium">
-      <span className="size-2 rounded-full" style={{ backgroundColor: STATUS_COLOR[status] }} />
-      {t(status)}
-    </span>
-  );
+  return <span className={`${pill} ${STYLE[status]}`}>{t(status)}</span>;
 }
