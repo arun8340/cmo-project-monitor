@@ -41,6 +41,8 @@ export type DepartmentCard = {
   nameLocal: string;
   counts: StatusCounts;
   health: Health;
+  /** Total sanctioned budget of the department's projects in view (₹ lakh). */
+  budgetLakhs: number;
 };
 
 export type ProjectPin = {
@@ -58,9 +60,11 @@ export async function getDistrictView(user: CurrentUser, state: StateConfig, slu
   if (!district) return null;
 
   const pWhere: Prisma.ProjectWhereInput = { AND: [projectScope(user, state.code), { districtId: district.id }] };
-  const [departments, grouped, pins, openIssues, openDirectives] = await Promise.all([
+  const [departments, grouped, budgets, collector, pins, openIssues, openDirectives] = await Promise.all([
     db.department.findMany({ where: departmentScope(user, state.code) }),
     db.project.groupBy({ by: ["departmentId", "status"], where: pWhere, _count: true }),
+    db.project.groupBy({ by: ["departmentId"], where: pWhere, _sum: { budgetLakhs: true } }),
+    db.user.findFirst({ where: { active: true, districtId: district.id, role: { key: "DISTRICT_COLLECTOR" } }, select: { name: true } }),
     db.project.findMany({
       where: pWhere,
       select: {
@@ -94,15 +98,25 @@ export async function getDistrictView(user: CurrentUser, state: StateConfig, slu
     byDept.set(row.departmentId, c);
   }
 
+  const budgetByDept = new Map(budgets.map((b) => [b.departmentId, b._sum.budgetLakhs ?? 0]));
   const cards: DepartmentCard[] = departments
     .sort((a, b) => DEPT_ORDER.indexOf(a.code) - DEPT_ORDER.indexOf(b.code))
     .map((d) => {
       const counts = byDept.get(d.id) ?? { ...EMPTY_COUNTS };
-      return { code: d.code, slug: d.code.toLowerCase(), name: d.name, nameLocal: d.nameLocal, counts, health: classifyHealth(counts) };
+      return {
+        code: d.code,
+        slug: d.code.toLowerCase(),
+        name: d.name,
+        nameLocal: d.nameLocal,
+        counts,
+        health: classifyHealth(counts),
+        budgetLakhs: budgetByDept.get(d.id) ?? 0,
+      };
     });
 
   return {
     district,
+    collector: collector?.name ?? null,
     totals,
     health: classifyHealth(totals),
     openIssues,

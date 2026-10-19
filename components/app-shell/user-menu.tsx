@@ -42,15 +42,13 @@ export function UserMenu({ name, roleName, scopeLabel, isAdmin, locales }: Props
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 text-left outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40">
-        <span className="flex size-8 items-center justify-center rounded-full bg-white/15 text-xs font-semibold">
-          {initials(name)}
-        </span>
-        <span className="hidden min-w-0 sm:block">
-          <span className="block truncate text-sm font-medium leading-tight">{name}</span>
+      <DropdownMenuTrigger className="flex items-center gap-3 rounded-lg py-1 pr-1 pl-2 text-right outline-none hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-white/40">
+        <span className="hidden max-w-48 min-w-0 sm:block">
+          <span className="block truncate text-sm font-bold leading-tight">{name}</span>
           <span className="block truncate text-xs leading-tight text-white/70">{roleName}</span>
         </span>
-        <ChevronDownIcon className="size-4 text-white/70" />
+        <span className="flex size-10 items-center justify-center rounded-full bg-amber text-sm font-bold text-navy">{initials(name)}</span>
+        <ChevronDownIcon className="size-4 text-white/60" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-64">
         <DropdownMenuGroup>

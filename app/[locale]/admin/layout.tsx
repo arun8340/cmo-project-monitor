@@ -5,7 +5,7 @@ export default function AdminLayout({ children }: LayoutProps<"/[locale]/admin">
   return (
     <>
       <AdminHeader />
-      <div className="flex-1 bg-muted/30">{children}</div>
+      <div className="flex-1 bg-background">{children}</div>
     </>
   );
 }

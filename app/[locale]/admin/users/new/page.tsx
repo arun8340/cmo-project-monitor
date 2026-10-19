@@ -13,7 +13,7 @@ export default function NewUserPage() {
     <main className="mx-auto grid w-full max-w-3xl gap-5 px-4 py-6">
       <Breadcrumbs items={[{ label: "Users", href: "/admin/users" }, { label: "Add user" }]} />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Add user</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">Add user</h1>
         <p className="mt-1 text-sm text-muted-foreground">The person signs in on their state&apos;s portal with the email and temporary password you set here.</p>
       </div>
       <Suspense fallback={<Skeleton className="h-[640px] w-full" />}>

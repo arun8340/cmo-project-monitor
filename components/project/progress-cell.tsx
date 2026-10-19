@@ -11,24 +11,24 @@ export function ProgressCell({ actual, planned, behind, className }: Props) {
   return (
     <div className={`grid min-w-36 gap-1 ${className ?? ""}`}>
       <div className="flex items-baseline justify-between gap-2 text-xs">
-        <span className="font-medium tabular-nums">{actual}%</span>
+        <span className="font-bold text-navy tabular-nums">{actual}%</span>
         {planned != null && <span className="text-muted-foreground tabular-nums">{t("plan", { planned })}</span>}
       </div>
       <div
-        className="relative h-1.5 rounded-full bg-muted"
+        className="relative h-2 rounded-full bg-[#ebe7dd]"
         role="img"
         aria-label={planned != null ? t("ariaWithPlan", { actual, planned }) : t("aria", { actual })}
       >
         <div
           className="h-full rounded-full"
-          style={{ width: `${actual}%`, backgroundColor: flagged ? "#d97706" : "#475569" }}
+          style={{ width: `${actual}%`, backgroundColor: "#2c4f7c" }}
         />
         {planned != null && (
-          <span className="absolute -top-0.5 h-2.5 w-0.5 rounded-full bg-foreground/70" style={{ left: `calc(${planned}% - 1px)` }} />
+          <span className="absolute -top-1 h-4 w-[3px] rounded-full bg-rust" style={{ left: `calc(${planned}% - 1.5px)` }} />
         )}
       </div>
       {flagged && (
-        <span className="flex items-center gap-1 text-xs font-medium text-amber-700">
+        <span className="flex items-center gap-1 text-xs font-semibold text-bad">
           <TriangleAlertIcon className="size-3" />
           {t("behindBy", { behind })}
         </span>

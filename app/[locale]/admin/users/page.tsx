@@ -20,7 +20,7 @@ export default function UsersPage({ searchParams }: PageProps<"/[locale]/admin/u
     <main className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
             <UsersIcon className="size-6 text-muted-foreground" />
             Users
           </h1>
@@ -125,18 +125,18 @@ async function Users({ searchParams }: { searchParams: PageProps<"/[locale]/admi
         <>
           <div className="hidden overflow-x-auto rounded-xl border bg-card md:block">
             <table className="w-full text-sm">
-              <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
+              <thead className="border-b bg-[#faf8f3] text-left text-[13px] text-muted-foreground">
                 <tr>
-                  <th className="px-4 py-2.5 font-medium">Name</th>
-                  <th className="px-4 py-2.5 font-medium">Role</th>
-                  <th className="px-4 py-2.5 font-medium">State</th>
-                  <th className="px-4 py-2.5 font-medium">Scope</th>
-                  <th className="px-4 py-2.5 font-medium">Last sign-in</th>
+                  <th className="px-4 py-3 font-semibold">Name</th>
+                  <th className="px-4 py-3 font-semibold">Role</th>
+                  <th className="px-4 py-3 font-semibold">State</th>
+                  <th className="px-4 py-3 font-semibold">Scope</th>
+                  <th className="px-4 py-3 font-semibold">Last sign-in</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {users.map((u) => (
-                  <tr key={u.id} className={`align-top hover:bg-muted/30 ${u.active ? "" : "text-muted-foreground"}`}>
+                  <tr key={u.id} className={`align-top hover:bg-[#faf8f3] ${u.active ? "" : "text-muted-foreground"}`}>
                     <td className="px-4 py-3">
                       <Link href={`/admin/users/${u.id}`} className="font-medium text-foreground hover:underline">
                         {u.name}

@@ -33,14 +33,14 @@ export function NavLinks({ items, pathname }: { items: NavItem[]; pathname: stri
             key={it.key}
             href={it.href}
             aria-current={on ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-sm transition-colors ${
-              on ? "border-white font-medium text-white" : "border-transparent text-white/75 hover:text-white"
+            className={`-mb-px flex shrink-0 items-center gap-1.5 border-b-[3px] px-3.5 py-2.5 text-[15px] transition-colors ${
+              on ? "border-rust font-semibold text-navy" : "border-transparent text-muted-foreground hover:text-navy"
             }`}
           >
             {it.label}
             {it.count != null && it.count > 0 && (
               <span
-                className={`rounded-full px-1.5 text-[11px] leading-5 font-semibold tabular-nums ${it.danger ? "bg-red-600 text-white" : "bg-white/20 text-white"}`}
+                className={`rounded-full px-1.5 text-[11px] leading-5 font-semibold tabular-nums ${it.danger ? "bg-bad text-white" : "bg-muted text-navy"}`}
                 title={it.danger ? t("overdueCount", { count: it.count }) : t("openCount", { count: it.count })}
               >
                 {it.count}

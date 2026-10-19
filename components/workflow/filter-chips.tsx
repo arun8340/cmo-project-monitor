@@ -16,14 +16,14 @@ export function FilterChips({ label, chips }: { label: string; chips: Chip[] }) 
             c.active
               ? c.tone === "danger"
                 ? "border-red-700 bg-red-700 text-white"
-                : "border-foreground bg-foreground text-background"
+                : "border-navy bg-navy font-semibold text-white"
               : c.tone === "danger" && (c.count ?? 1) > 0
                 ? "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
-                : "bg-background hover:bg-muted"
+                : "bg-card text-foreground hover:bg-muted"
           } ${c.count === 0 && !c.active ? "opacity-50" : ""}`}
         >
           {c.label}
-          {c.count !== undefined && <span className={c.active ? "opacity-70" : "text-muted-foreground"}>{c.count}</span>}
+          {c.count !== undefined && <span className={c.active ? "text-white/70" : "text-muted-foreground"}>{c.count}</span>}
         </Link>
       ))}
     </nav>

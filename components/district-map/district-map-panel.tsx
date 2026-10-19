@@ -29,7 +29,7 @@ export function DistrictMapPanel(props: Props) {
   return (
     <div className="flex h-full flex-col gap-2">
       {/* `isolate` keeps Leaflet's internal z-indexes below the sticky header */}
-      <div className="relative isolate min-h-80 flex-1 overflow-hidden rounded-xl border bg-slate-100">
+      <div className="relative isolate min-h-80 flex-1 overflow-hidden rounded-lg border bg-[#f7f5f0]">
         <DistrictMap {...props} />
       </div>
       <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground" aria-label={t("siteStatus")}>

@@ -64,7 +64,7 @@ async function Directives({ params, searchParams }: { params: Params["params"]; 
       <Breadcrumbs items={[{ label: localName(locale, state.name, state.nameLocal), href: basePath || "/" }, { label: t("title") }]} />
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+          <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
             <ScrollTextIcon className="size-6 text-muted-foreground" />
             {t("title")}
           </h1>
@@ -115,7 +115,7 @@ async function Directives({ params, searchParams }: { params: Params["params"]; 
         <Link
           href={link({ mine: !f.mine })}
           aria-pressed={f.mine}
-          className={`flex h-9 items-center rounded-lg border px-3 text-sm ${f.mine ? "border-foreground bg-foreground text-background" : "bg-background hover:bg-muted"}`}
+          className={`flex h-9 items-center rounded-lg border px-3 text-sm ${f.mine ? "border-navy bg-navy font-semibold text-white" : "bg-card text-foreground hover:bg-muted"}`}
         >
           {t("mine")}
         </Link>
@@ -134,10 +134,10 @@ async function Directives({ params, searchParams }: { params: Params["params"]; 
               <li key={r.id}>
                 <Link
                   href={`${listPath}/${r.id}`}
-                  className={`grid gap-2 rounded-xl border bg-card p-4 transition hover:shadow-sm ${r.overdue ? "border-l-4 border-l-red-600" : ""}`}
+                  className={`grid gap-2 rounded-xl border bg-card p-4 transition hover:shadow-sm ${r.overdue ? "border-l-4 border-l-bad" : ""}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
-                    <p className="max-w-3xl font-medium">{r.text}</p>
+                    <p className="max-w-3xl font-semibold text-navy">{r.text}</p>
                     <DirectiveStatusBadge status={r.status} overdue={r.overdue} />
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">

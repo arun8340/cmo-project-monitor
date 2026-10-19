@@ -57,7 +57,7 @@ async function Directive({ params, searchParams }: { params: Params["params"]; s
         ]}
       />
 
-      <section className={`grid gap-4 rounded-xl border bg-card p-5 ${overdue ? "border-l-4 border-l-red-600" : ""}`}>
+      <section className={`grid gap-4 rounded-xl border bg-card p-5 ${overdue ? "border-l-4 border-l-bad" : ""}`}>
         <DirectiveStatusBadge status={status} overdue={overdue} />
         <h1 className="text-xl leading-snug font-semibold">{d.text}</h1>
         <dl className="grid gap-3 text-sm sm:grid-cols-2">
@@ -98,7 +98,7 @@ async function Directive({ params, searchParams }: { params: Params["params"]; s
       </section>
 
       <section className="rounded-xl border bg-card p-5" aria-labelledby="history-heading">
-        <h2 id="history-heading" className="mb-4 font-medium">
+        <h2 id="history-heading" className="mb-4 text-lg font-bold text-navy">
           {t("history")}
         </h2>
         <Timeline entries={d.updates} labels={labels.directiveStatus} createdVerb={t("issued")} />

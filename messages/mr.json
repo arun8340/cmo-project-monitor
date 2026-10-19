@@ -118,7 +118,9 @@
     "sessionEnded": "तुमच्या खात्यात बदल झाल्यामुळे तुम्हाला साइन आउट केले आहे. पुढे जाण्यासाठी पुन्हा साइन इन करा.",
     "errorMissing": "तुमचा ईमेल आणि पासवर्ड टाका.",
     "errorInvalid": "ईमेल किंवा पासवर्ड चुकीचा आहे.",
-    "errorFailed": "साइन इन झाले नाही. कृपया पुन्हा प्रयत्न करा."
+    "errorFailed": "साइन इन झाले नाही. कृपया पुन्हा प्रयत्न करा.",
+    "heroTitle": "प्रत्येक प्रकल्प स्थळ पाहा, फक्त त्याचा स्थिती अहवाल नव्हे.",
+    "heroBody": "मुख्यमंत्री कार्यालयासाठी जिल्हानिहाय प्रकल्प देखरेख, दिनांकानुसार उपग्रह, ड्रोन आणि स्थळ प्रतिमांनी पडताळलेली."
   },
   "account": {
     "changeTitle": "पासवर्ड बदला",
@@ -159,7 +161,23 @@
     "noMeetings": "अद्याप कोणतीही आढावा बैठक नोंदवलेली नाही",
     "directives": "निर्देश",
     "open": "खुले",
-    "overdue": "मुदत उलटलेले"
+    "overdue": "मुदत उलटलेले",
+    "totalProjects": "एकूण प्रकल्प",
+    "acrossDepartments": "{count, plural, one {# विभागात} other {# विभागांमध्ये}}",
+    "completed": "पूर्ण",
+    "ofTotal": "एकूणपैकी {percent}%",
+    "ongoing": "सुरू आहे",
+    "delayedStalled": "विलंबित किंवा रखडलेले",
+    "behindSchedule": "नियोजित वेळापत्रकाच्या मागे",
+    "openIssues": "खुल्या समस्या",
+    "pendingAtMeeting": "मागील आढाव्यात {count} प्रलंबित",
+    "viewAll": "सर्व पाहा",
+    "byDepartment": "विभागनिहाय प्रकल्प",
+    "directivesTitle": "मुख्यमंत्री कार्यालय / मुख्य सचिवांचे निर्देश",
+    "noOpenDirectives": "कोणतेही खुले निर्देश नाहीत.",
+    "overdueOn": "मुदत उलटली · {date}",
+    "dueOn": "मुदत {date}",
+    "overdueCount": "{count} मुदत उलटलेले"
   },
   "map": {
     "loading": "नकाशा लोड होत आहे…",
@@ -193,7 +211,9 @@
     },
     "clickToOpenProject": "प्रकल्प उघडण्यासाठी क्लिक करा",
     "siteStatus": "प्रकल्प स्थळाची स्थिती",
-    "noSites": "तुमच्या दृश्यात कोणतेही प्रकल्प स्थळ नाही"
+    "noSites": "तुमच्या दृश्यात कोणतेही प्रकल्प स्थळ नाही",
+    "panelTitle": "जिल्हे",
+    "panelHint": "रंग विलंबित किंवा रखडलेल्या प्रकल्पांचे प्रमाण दाखवतो. संख्यांसाठी होव्हर करा, उघडण्यासाठी क्लिक करा."
   },
   "district": {
     "inView": "{count, plural, one {तुमच्या दृश्यात # प्रकल्प} other {तुमच्या दृश्यात # प्रकल्प}}",
@@ -205,7 +225,11 @@
     "projectSites": "प्रकल्प स्थळे",
     "completedOngoing": "{completed} पूर्ण · {ongoing} सुरू",
     "byStatus": "स्थितीनुसार प्रकल्प",
-    "behindCount": "{count} विलंबित / रखडलेले"
+    "behindCount": "{count} विलंबित / रखडलेले",
+    "title": "{district} जिल्हा",
+    "collector": "जिल्हाधिकारी: {name}",
+    "projectsAcross": "{departments, plural, one {# विभागात} other {# विभागांमध्ये}} {count, plural, one {# प्रकल्प} other {# प्रकल्प}}",
+    "deptMeta": "{count, plural, one {# प्रकल्प} other {# प्रकल्प}}"
   },
   "projectList": {
     "allDepartments": "सर्व विभाग",
@@ -325,7 +349,16 @@
     "owner": "जबाबदार {name}",
     "due": "अंतिम दिनांक {date}",
     "recentActivity": "अलीकडील क्रियाकलाप",
-    "noActivity": "कोणताही क्रियाकलाप नोंदवलेला नाही."
+    "noActivity": "कोणताही क्रियाकलाप नोंदवलेला नाही.",
+    "behindBadge": "वेळापत्रकाच्या मागे",
+    "lastUpdateLabel": "शेवटचे प्रगती अद्यतन",
+    "plannedVsReported": "नियोजित विरुद्ध नोंदवलेली प्रगती",
+    "planned": "नियोजित",
+    "reported": "नोंदवलेली",
+    "pointsBehind": "नियोजित वेळापत्रकाच्या {points} गुण मागे",
+    "siteImagery": "दिनांकानुसार स्थळ प्रतिमा",
+    "captures": "{count, plural, one {# प्रतिमा} other {# प्रतिमा}}",
+    "compareShort": "तुलना"
   },
   "chart": {
     "empty": "अद्याप कोणतीही प्रगती नोंदवलेली नाही.",
@@ -563,7 +596,9 @@
     "paneProgress": "नोंदवलेली प्रगती {progress}%",
     "comparing": "तुलना होत आहे…",
     "changedSince": "{date} पासून ≈ {percent}% बदल",
-    "imageAlt": "{source} प्रतिमा, {date}"
+    "imageAlt": "{source} प्रतिमा, {date}",
+    "before": "आधी",
+    "after": "नंतर"
   },
   "workflow": {
     "updated": "अद्यतनित केले",

@@ -7,9 +7,25 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
+  /* CM Project Monitor palette (see the UI prototype) */
+  --color-navy: var(--navy);
+  --color-navy-soft: var(--navy-soft);
+  --color-amber: var(--amber);
+  --color-rust: var(--rust);
+  --color-link: var(--link);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-stall: var(--stall);
+  --color-stall-soft: var(--stall-soft);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,38 +65,55 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  /* Navy / warm paper / amber, from the UI prototype */
+  --navy: #14243b;
+  --navy-soft: #1f3354;
+  --amber: #e9a23b;
+  --rust: #b9541a;
+  --link: #1d4e89;
+  --ok: #1f5e37;
+  --ok-soft: #e6f2ea;
+  --info: #1d4e89;
+  --info-soft: #e8eef6;
+  --warn: #8a4a0b;
+  --warn-soft: #fbf1e4;
+  --bad: #a93232;
+  --bad-soft: #f8e1e1;
+  --stall: #4b2a6b;
+  --stall-soft: #ece6f3;
+
+  --background: #f4f2ec;
+  --foreground: #1b2430;
+  --card: #ffffff;
+  --card-foreground: #1b2430;
+  --popover: #ffffff;
+  --popover-foreground: #1b2430;
+  --primary: #14243b;
+  --primary-foreground: #ffffff;
+  --secondary: #eeeae0;
+  --secondary-foreground: #14243b;
+  --muted: #efebe2;
+  --muted-foreground: #5b6472;
+  --accent: #eeeae0;
+  --accent-foreground: #14243b;
+  --destructive: #a93232;
+  --border: #e4e0d6;
+  --input: #cfc9bb;
+  --ring: #1d4e89;
+  --chart-1: #1d4e89;
+  --chart-2: #1f5e37;
+  --chart-3: #e9a23b;
+  --chart-4: #a93232;
+  --chart-5: #4b2a6b;
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1b2430;
+  --sidebar-primary: #14243b;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #eeeae0;
+  --sidebar-accent-foreground: #14243b;
+  --sidebar-border: #e4e0d6;
+  --sidebar-ring: #1d4e89;
 }
 
 .dark {
@@ -126,6 +159,11 @@
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3 {
+    letter-spacing: -0.01em;
   }
 }
 /* State map (Leaflet) tooltip */
@@ -188,4 +226,23 @@
 }
 .leaflet-container {
   font-family: var(--font-sans);
+}
+/* District names on the flat state map */
+.sm-label {
+  pointer-events: none;
+}
+.sm-label span {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  color: #1b2430;
+  text-shadow:
+    0 0 2px rgb(255 255 255 / 0.9),
+    0 0 4px rgb(255 255 255 / 0.7);
+}
+.leaflet-container.leaflet-container {
+  background: #f7f5f0;
 }

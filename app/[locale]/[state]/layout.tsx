@@ -24,7 +24,7 @@ export default function StateLayout({ children, params }: LayoutProps<"/[locale]
       <Suspense fallback={<AppHeaderSkeleton />}>
         <StateHeader params={params} />
       </Suspense>
-      <div className="flex-1 bg-muted/30">{children}</div>
+      <div className="flex-1 bg-background">{children}</div>
     </>
   );
 }

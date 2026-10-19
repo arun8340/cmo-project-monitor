@@ -19,7 +19,7 @@ export default function ComparePage({ params, searchParams }: Params) {
   return (
     <Suspense
       fallback={
-        <div className="fixed inset-0 z-[45] flex items-center justify-center bg-slate-950 text-white/70">
+        <div className="fixed inset-0 z-[45] flex items-center justify-center bg-navy text-white/70">
           <LoaderCircleIcon className="size-6 animate-spin" />
         </div>
       }
@@ -42,7 +42,7 @@ async function Compare({ params, searchParams }: { params: Params["params"]; sea
   if (data.images.length < 2) {
     const t = await getTranslations("compare");
     return (
-      <div className="fixed inset-0 z-[45] flex flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-center text-white">
+      <div className="fixed inset-0 z-[45] flex flex-col items-center justify-center gap-3 bg-navy px-4 text-center text-white">
         <p className="font-medium">{t("needTwo")}</p>
         <a href={galleryHref} className="rounded-md bg-white px-3 py-1.5 text-sm text-slate-900">
           {t("backToImagery")}

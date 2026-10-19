@@ -13,7 +13,7 @@ export default function RolesPage() {
   return (
     <main className="mx-auto grid w-full max-w-7xl gap-5 px-4 py-6">
       <div>
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+        <h1 className="flex items-center gap-2 text-[28px] leading-tight font-bold tracking-tight text-navy [&>svg]:hidden">
           <ShieldCheckIcon className="size-6 text-muted-foreground" />
           Roles &amp; permissions
         </h1>

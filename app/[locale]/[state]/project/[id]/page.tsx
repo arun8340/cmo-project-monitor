@@ -2,19 +2,19 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
-  CalendarClockIcon,
   CircleAlertIcon,
   ClipboardCheckIcon,
   ColumnsIcon,
   HistoryIcon,
-  ImageIcon,
   PencilIcon,
   ScrollTextIcon,
   PlusIcon,
   UploadIcon,
 } from "lucide-react";
 import { OUTCOME_STYLE } from "@/components/compare/outcome-style";
-import { DirectiveStatusBadge, IssueStatusBadge, PriorityBadge } from "@/components/workflow/badges";
+import { DirectiveStatusBadge, IssueStatusBadge, pill, PriorityBadge, TONE_PILL } from "@/components/workflow/badges";
+import { FactCard, PageHeader, Panel, PanelLink } from "@/components/app-shell/page-parts";
+import { BEHIND_THRESHOLD } from "@/lib/progress";
 import { RaiseIssueDialog } from "@/components/issues/raise-issue-dialog";
 import { canIssueDirective, canRaiseIssue } from "@/lib/auth/project-permissions";
 import { db } from "@/lib/db";
@@ -23,7 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { StatusBadge } from "@/components/project/status-badge";
-import { ProgressCell } from "@/components/project/progress-cell";
 import { ProgressChart } from "@/components/project/progress-chart";
 import { ProgressDialog } from "@/components/project/progress-dialog";
 import { SiteMap } from "@/components/project/site-map";
@@ -43,7 +42,7 @@ type Params = PageProps<"/[locale]/[state]/project/[id]">;
 
 export default function ProjectPage({ params }: Params) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+    <main className="mx-auto w-full max-w-7xl px-4 py-7">
       <Suspense fallback={<ProjectSkeleton />}>
         <Project params={params} />
       </Suspense>
@@ -75,6 +74,10 @@ async function Project({ params }: { params: Params["params"] }) {
   const districtName = localName(locale, project.district.name, project.district.nameLocal);
   const deptName = localName(locale, project.department.name, project.department.nameLocal);
 
+  const reportedBehind = behind > BEHIND_THRESHOLD;
+  const compareHref = `${basePath}/project/${project.id}/compare?from=project`;
+  const latestImageId = project.imagery[0]?.id ?? null;
+
   return (
     <div className="grid gap-5">
       <Breadcrumbs
@@ -86,17 +89,22 @@ async function Project({ params }: { params: Params["params"] }) {
         ]}
       />
 
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-semibold tracking-tight">{name.primary}</h1>
+      <PageHeader
+        title={name.primary}
+        badges={
+          <>
             <StatusBadge status={status} />
-          </div>
-          {name.secondary && <p className="text-muted-foreground">{name.secondary}</p>}
-          <p className="mt-1 text-sm text-muted-foreground">{t("deptDistrict", { department: deptName, district: districtName })}</p>
-        </div>
-        {(can.updateProgress || can.edit) && (
-          <div className="flex gap-2">
+            {reportedBehind && <span className={`${pill} ${TONE_PILL.bad}`}>{t("behindBadge")}</span>}
+          </>
+        }
+        subtitle={
+          <>
+            {name.secondary && <span className="mr-2 text-foreground/80">{name.secondary} ·</span>}
+            {t("deptDistrict", { department: deptName, district: districtName })}
+          </>
+        }
+        actions={
+          <>
             {can.edit && (
               <Button variant="outline" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/edit`} />}>
                 <PencilIcon />
@@ -113,97 +121,59 @@ async function Project({ params }: { params: Params["params"] }) {
                 today={todayIST(now)}
               />
             )}
-          </div>
-        )}
-      </header>
+            {project._count.imagery >= 2 && (
+              <Button nativeButton={false} render={<Link href={compareHref} />}>
+                <ColumnsIcon />
+                {t("compareImagery")}
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+        <FactCard label={t("budget")} value={formatBudget(project.budgetLakhs, locale)} />
+        <FactCard label={t("start")} value={fmt(project.startDate)} />
+        <FactCard label={t("plannedEnd")} value={fmt(project.plannedEndDate)} />
+        <FactCard label={t("lastUpdateLabel")} value={lastUpdate ? fmt(lastUpdate.date) : "—"} />
+        <FactCard label={t("addedBy")} value={project.createdBy?.name ?? "—"} />
+      </div>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <div className="grid content-start gap-5">
-          <section className="grid gap-5 rounded-xl border bg-card p-5" aria-label={t("overview")}>
-            <div className="grid gap-5 sm:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
-              <div className="grid gap-3">
-                <ProgressCell actual={project.progressPercent} planned={planned} behind={behind} className="text-base" />
-                {timeElapsed != null && (
-                  <p className="text-xs text-muted-foreground">
-                    {t("timeElapsed", { percent: timeElapsed })}
-                    {lastUpdate && <> · {t("lastUpdate", { date: fmt(lastUpdate.date) })}</>}
-                  </p>
-                )}
-              </div>
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                <Fact label={t("budget")} value={formatBudget(project.budgetLakhs, locale)} />
-                <Fact label={t("start")} value={fmt(project.startDate)} />
-                <Fact label={t("plannedEnd")} value={fmt(project.plannedEndDate)} />
-                <Fact label={t("addedBy")} value={project.createdBy?.name ?? "—"} />
-              </dl>
+          <Panel title={t("plannedVsReported")}>
+            <div className="grid gap-2.5">
+              {planned != null && <Bar label={t("planned")} value={planned} color="var(--rust)" />}
+              <Bar label={t("reported")} value={project.progressPercent} color="#2c4f7c" />
             </div>
-            {project.description && <p className="border-t pt-4 text-sm text-muted-foreground">{project.description}</p>}
-          </section>
-
-          <section className="rounded-xl border bg-card p-5" aria-labelledby="progress-heading">
-            <h2 id="progress-heading" className="mb-3 font-medium">
-              {t("progressOverTime")}
-            </h2>
-            <ProgressChart
-              start={project.startDate}
-              plannedEnd={project.plannedEndDate}
-              updates={project.progressUpdates.map((u) => ({ date: u.date, percent: u.progressPercent }))}
-              now={now}
-            />
-          </section>
-
-          <section className="rounded-xl border bg-card p-5" aria-labelledby="updates-heading">
-            <h2 id="updates-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <CalendarClockIcon className="size-4 text-muted-foreground" />
-              {t("progressUpdates")}
-              <span className="font-normal text-muted-foreground">{project.progressUpdates.length}</span>
-            </h2>
-            {project.progressUpdates.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noUpdates")}</p>
-            ) : (
-              <ol className="relative grid gap-4 border-l pl-5">
-                {[...project.progressUpdates].reverse().map((u) => (
-                  <li key={u.id} className="relative">
-                    <span className="absolute top-1.5 -left-6.25 size-2.5 rounded-full border-2 border-card bg-slate-500" />
-                    <div className="flex flex-wrap items-baseline gap-x-2 text-sm">
-                      <span className="font-medium tabular-nums">{u.progressPercent}%</span>
-                      <span className="text-muted-foreground">{fmt(u.date)}</span>
-                      {u.updatedBy && <span className="text-xs text-muted-foreground">· {u.updatedBy.name}</span>}
-                    </div>
-                    {u.notes && <p className="mt-0.5 text-sm text-muted-foreground">{u.notes}</p>}
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-        </div>
-
-        <aside className="grid content-start gap-5">
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="site-heading">
-            <h2 id="site-heading" className="mb-3 font-medium">
-              {t("site")}
-            </h2>
-            <SiteMap latitude={project.latitude} longitude={project.longitude} color={STATUS_COLOR[status]} />
-            <p className="mt-2 font-mono text-xs text-muted-foreground">
-              {project.latitude.toFixed(5)}, {project.longitude.toFixed(5)}
+            <p className={`mt-3 text-sm ${reportedBehind ? "font-semibold text-bad" : "text-muted-foreground"}`}>
+              {reportedBehind ? t("pointsBehind", { points: behind }) : timeElapsed != null ? t("timeElapsed", { percent: timeElapsed }) : null}
             </p>
-          </section>
+            {project.description && <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{project.description}</p>}
+          </Panel>
 
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="imagery-heading">
-            <h2 id="imagery-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <ImageIcon className="size-4 text-muted-foreground" />
-              {t("latestImagery")}
-              <span className="font-normal text-muted-foreground">{project._count.imagery}</span>
-              <Link href={`${basePath}/project/${project.id}/imagery`} className="ml-auto text-sm font-normal text-muted-foreground hover:text-foreground">
-                {t("viewAll")}
-              </Link>
-            </h2>
+          <Panel
+            title={t("siteImagery")}
+            id="imagery-heading"
+            action={
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-[13px] text-muted-foreground">{t("captures", { count: project._count.imagery })}</span>
+                {can.uploadImagery && (
+                  <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}>
+                    <UploadIcon />
+                    {t("uploadImagery")}
+                  </Button>
+                )}
+                <PanelLink href={`${basePath}/project/${project.id}/imagery`}>{t("viewAll")}</PanelLink>
+              </div>
+            }
+          >
             {project.imagery.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noImagery")}</p>
             ) : (
-              <ul className="grid grid-cols-2 gap-2">
+              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                 {project.imagery.map((img) => (
-                  <li key={img.id}>
+                  <li key={img.id} className="grid gap-1.5">
                     <Link href={`${basePath}/project/${project.id}/imagery`} className="block overflow-hidden rounded-lg border hover:shadow-sm">
                       {/* Access-checked API image (see app/api/imagery). */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -211,51 +181,100 @@ async function Project({ params }: { params: Params["params"] }) {
                         src={imageryUrl(img.id, "thumb")}
                         alt={t("imageAlt", { source: labels.source[img.source as ImagerySource], date: fmt(img.captureDate) })}
                         loading="lazy"
-                        className="aspect-3/2 w-full bg-muted object-cover"
+                        className="aspect-4/3 w-full bg-muted object-cover"
                       />
-                      <div className="px-2 py-1.5 text-xs">
-                        <div className="font-medium">{fmt(img.captureDate)}</div>
+                    </Link>
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 text-[13px] leading-tight">
+                        <div className="font-bold text-navy">{fmt(img.captureDate)}</div>
                         <div className="text-muted-foreground">{labels.source[img.source as ImagerySource]}</div>
                       </div>
-                    </Link>
+                      {project._count.imagery >= 2 && latestImageId && (
+                        <Link
+                          href={img.id === latestImageId ? compareHref : `${compareHref}&images=${img.id},${latestImageId}`}
+                          className="shrink-0 rounded-md border bg-card px-2 py-0.5 text-xs font-semibold text-navy hover:bg-muted"
+                        >
+                          {t("compareShort")}
+                        </Link>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {project._count.imagery >= 2 && (
-                <Button size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/compare?from=project`} />}>
-                  <ColumnsIcon />
-                  {t("compareImagery")}
-                </Button>
-              )}
-              {can.uploadImagery && (
-                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}>
-                  <UploadIcon />
-                  {t("uploadImagery")}
-                </Button>
-              )}
-            </div>
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="verifications-heading">
-            <h2 id="verifications-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <ClipboardCheckIcon className="size-4 text-muted-foreground" />
-              {t("verifications")}
-              <span className="font-normal text-muted-foreground">{verifications.length}</span>
-            </h2>
+          <Panel title={t("progressOverTime")} id="progress-heading">
+            <ProgressChart
+              start={project.startDate}
+              plannedEnd={project.plannedEndDate}
+              updates={project.progressUpdates.map((u) => ({ date: u.date, percent: u.progressPercent }))}
+              now={now}
+            />
+          </Panel>
+
+          <Panel
+            title={
+              <>
+                {t("progressUpdates")}
+                <span className="font-normal text-muted-foreground">{project.progressUpdates.length}</span>
+              </>
+            }
+            id="updates-heading"
+          >
+            {project.progressUpdates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t("noUpdates")}</p>
+            ) : (
+              <ol className="divide-y border-t">
+                {[...project.progressUpdates].reverse().map((u) => (
+                  <li key={u.id} className="flex items-start gap-4 py-3">
+                    <span className="grid size-12 shrink-0 place-items-center rounded-full bg-info-soft text-sm font-bold text-info tabular-nums">
+                      {u.progressPercent}%
+                    </span>
+                    <div className="min-w-0 pt-1">
+                      {u.notes && <p className="font-semibold text-navy">{u.notes}</p>}
+                      <p className="text-[13px] text-muted-foreground">
+                        {fmt(u.date)}
+                        {u.updatedBy && <> · {u.updatedBy.name}</>}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Panel>
+        </div>
+
+        <aside className="grid content-start gap-5">
+          <Panel title={t("site")} id="site-heading">
+            <SiteMap latitude={project.latitude} longitude={project.longitude} color={STATUS_COLOR[status]} />
+            <p className="mt-2 font-mono text-xs text-muted-foreground">
+              {project.latitude.toFixed(5)}, {project.longitude.toFixed(5)}
+            </p>
+          </Panel>
+
+          <Panel
+            title={
+              <>
+                <ClipboardCheckIcon className="size-4 text-muted-foreground" />
+                {t("verifications")}
+                <span className="font-normal text-muted-foreground">{verifications.length}</span>
+              </>
+            }
+            id="verifications-heading"
+          >
             {verifications.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 {t("noVerifications")}
                 {project._count.imagery >= 2 && <> {t("compareToRecord")}</>}
               </p>
             ) : (
-              <ul className="grid gap-3">
+              <ul className="divide-y border-t">
                 {verifications.slice(0, 5).map((v) => {
                   const style = OUTCOME_STYLE[v.outcome];
                   return (
-                    <li key={v.id} className="grid gap-1 text-sm">
-                      <div className={`flex items-center gap-1.5 font-medium ${style.className}`}>
+                    <li key={v.id} className="grid gap-1 py-2.5 text-sm">
+                      <div className={`flex items-center gap-1.5 font-semibold ${style.className}`}>
                         <style.icon className="size-4" />
                         {labels.outcome[v.outcome]}
                       </div>
@@ -266,7 +285,7 @@ async function Project({ params }: { params: Params["params"] }) {
                         </span>
                         <Link
                           href={`${basePath}/project/${project.id}/compare?from=project&images=${v.imageIds.join(",")}`}
-                          className="underline-offset-2 hover:text-foreground hover:underline"
+                          className="font-semibold text-link hover:underline"
                         >
                           {t("viewComparison", { from: v.fromLabel, to: v.toLabel })}
                         </Link>
@@ -276,86 +295,102 @@ async function Project({ params }: { params: Params["params"] }) {
                 })}
               </ul>
             )}
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="issues-heading">
-            <h2 id="issues-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <CircleAlertIcon className="size-4 text-muted-foreground" />
-              {t("issues")}
-              <span className="font-normal text-muted-foreground">{project.issues.length}</span>
-              {canRaiseIssue(user) && (
-                <span className="ml-auto">
-                  <RaiseIssueDialog
-                    projectId={project.id}
-                    projectName={name.primary}
-                    stateSlug={state.code.toLowerCase()}
-                    lastMeeting={lastMeeting ? fmt(lastMeeting) : null}
-                  />
-                </span>
-              )}
-            </h2>
+          <Panel
+            title={
+              <>
+                <CircleAlertIcon className="size-4 text-muted-foreground" />
+                {t("issues")}
+                <span className="font-normal text-muted-foreground">{project.issues.length}</span>
+              </>
+            }
+            id="issues-heading"
+            action={
+              canRaiseIssue(user) && (
+                <RaiseIssueDialog
+                  projectId={project.id}
+                  projectName={name.primary}
+                  stateSlug={state.code.toLowerCase()}
+                  lastMeeting={lastMeeting ? fmt(lastMeeting) : null}
+                />
+              )
+            }
+          >
             {project.issues.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noIssues")}</p>
             ) : (
-              <ul className="grid gap-3">
+              <ul className="divide-y border-t">
                 {project.issues.map((i) => (
-                  <li key={i.id} className="grid gap-1 text-sm">
-                    <Link href={`${basePath}/issues/${i.id}`} className="font-medium hover:underline">
-                      {i.title}
-                    </Link>
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                  <li key={i.id} className="grid gap-1 py-2.5 text-sm">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link href={`${basePath}/issues/${i.id}`} className="font-semibold text-navy hover:underline">
+                        {i.title}
+                      </Link>
                       <PriorityBadge priority={i.priority as IssuePriority} />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
                       <IssueStatusBadge status={i.status as IssueStatus} />
-                      {i.meetingDate && <span className="text-muted-foreground">{t("reviewMeeting", { date: fmt(i.meetingDate) })}</span>}
+                      {i.meetingDate && <span>{t("reviewMeeting", { date: fmt(i.meetingDate) })}</span>}
                     </div>
                   </li>
                 ))}
               </ul>
             )}
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="directives-heading">
-            <h2 id="directives-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <ScrollTextIcon className="size-4 text-muted-foreground" />
-              {t("directives")}
-              <span className="font-normal text-muted-foreground">{directives.length}</span>
-              {canIssueDirective(user) && (
-                <Button variant="outline" size="sm" className="ml-auto" nativeButton={false} render={<Link href={`${basePath}/directives/new?project=${project.id}`} />}>
+          <Panel
+            title={
+              <>
+                <ScrollTextIcon className="size-4 text-muted-foreground" />
+                {t("directives")}
+                <span className="font-normal text-muted-foreground">{directives.length}</span>
+              </>
+            }
+            id="directives-heading"
+            action={
+              canIssueDirective(user) && (
+                <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${basePath}/directives/new?project=${project.id}`} />}>
                   <PlusIcon />
                   {t("newDirective")}
                 </Button>
-              )}
-            </h2>
+              )
+            }
+          >
             {directives.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noDirectives")}</p>
             ) : (
-              <ul className="grid gap-3">
+              <ul className="divide-y border-t">
                 {directives.map((d) => {
                   const open = d.status === "OPEN" || d.status === "IN_PROGRESS";
                   const overdue = open && d.dueDate != null && d.dueDate < now;
                   return (
-                    <li key={d.id} className="grid gap-1 text-sm">
-                      <Link href={`${basePath}/directives/${d.id}`} className="hover:underline">
+                    <li key={d.id} className="grid gap-1 py-2.5 text-sm">
+                      <Link href={`${basePath}/directives/${d.id}`} className="font-semibold text-navy hover:underline">
                         {d.text}
                       </Link>
                       <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                         <DirectiveStatusBadge status={d.status as DirectiveStatus} overdue={overdue} />
                         <span>{t("from", { name: d.fromUser.name })}</span>
                         {d.owner && <span>· {t("owner", { name: d.owner.name })}</span>}
-                        {d.dueDate && <span className={overdue ? "font-medium text-red-700" : ""}>· {t("due", { date: fmt(d.dueDate) })}</span>}
+                        {d.dueDate && <span className={overdue ? "font-semibold text-bad" : ""}>· {t("due", { date: fmt(d.dueDate) })}</span>}
                       </div>
                     </li>
                   );
                 })}
               </ul>
             )}
-          </section>
+          </Panel>
 
-          <section className="rounded-xl border bg-card p-4" aria-labelledby="activity-heading">
-            <h2 id="activity-heading" className="mb-3 flex items-center gap-2 font-medium">
-              <HistoryIcon className="size-4 text-muted-foreground" />
-              {t("recentActivity")}
-            </h2>
+          <Panel
+            title={
+              <>
+                <HistoryIcon className="size-4 text-muted-foreground" />
+                {t("recentActivity")}
+              </>
+            }
+            id="activity-heading"
+          >
             {activity.length === 0 ? (
               <p className="text-sm text-muted-foreground">{t("noActivity")}</p>
             ) : (
@@ -371,18 +406,22 @@ async function Project({ params }: { params: Params["params"] }) {
                 ))}
               </ul>
             )}
-          </section>
+          </Panel>
         </aside>
       </div>
     </div>
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+/** One horizontal bar of the planned vs reported comparison. */
+function Bar({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div>
-      <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)_3rem] items-center gap-3 text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="h-2.5 overflow-hidden rounded-full bg-[#ebe7dd]">
+        <span className="block h-full rounded-full" style={{ width: `${value}%`, backgroundColor: color }} />
+      </span>
+      <span className="text-right font-bold text-navy tabular-nums">{value}%</span>
     </div>
   );
 }

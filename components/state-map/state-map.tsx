@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import L from "leaflet";
 import type { Feature, FeatureCollection } from "geojson";
-import { BASEMAP } from "@/config/map";
 import { HEALTH_STYLE } from "@/lib/district-health";
 import { districtHref } from "@/lib/district-slug";
 import type { DistrictSummary } from "@/lib/data/state-overview";
@@ -56,7 +55,7 @@ function tooltipHtml(d: DistrictSummary, { t, locale }: Text) {
 export default function StateMap(props: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
-  const layerRef = useRef<L.GeoJSON | null>(null);
+  const layerRef = useRef<L.LayerGroup | null>(null);
   const router = useRouter();
   const text: Text = { t: useTranslations("map"), locale: useLocale() };
 
@@ -78,8 +77,8 @@ export default function StateMap(props: Props) {
     container.style.height = "100%";
     host.appendChild(container);
 
-    const map = L.map(container, { center: [lat, lng], zoom, zoomSnap: 0.25, scrollWheelZoom: false });
-    L.tileLayer(BASEMAP.url, { attribution: BASEMAP.attribution, maxZoom: BASEMAP.maxZoom }).addTo(map);
+    // Flat map: district shapes only, no street tiles (the state is the whole picture here).
+    const map = L.map(container, { center: [lat, lng], zoom, zoomSnap: 0.25, scrollWheelZoom: false, attributionControl: false });
 
     const bounds = L.geoJSON(data).getBounds();
     if (bounds.isValid()) {
@@ -107,12 +106,12 @@ export default function StateMap(props: Props) {
     if (mapRef.current) drawDistricts(mapRef.current, layerRef, latest.current);
   }, [districts, styleKey]);
 
-  return <div ref={hostRef} className="size-full bg-slate-100" />;
+  return <div ref={hostRef} className="size-full bg-[#f7f5f0]" />;
 }
 
 function drawDistricts(
   map: L.Map,
-  layerRef: { current: L.GeoJSON | null },
+  layerRef: { current: L.LayerGroup | null },
   { props, router, text }: { props: Props; router: ReturnType<typeof useRouter>; text: Text },
 ) {
   layerRef.current?.remove();
@@ -123,12 +122,13 @@ function drawDistricts(
   const style = (f?: Feature): L.PathOptions => {
     const d = districtFor(f);
     if (!d || !d.accessible) {
-      return { color: "#94a3b8", weight: 1, dashArray: "3 3", fillColor: "#e2e8f0", fillOpacity: 0.35, className: "sm-locked" };
+      return { color: "#cfc9bb", weight: 1, dashArray: "3 3", fillColor: "#f1eee6", fillOpacity: 1, className: "sm-locked" };
     }
-    return { color: "#ffffff", weight: 1.5, fillColor: HEALTH_STYLE[d.health].color, fillOpacity: 0.6 };
+    return { color: "#ffffff", weight: 1.2, fillColor: HEALTH_STYLE[d.health].fill, fillOpacity: 1 };
   };
 
-  layerRef.current = L.geoJSON(props.data, {
+  const group = L.layerGroup();
+  const shapes = L.geoJSON(props.data, {
     style,
     onEachFeature: (f, layer) => {
       const d = districtFor(f);
@@ -138,12 +138,27 @@ function drawDistricts(
       if (!d.accessible) return;
       path.on({
         mouseover: () => {
-          path.setStyle({ weight: 3, color: "#0f172a", fillOpacity: 0.75 });
+          path.setStyle({ weight: 2.5, color: "#14243b" });
           path.bringToFront();
         },
         mouseout: () => path.setStyle(style(f)),
         click: () => router.push(districtHref(props.basePath, d.slug, props.styleKey)),
       });
     },
-  }).addTo(map);
+  }).addTo(group);
+
+  // District names at the middle of each shape (not interactive, so hover and clicks
+  // reach the shape). Skipped on narrow maps (phones), where they would overlap.
+  if (map.getSize().x >= 600) shapes.eachLayer((layer) => {
+    const f = (layer as L.GeoJSON & { feature?: Feature }).feature;
+    const d = districtFor(f);
+    if (!d) return;
+    const name = text.locale === "en" ? d.name : d.nameLocal || d.name;
+    L.marker((layer as L.Polygon).getBounds().getCenter(), {
+      interactive: false,
+      keyboard: false,
+      icon: L.divIcon({ className: "sm-label", html: `<span>${escapeHtml(name)}</span>`, iconSize: [0, 0] }),
+    }).addTo(group);
+  });
+  layerRef.current = group.addTo(map);
 }

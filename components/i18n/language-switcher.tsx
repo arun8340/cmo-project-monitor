@@ -1,7 +1,6 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
-import { LanguagesIcon } from "lucide-react";
 import { LOCALE_COOKIE, LOCALE_NAMES, type Locale } from "@/lib/i18n/config";
 
 /** Remembers the language for this portal address (read by Proxy on every request). */
@@ -25,23 +24,23 @@ export function LanguageSwitcher({ locales, tone = "dark" }: { locales: Locale[]
     window.location.reload();
   }
 
-  const box = tone === "dark" ? "border-white/20 bg-white/5" : "border-border bg-background";
-  const on = tone === "dark" ? "bg-white text-slate-900" : "bg-foreground text-background";
+  const box = tone === "dark" ? "border-white/15 bg-white/[0.06]" : "border-border bg-card";
+  const on = "bg-amber text-navy";
   const off = tone === "dark" ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-muted-foreground hover:bg-muted hover:text-foreground";
 
   return (
-    <div role="group" aria-label={t("language")} className={`flex items-center gap-0.5 rounded-lg border p-0.5 ${box}`}>
-      <LanguagesIcon className={`mx-1 size-3.5 ${tone === "dark" ? "text-white/60" : "text-muted-foreground"}`} aria-hidden />
+    <div role="group" aria-label={t("language")} className={`flex items-center gap-0.5 rounded-lg border p-1 ${box}`}>
       {locales.map((l) => (
         <button
           key={l}
           type="button"
           lang={l}
+          title={LOCALE_NAMES[l]}
           onClick={() => choose(l)}
           aria-pressed={l === current}
-          className={`rounded-md px-2 py-0.5 text-xs font-medium transition-colors ${l === current ? on : off}`}
+          className={`min-w-9 rounded-md px-2.5 py-1 text-xs font-semibold transition-colors ${l === current ? on : off}`}
         >
-          {LOCALE_NAMES[l]}
+          {l === "en" ? "EN" : LOCALE_NAMES[l]}
         </button>
       ))}
     </div>

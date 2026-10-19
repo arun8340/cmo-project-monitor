@@ -21,9 +21,11 @@ export type StateConfig = {
   mapCenter: [lat: number, lng: number];
   mapZoom: number;
   theme: {
-    /** Accent colour used for headers / highlights for this state */
+    /** Accent colour used for highlights for this state */
     primary: string;
   };
+  /** Shown in the header and on the login page. */
+  government: { name: string; nameLocal: string };
 };
 
 export const STATES: Record<StateCode, StateConfig> = {
@@ -37,6 +39,7 @@ export const STATES: Record<StateCode, StateConfig> = {
     mapCenter: [26.6, 73.8],
     mapZoom: 6,
     theme: { primary: "#c2410c" }, // terracotta
+    government: { name: "Government of Rajasthan", nameLocal: "राजस्थान सरकार" },
   },
   MH: {
     code: "MH",
@@ -48,6 +51,7 @@ export const STATES: Record<StateCode, StateConfig> = {
     mapCenter: [19.4, 76.4],
     mapZoom: 6,
     theme: { primary: "#1d4ed8" }, // deep blue
+    government: { name: "Government of Maharashtra", nameLocal: "महाराष्ट्र शासन" },
   },
 };
 

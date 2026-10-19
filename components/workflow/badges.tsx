@@ -1,62 +1,58 @@
-import { ArchiveIcon, CircleCheckIcon, CircleDotIcon, CircleIcon, ClockAlertIcon, LockIcon } from "lucide-react";
+import { ClockAlertIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
-import {
-  type DirectiveStatus,
-  type IssuePriority,
-  type IssueStatus,
-} from "@/lib/constants";
+import type { DirectiveStatus, IssuePriority, IssueStatus } from "@/lib/constants";
 
-const base = "inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium";
+/** Soft pill: tinted background, dark text of the same hue (always a text label, never colour alone). */
+export const pill = "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold";
+
+export const TONE_PILL = {
+  ok: "bg-ok-soft text-ok",
+  info: "bg-info-soft text-info",
+  warn: "bg-warn-soft text-warn",
+  bad: "bg-bad-soft text-bad",
+  stall: "bg-stall-soft text-stall",
+  muted: "bg-muted text-muted-foreground",
+} as const;
 
 export const PRIORITY_STYLE: Record<IssuePriority, string> = {
-  CRITICAL: "border-red-300 bg-red-50 text-red-800",
-  HIGH: "border-orange-300 bg-orange-50 text-orange-800",
-  MEDIUM: "border-amber-300 bg-amber-50 text-amber-800",
-  LOW: "border-slate-300 bg-slate-50 text-slate-700",
+  CRITICAL: TONE_PILL.bad,
+  HIGH: TONE_PILL.warn,
+  MEDIUM: TONE_PILL.info,
+  LOW: TONE_PILL.muted,
 };
 
 export function PriorityBadge({ priority }: { priority: IssuePriority }) {
   const t = useTranslations("enums.priority");
-  return <span className={`${base} ${PRIORITY_STYLE[priority]}`}>{t(priority)}</span>;
+  return <span className={`${pill} ${PRIORITY_STYLE[priority]}`}>{t(priority)}</span>;
 }
 
-const ISSUE_ICON: Record<IssueStatus, { icon: typeof CircleIcon; className: string }> = {
-  PENDING: { icon: CircleIcon, className: "text-amber-700" },
-  IN_PROGRESS: { icon: CircleDotIcon, className: "text-blue-700" },
-  RESOLVED: { icon: CircleCheckIcon, className: "text-green-700" },
-  ARCHIVED: { icon: ArchiveIcon, className: "text-slate-500" },
+const ISSUE_STYLE: Record<IssueStatus, string> = {
+  PENDING: TONE_PILL.warn,
+  IN_PROGRESS: TONE_PILL.info,
+  RESOLVED: TONE_PILL.ok,
+  ARCHIVED: TONE_PILL.muted,
 };
 
 export function IssueStatusBadge({ status }: { status: IssueStatus }) {
-  const { icon: Icon, className } = ISSUE_ICON[status];
   const t = useTranslations("enums.issueStatus");
-  return (
-    <span className={`${base} bg-background`}>
-      <Icon className={`size-3 ${className}`} />
-      {t(status)}
-    </span>
-  );
+  return <span className={`${pill} ${ISSUE_STYLE[status]}`}>{t(status)}</span>;
 }
 
-const DIRECTIVE_ICON: Record<DirectiveStatus, { icon: typeof CircleIcon; className: string }> = {
-  OPEN: { icon: CircleIcon, className: "text-amber-700" },
-  IN_PROGRESS: { icon: CircleDotIcon, className: "text-blue-700" },
-  COMPLIED: { icon: CircleCheckIcon, className: "text-green-700" },
-  CLOSED: { icon: LockIcon, className: "text-slate-500" },
+const DIRECTIVE_STYLE: Record<DirectiveStatus, string> = {
+  OPEN: TONE_PILL.warn,
+  IN_PROGRESS: TONE_PILL.info,
+  COMPLIED: TONE_PILL.ok,
+  CLOSED: TONE_PILL.muted,
 };
 
 export function DirectiveStatusBadge({ status, overdue }: { status: DirectiveStatus; overdue?: boolean }) {
-  const { icon: Icon, className } = DIRECTIVE_ICON[status];
   const t = useTranslations("enums.directiveStatus");
   const tw = useTranslations("workflow");
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
-      <span className={`${base} bg-background`}>
-        <Icon className={`size-3 ${className}`} />
-        {t(status)}
-      </span>
+      <span className={`${pill} ${DIRECTIVE_STYLE[status]}`}>{t(status)}</span>
       {overdue && (
-        <span className={`${base} border-red-300 bg-red-50 text-red-800`}>
+        <span className={`${pill} ${TONE_PILL.bad}`}>
           <ClockAlertIcon className="size-3" />
           {tw("overdue")}
         </span>
@@ -64,4 +60,3 @@ export function DirectiveStatusBadge({ status, overdue }: { status: DirectiveSta
     </span>
   );
 }
-

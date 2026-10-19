@@ -118,7 +118,9 @@
     "sessionEnded": "You've been signed out because your account was changed. Sign in again to continue.",
     "errorMissing": "Enter your email and password.",
     "errorInvalid": "Invalid email or password.",
-    "errorFailed": "Sign-in failed. Please try again."
+    "errorFailed": "Sign-in failed. Please try again.",
+    "heroTitle": "See every project site, not just its status report.",
+    "heroBody": "District-wise project tracking for the Chief Minister's Office, verified with dated satellite, drone and field imagery."
   },
   "account": {
     "changeTitle": "Change password",
@@ -159,7 +161,23 @@
     "noMeetings": "No review meetings recorded yet",
     "directives": "Directives",
     "open": "Open",
-    "overdue": "Overdue"
+    "overdue": "Overdue",
+    "totalProjects": "Total projects",
+    "acrossDepartments": "{count, plural, one {Across # department} other {Across # departments}}",
+    "completed": "Completed",
+    "ofTotal": "{percent}% of total",
+    "ongoing": "On-going",
+    "delayedStalled": "Delayed or stalled",
+    "behindSchedule": "Behind planned schedule",
+    "openIssues": "Open issues",
+    "pendingAtMeeting": "{count} pending at last review",
+    "viewAll": "View all",
+    "byDepartment": "Projects by department",
+    "directivesTitle": "Directives from CMO / CS",
+    "noOpenDirectives": "No open directives.",
+    "overdueOn": "Overdue · {date}",
+    "dueOn": "Due {date}",
+    "overdueCount": "{count} overdue"
   },
   "map": {
     "loading": "Loading map…",
@@ -193,7 +211,9 @@
     },
     "clickToOpenProject": "Click to open project",
     "siteStatus": "Project site status",
-    "noSites": "No project sites in your view"
+    "noSites": "No project sites in your view",
+    "panelTitle": "Districts",
+    "panelHint": "Colour shows the share of delayed or stalled projects. Hover for counts, click to open."
   },
   "district": {
     "inView": "{count, plural, one {# project in your view} other {# projects in your view}}",
@@ -205,7 +225,11 @@
     "projectSites": "Project sites",
     "completedOngoing": "{completed} completed · {ongoing} on-going",
     "byStatus": "Projects by status",
-    "behindCount": "{count} delayed / stalled"
+    "behindCount": "{count} delayed / stalled",
+    "title": "{district} district",
+    "collector": "Collector: {name}",
+    "projectsAcross": "{count, plural, one {# project} other {# projects}} across {departments, plural, one {# department} other {# departments}}",
+    "deptMeta": "{count, plural, one {# project} other {# projects}}"
   },
   "projectList": {
     "allDepartments": "All departments",
@@ -325,7 +349,16 @@
     "owner": "Owner {name}",
     "due": "Due {date}",
     "recentActivity": "Recent activity",
-    "noActivity": "No activity recorded."
+    "noActivity": "No activity recorded.",
+    "behindBadge": "Behind schedule",
+    "lastUpdateLabel": "Last progress update",
+    "plannedVsReported": "Planned vs reported progress",
+    "planned": "Planned",
+    "reported": "Reported",
+    "pointsBehind": "{points} points behind the planned schedule",
+    "siteImagery": "Site imagery by date",
+    "captures": "{count, plural, one {# capture} other {# captures}}",
+    "compareShort": "Compare"
   },
   "chart": {
     "empty": "No progress recorded yet.",
@@ -563,7 +596,9 @@
     "paneProgress": "Reported progress {progress}%",
     "comparing": "Comparing…",
     "changedSince": "≈ {percent}% changed since {date}",
-    "imageAlt": "{source} image, {date}"
+    "imageAlt": "{source} image, {date}",
+    "before": "Before",
+    "after": "After"
   },
   "workflow": {
     "updated": "Updated",

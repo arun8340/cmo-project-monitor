@@ -18,7 +18,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
   const [email, setEmail] = useState(state.email ?? "");
   const [password, setPassword] = useState("");
-  const [showDemo, setShowDemo] = useState(false);
+  const [showDemo, setShowDemo] = useState(true);
   const t = useTranslations("login");
   const th = useTranslations("header");
   const tr = useTranslations("enums.role");
@@ -46,6 +46,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
               type="email"
               autoComplete="username"
               placeholder="name@gov.in"
+              className="h-11 bg-card"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               aria-invalid={!!state.error || undefined}
@@ -58,6 +59,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
               id="password"
               name="password"
               type="password"
+              className="h-11 bg-card"
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -66,7 +68,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
             />
             {state.error && <FieldError>{state.error}</FieldError>}
           </Field>
-          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          <Button type="submit" size="lg" className="h-12 w-full text-[15px] font-semibold" disabled={pending}>
             {pending && <LoaderCircleIcon className="animate-spin" />}
             {pending ? t("signingIn") : t("signIn")}
           </Button>
@@ -74,11 +76,11 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
       </form>
 
       {SHOW_DEMO_ACCOUNTS && demoAccounts.length > 0 && (
-        <div className="rounded-lg border bg-muted/40">
+        <div className="rounded-xl border bg-card">
           <button
             type="button"
             onClick={() => setShowDemo((v) => !v)}
-            className="flex w-full items-center justify-between px-3 py-2.5 text-sm font-medium"
+            className="flex w-full items-center justify-between px-4 py-3 text-sm font-bold text-navy"
             aria-expanded={showDemo}
           >
             <span className="flex items-center gap-2">
@@ -88,7 +90,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
             <ChevronDownIcon className={`size-4 text-muted-foreground transition-transform ${showDemo ? "rotate-180" : ""}`} />
           </button>
           {showDemo && (
-            <div className="border-t px-1.5 pb-1.5">
+            <div className="border-t px-2 pb-2">
               <p className="px-1.5 py-2 text-xs text-muted-foreground">
                 {t("demoHint")} <code className="font-mono">{DEMO_PASSWORD}</code>
               </p>
@@ -98,10 +100,10 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
                     <button
                       type="button"
                       onClick={() => fillDemo(a.email)}
-                      className="flex w-full items-center justify-between gap-3 rounded-md px-1.5 py-1.5 text-left text-sm hover:bg-background"
+                      className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-muted"
                     >
                       <span className="min-w-0">
-                        <span className="block font-medium">{tr(a.role)}</span>
+                        <span className="block font-semibold text-navy">{tr(a.role)}</span>
                         <span className="block truncate text-xs text-muted-foreground">{a.email}</span>
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">{a.scope === "STATE" ? th("wholeState") : a.scope === "ALL" ? th("allStates") : a.scope}</span>

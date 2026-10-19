@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Noto_Sans_Devanagari } from "next/font/google";
+import { Geist_Mono, Noto_Sans_Devanagari, Public_Sans } from "next/font/google";
 import { locale as rootLocale } from "next/root-params";
 import { NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -7,8 +7,8 @@ import "../globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_LOCALE, isLocale, LOCALES } from "@/lib/i18n/config";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const publicSans = Public_Sans({
+  variable: "--font-public-sans",
   subsets: ["latin"],
 });
 
@@ -41,7 +41,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
   const param = await rootLocale();
   const locale = isLocale(param) ? param : DEFAULT_LOCALE;
   return (
-    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} ${devanagari.variable} h-full antialiased`}>
+    <html lang={locale} className={`${publicSans.variable} ${geistMono.variable} ${devanagari.variable} h-full antialiased`}>
       {/* suppressHydrationWarning: browser extensions (e.g. Grammarly) add attributes to <body> */}
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>

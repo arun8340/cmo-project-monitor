@@ -21,6 +21,8 @@ type Props = {
   changedShare: number | null;
   onChangedShare: (share: number | null) => void;
   baselineLabel: string | null;
+  /** First pane is the "before" image, last is "after". */
+  role?: "before" | "after" | null;
 };
 
 type Rect = { left: number; top: number; width: number; height: number };
@@ -33,7 +35,7 @@ function containRect(paneW: number, paneH: number, imgW: number, imgH: number): 
 }
 
 /** One dated image; zoom/pan gestures update the shared view used by every pane. */
-export function ComparePane({ image, order, view, setView, diff, showChanges, sensitivity, changedShare, onChangedShare, baselineLabel }: Props) {
+export function ComparePane({ image, order, view, setView, diff, showChanges, sensitivity, changedShare, onChangedShare, baselineLabel, role }: Props) {
   const paneRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -111,8 +113,14 @@ export function ComparePane({ image, order, view, setView, diff, showChanges, se
 
   return (
     <figure className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-lg border border-white/10 bg-black">
-      <figcaption className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-white/10 bg-slate-900 px-3 py-1.5 text-xs">
-        <span className="flex size-5 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold">{order}</span>
+      <figcaption className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-white/10 bg-navy-soft px-3 py-1.5 text-xs">
+        {role ? (
+          <span className={`rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase ${role === "before" ? "bg-navy text-white ring-1 ring-white/20" : "bg-rust text-white"}`}>
+            {t(role)}
+          </span>
+        ) : (
+          <span className="flex size-5 items-center justify-center rounded-full bg-white/15 text-[11px] font-semibold">{order}</span>
+        )}
         <span className="text-sm font-semibold">{image.dayLabel}</span>
         <span className="flex items-center gap-1 text-white/70">
           <meta.icon className="size-3.5" style={{ color: meta.color }} />

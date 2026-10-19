@@ -54,7 +54,7 @@ async function UserDetail({ params, searchParams }: { params: Params["params"]; 
       <Breadcrumbs items={[{ label: "Users", href: "/admin/users" }, { label: user.name }]} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{user.name}</h1>
+          <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">{user.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {user.role.name}
             {user.state && ` · ${user.state.name}`} · {user.email}

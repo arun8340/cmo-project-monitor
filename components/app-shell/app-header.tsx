@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { LandmarkIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import type { StateConfig } from "@/config/states";
@@ -11,41 +10,45 @@ import { localNames } from "@/lib/i18n/names";
 import { getLabels } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { UserMenu } from "./user-menu";
+import { APP_NAMES, BrandMark } from "./brand";
 
 /**
- * Top bar. The state band is static; the user menu streams in (it reads the session).
- * `homeHref` is where the app name links to (the state's map on its portal);
- * `nav` is an optional row of section links under the bar.
+ * Top bar (navy): app mark and name, the state's government, and — streamed in,
+ * since it reads the session — the language switch and user menu.
+ * `homeHref` is where the app name links to; `nav` is an optional row of
+ * section tabs under the bar.
  */
 export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig; homeHref?: string; nav?: ReactNode }) {
   const t = useTranslations("app");
   const locale = useLocale();
-  const stateName = state ? localNames(locale, state.name, state.nameLocal) : null;
+  const subtitle = locale === "en" ? APP_NAMES[state?.locale ?? "hi"] : APP_NAMES.en;
+  const government = state ? localNames(locale, state.government.name, state.government.nameLocal) : null;
   return (
-    <header
-      className="sticky top-0 z-40 text-white shadow-sm"
-      style={{ backgroundColor: state?.theme.primary ?? "#0f172a" }}
-    >
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
-        <Link
-          href={homeHref}
-          className="flex min-w-0 items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-        >
-          <LandmarkIcon className="size-5 shrink-0" />
-          <span className="truncate text-sm font-semibold sm:text-base">{t("name")}</span>
-          {stateName && (
-            <span className="hidden items-center gap-2 text-sm text-white/80 sm:flex">
-              <span className="text-white/40">|</span>
-              {stateName.primary}
-              {stateName.secondary && <span className="text-white/60">{stateName.secondary}</span>}
+    <header className="sticky top-0 z-40 shadow-sm">
+      <div className="bg-navy text-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
+          <Link
+            href={homeHref}
+            className="flex min-w-0 items-center gap-3 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+          >
+            <BrandMark className="size-9 shrink-0" />
+            <span className="grid min-w-0 leading-tight">
+              <span className="truncate text-[15px] font-bold sm:text-base">{t("name")}</span>
+              <span className="hidden truncate text-[11px] text-white/70 sm:block">{subtitle}</span>
+            </span>
+          </Link>
+          {government && (
+            <span className="hidden items-center gap-2 rounded-lg bg-white/[0.07] px-3.5 py-1.5 text-sm lg:flex">
+              <span className="font-semibold">{government.primary}</span>
+              {government.secondary && <span className="text-white/70">{government.secondary}</span>}
             </span>
           )}
-        </Link>
-        <Suspense fallback={<div className="h-9 w-40 animate-pulse rounded-lg bg-white/10" />}>
-          <HeaderUser />
-        </Suspense>
+          <Suspense fallback={<div className="h-9 w-40 animate-pulse rounded-lg bg-white/10" />}>
+            <HeaderUser />
+          </Suspense>
+        </div>
       </div>
-      {nav && <div className="border-t border-white/10">{nav}</div>}
+      {nav && <div className="border-b bg-card">{nav}</div>}
     </header>
   );
 }
@@ -54,14 +57,17 @@ export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig;
 export function AppHeaderSkeleton() {
   const t = useTranslations("app");
   return (
-    <header className="sticky top-0 z-40 bg-slate-900 text-white shadow-sm">
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4">
-        <span className="flex items-center gap-2.5">
-          <LandmarkIcon className="size-5" />
-          <span className="text-sm font-semibold sm:text-base">{t("name")}</span>
-        </span>
-        <div className="h-9 w-40 animate-pulse rounded-lg bg-white/10" />
+    <header className="sticky top-0 z-40 shadow-sm">
+      <div className="bg-navy text-white">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4">
+          <span className="flex items-center gap-3">
+            <BrandMark className="size-9" />
+            <span className="text-[15px] font-bold sm:text-base">{t("name")}</span>
+          </span>
+          <div className="h-9 w-40 animate-pulse rounded-lg bg-white/10" />
+        </div>
       </div>
+      <div className="h-11 border-b bg-card" />
     </header>
   );
 }
@@ -74,7 +80,7 @@ async function HeaderUser() {
     user.roleKey === "ADMIN" ? t("allStates") : [user.districtName, user.departmentName].filter(Boolean).join(" · ") || t("wholeState");
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
       <div className="hidden sm:block">
         <LanguageSwitcher locales={portalLocales(portal)} />
       </div>

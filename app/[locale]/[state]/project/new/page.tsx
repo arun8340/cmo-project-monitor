@@ -51,7 +51,7 @@ async function NewProject({ params, searchParams }: { params: Params["params"]; 
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{t("newTitle")}</h1>
+        <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">{t("newTitle")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("newIntro", { scope: stateName })}</p>
       </div>
       <div className="rounded-xl border bg-card p-5">
