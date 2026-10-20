@@ -213,7 +213,8 @@
     "siteStatus": "Project site status",
     "noSites": "No project sites in your view",
     "panelTitle": "Districts",
-    "panelHint": "Colour shows the share of delayed or stalled projects. Hover for counts, click to open."
+    "panelHint": "Colour shows the share of delayed or stalled projects. Hover for counts, click to open.",
+    "byDepartment": "Projects by department"
   },
   "district": {
     "inView": "{count, plural, one {# project in your view} other {# projects in your view}}",
@@ -229,7 +230,8 @@
     "title": "{district} district",
     "collector": "Collector: {name}",
     "projectsAcross": "{count, plural, one {# project} other {# projects}} across {departments, plural, one {# department} other {# departments}}",
-    "deptMeta": "{count, plural, one {# project} other {# projects}}"
+    "deptMeta": "{count, plural, one {# project} other {# projects}}",
+    "projectSitesHint": "Every project in the district, coloured by department. Hover a department to pick out its sites."
   },
   "projectList": {
     "allDepartments": "All departments",
@@ -260,7 +262,10 @@
       "progress": "Progress",
       "budget": "Budget",
       "end": "Planned end date"
-    }
+    },
+    "mapTitle": "Project sites",
+    "mapHint": "The projects in this list. Hover a row to find it on the map.",
+    "imageryOn": "Imagery {date}"
   },
   "progress": {
     "plan": "plan {planned}%",

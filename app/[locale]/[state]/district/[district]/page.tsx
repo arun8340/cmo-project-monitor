@@ -10,6 +10,8 @@ import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { PageHeader, Panel, StatCard } from "@/components/app-shell/page-parts";
 import { pill } from "@/components/workflow/badges";
 import { DistrictMapPanel } from "@/components/district-map/district-map-panel";
+import { Highlight, MapHighlightProvider } from "@/components/district-map/highlight";
+import { deptColor, deptShort } from "@/lib/departments";
 import { requireStateAccess } from "@/lib/auth/dal";
 import { getDistrictView, type DepartmentCard } from "@/lib/data/district";
 import { HEALTH_STYLE, PROJECT_STATUS_COLOR, type StatusCounts } from "@/lib/district-health";
@@ -26,8 +28,6 @@ export default function DistrictPage({ params }: PageProps<"/[locale]/[state]/di
   );
 }
 
-/** Short codes shown in the department tiles. */
-const DEPT_SHORT: Record<string, string> = { PWD: "PWD", METRO: "MET", DRAINAGE: "D&S", URBAN: "URB", RNB: "R&B", RURAL: "RUR", MGNREGA: "MGN" };
 
 async function District({ params }: { params: PageProps<"/[locale]/[state]/district/[district]">["params"] }) {
   const { state: stateParam, district: slug } = await params;
@@ -73,31 +73,36 @@ async function District({ params }: { params: PageProps<"/[locale]/[state]/distr
         <StatCard label={t("openDirectives")} value={view.openDirectives} href={`${basePath}/directives?district=${slug}`} />
       </div>
 
-      <section aria-labelledby="departments-heading">
-        <h2 id="departments-heading" className="mb-3 text-lg font-bold text-navy">
-          {t("departments")}
-        </h2>
-        <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {view.departments.map((d) => (
-            <li key={d.code}>
-              <DepartmentCardLink dept={d} href={`${districtPath}/${d.slug}`} />
-            </li>
-          ))}
-        </ul>
-      </section>
+      <MapHighlightProvider>
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+          <section aria-labelledby="departments-heading">
+            <h2 id="departments-heading" className="mb-3 text-lg font-bold text-navy">
+              {t("departments")}
+            </h2>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {view.departments.map((d) => (
+                <Highlight key={d.code} as="li" dept={d.code}>
+                  <DepartmentCardLink dept={d} href={`${districtPath}/${d.slug}`} />
+                </Highlight>
+              ))}
+            </ul>
+          </section>
 
-      <Panel title={t("projectSites")} id="sites-heading">
-        <div className="h-96">
-          <DistrictMapPanel
-            geojsonUrl={state.geojson}
-            geoCodeProperty={state.geoCodeProperty}
-            geoCode={district.geoCode}
-            center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
-            pins={view.pins}
-            basePath={basePath}
-          />
+          <div className="lg:sticky lg:top-32">
+            <Panel title={t("projectSites")} description={t("projectSitesHint")} id="sites-heading">
+              <DistrictMapPanel
+                geojsonUrl={state.geojson}
+                geoCodeProperty={state.geoCodeProperty}
+                geoCode={district.geoCode}
+                center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
+                pins={view.pins}
+                basePath={basePath}
+                mapClassName="h-[420px] lg:h-[calc(100svh-19rem)] lg:min-h-[420px]"
+              />
+            </Panel>
+          </div>
         </div>
-      </Panel>
+      </MapHighlightProvider>
     </div>
   );
 }
@@ -126,8 +131,11 @@ function DepartmentCardLink({ dept, href }: { dept: DepartmentCard; href: string
       }`}
     >
       <div className="flex items-start gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-lg bg-info-soft text-[13px] font-bold text-info">
-          {DEPT_SHORT[dept.code] ?? dept.code.slice(0, 3)}
+        <span
+          className="grid size-11 shrink-0 place-items-center rounded-lg text-[13px] font-bold"
+          style={{ backgroundColor: `${deptColor(dept.code)}1f`, color: deptColor(dept.code) }}
+        >
+          {deptShort(dept.code)}
         </span>
         <div className="min-w-0 flex-1">
           <div className="leading-snug font-bold text-navy group-hover:underline">{name.primary}</div>
