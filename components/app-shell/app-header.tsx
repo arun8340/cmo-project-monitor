@@ -11,6 +11,7 @@ import { getLabels } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { UserMenu } from "./user-menu";
 import { APP_NAMES, BrandMark } from "./brand";
+import { DEMO_MODE } from "@/lib/demo";
 
 /**
  * Top bar (navy): app mark and name, the state's government, and — streamed in,
@@ -37,6 +38,7 @@ export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig;
               <span className="hidden truncate text-[11px] text-white/70 sm:block">{subtitle}</span>
             </span>
           </Link>
+          {DEMO_MODE && <DemoBadge />}
           {government && (
             <span className="hidden items-center gap-2 rounded-lg bg-white/[0.07] px-3.5 py-1.5 text-sm lg:flex">
               <span className="font-semibold">{government.primary}</span>
@@ -92,5 +94,20 @@ async function HeaderUser() {
         locales={portalLocales(portal)}
       />
     </div>
+  );
+}
+
+/** Shown on demo deployments (DEMO_MODE): data is a sample and changes reset. */
+export function DemoBadge({ tone = "dark" }: { tone?: "dark" | "light" }) {
+  const t = useTranslations("header");
+  return (
+    <span
+      title={t("demoHint")}
+      className={`shrink-0 rounded-md px-2 py-1 text-[11px] font-bold tracking-wide uppercase ${
+        tone === "dark" ? "bg-amber/20 text-amber ring-1 ring-amber/40" : "bg-warn-soft text-warn"
+      }`}
+    >
+      {t("demoBadge")}
+    </span>
   );
 }

@@ -16,6 +16,8 @@ const nextConfig: NextConfig = {
     serverActions: { bodySizeLimit: "210mb" },
   },
   cacheComponents: true,
+  // Demo mode (lib/demo.ts) reads the bundled demo database and imagery at runtime.
+  outputFileTracingIncludes: { "/*": ["./demo/**/*"] },
   partialPrefetching: true,
   turbopack: {
     // Pin the root so a stray lockfile in a parent folder is not picked up.
