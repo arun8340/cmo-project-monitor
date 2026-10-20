@@ -5,7 +5,10 @@ import { CircleAlertIcon, PlusIcon, SearchXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
-import { PageHeader } from "@/components/app-shell/page-parts";
+import { PageHeader, Panel } from "@/components/app-shell/page-parts";
+import { DistrictMapPanel } from "@/components/district-map/district-map-panel";
+import { Highlight, MapHighlightProvider } from "@/components/district-map/highlight";
+import { deptColor } from "@/lib/departments";
 import { StatusBadge } from "@/components/project/status-badge";
 import { ProgressCell } from "@/components/project/progress-cell";
 import { ListControls } from "@/components/project/list-controls";
@@ -120,14 +123,44 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
         <ListControls action={listPath} q={filters.q} status={filters.status} sort={filters.sort} />
       </div>
 
-      {rows.length === 0 ? (
-        <EmptyState searched={!!filters.q || !!filters.status} clearHref={listPath} />
-      ) : (
-        <>
-          <ProjectTable rows={rows} basePath={basePath} showDepartment={!department} />
-          <ProjectCards rows={rows} basePath={basePath} showDepartment={!department} />
-        </>
-      )}
+      <MapHighlightProvider>
+        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+          <div className="min-w-0">
+            {rows.length === 0 ? (
+              <EmptyState searched={!!filters.q || !!filters.status} clearHref={listPath} />
+            ) : (
+              <>
+                <ProjectTable rows={rows} basePath={basePath} showDepartment={!department} />
+                <ProjectCards rows={rows} basePath={basePath} showDepartment={!department} />
+              </>
+            )}
+          </div>
+          <div className="order-first xl:sticky xl:top-32 xl:order-none">
+            <Panel title={t("mapTitle")} description={t("mapHint")}>
+              <DistrictMapPanel
+                geojsonUrl={state.geojson}
+                geoCodeProperty={state.geoCodeProperty}
+                geoCode={district.geoCode}
+                center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
+                pins={rows.map((r) => ({
+                  id: r.id,
+                  name: r.name,
+                  nameLocal: r.nameLocal,
+                  latitude: r.latitude,
+                  longitude: r.longitude,
+                  status: r.status,
+                  progressPercent: r.progressPercent,
+                  departmentCode: r.departmentCode,
+                  departmentName: r.departmentName,
+                  departmentNameLocal: r.departmentNameLocal,
+                }))}
+                basePath={basePath}
+                mapClassName="h-80 xl:h-[calc(100svh-19rem)] xl:min-h-[420px]"
+              />
+            </Panel>
+          </div>
+        </div>
+      </MapHighlightProvider>
     </div>
   );
 }
@@ -150,14 +183,20 @@ function Chip({ href, active, label, count, color }: { href: string; active: boo
 }
 
 function ProjectName({ row, basePath, showDepartment }: { row: ProjectRow; basePath: string; showDepartment: boolean }) {
-  const name = localNames(useLocale(), row.name, row.nameLocal);
+  const locale = useLocale();
+  const name = localNames(locale, row.name, row.nameLocal);
   return (
     <div className="min-w-0">
       <Link href={`${basePath}/project/${row.id}`} className="font-semibold text-link hover:text-navy hover:underline">
         {name.primary}
       </Link>
       {name.secondary && <div className="truncate text-xs text-muted-foreground">{name.secondary}</div>}
-      {showDepartment && <div className="text-xs text-muted-foreground">{row.departmentName}</div>}
+      {showDepartment && (
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: deptColor(row.departmentCode) }} />
+          {localName(locale, row.departmentName, row.departmentNameLocal)}
+        </div>
+      )}
     </div>
   );
 }
@@ -173,17 +212,16 @@ function ProjectTable({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
             <th className="px-4 py-3 font-semibold">{t("colProject")}</th>
             <th className="px-4 py-3 font-semibold">{t("colStatus")}</th>
             <th className="px-4 py-3 font-semibold">{t("colProgress")}</th>
-            <th className="px-4 py-3 text-right font-semibold">{t("colBudget")}</th>
             <th className="px-4 py-3 font-semibold">{t("colTimeline")}</th>
-            <th className="px-4 py-3 font-semibold">{t("colImagery")}</th>
             <th className="px-4 py-3 text-right font-semibold">{t("colIssues")}</th>
           </tr>
         </thead>
         <tbody className="divide-y">
           {rows.map((r) => (
-            <tr key={r.id} className="align-top hover:bg-[#faf8f3]">
-              <td className="max-w-80 px-4 py-3">
+            <Highlight as="tr" key={r.id} project={r.id} className="align-top hover:bg-[#faf8f3]">
+              <td className="min-w-48 px-4 py-3">
                 <ProjectName row={r} basePath={basePath} showDepartment={showDepartment} />
+                <div className="mt-0.5 text-xs font-semibold text-navy tabular-nums">{formatBudget(r.budgetLakhs, locale)}</div>
               </td>
               <td className="px-4 py-3">
                 <StatusBadge status={r.status} />
@@ -191,12 +229,11 @@ function ProjectTable({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
               <td className="px-4 py-3">
                 <ProgressCell actual={r.progressPercent} planned={r.plannedPercent} behind={r.behind} />
               </td>
-              <td className="px-4 py-3 text-right whitespace-nowrap tabular-nums">{formatBudget(r.budgetLakhs, locale)}</td>
               <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">
-                <div>{t("start", { date: formatDate(r.startDate, locale) })}</div>
-                <div>{t("end", { date: formatDate(r.plannedEndDate, locale) })}</div>
+                <div>{formatDate(r.startDate, locale)} →</div>
+                <div>{formatDate(r.plannedEndDate, locale)}</div>
+                {r.latestImagery && <div className="mt-1 text-foreground/70">{t("imageryOn", { date: formatDate(r.latestImagery, locale) })}</div>}
               </td>
-              <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">{formatDate(r.latestImagery, locale)}</td>
               <td className="px-4 py-3 text-right tabular-nums">
                 {r.openIssues > 0 ? (
                   <span className="inline-flex items-center gap-1 font-medium text-red-700">
@@ -207,7 +244,7 @@ function ProjectTable({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
                   <span className="text-muted-foreground">0</span>
                 )}
               </td>
-            </tr>
+            </Highlight>
           ))}
         </tbody>
       </table>
@@ -221,7 +258,7 @@ function ProjectCards({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
   return (
     <ul className="grid gap-3 md:hidden">
       {rows.map((r) => (
-        <li key={r.id} className="grid gap-3 rounded-xl border bg-card p-4">
+        <Highlight as="li" key={r.id} project={r.id} className="grid gap-3 rounded-xl border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <ProjectName row={r} basePath={basePath} showDepartment={showDepartment} />
             <StatusBadge status={r.status} />
@@ -241,7 +278,7 @@ function ProjectCards({ rows, basePath, showDepartment }: { rows: ProjectRow[]; 
               <dd className={`font-medium ${r.openIssues > 0 ? "text-red-700" : ""}`}>{r.openIssues}</dd>
             </div>
           </dl>
-        </li>
+        </Highlight>
       ))}
     </ul>
   );
