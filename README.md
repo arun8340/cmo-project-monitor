@@ -1,36 +1,273 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CM Infrastructure Project Monitor (POC)
 
-## Getting Started
+Verification layer for government infrastructure projects in **Rajasthan** and **Maharashtra**:
+every project has a site, dated satellite / drone / field imagery, progress history, issues and directives.
+See [PROJECT_BRIEF.md](PROJECT_BRIEF.md) for the full scope.
 
-First, run the development server:
+## Stack
+
+Next.js 16 (App Router) · TypeScript · Tailwind v4 · shadcn/ui (Base UI) · Prisma 7 + SQLite (`better-sqlite3` adapter) · next-intl (English / हिन्दी / मराठी)
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install            # also runs `prisma generate`
+cp .env.example .env   # then set AUTH_SECRET (see below)
+npm run db:migrate     # create / update the SQLite database
+npm run db:seed        # demo data + placeholder imagery
+npm run dev            # then open a portal (below)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Portals: one address per state
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Portal | Local address | Who signs in |
+|---|---|---|
+| Rajasthan | <http://rj.localhost:3000> | Rajasthan users only |
+| Maharashtra | <http://mh.localhost:3000> | Maharashtra users only |
+| Admin | <http://admin.localhost:3000> | Admin only — the one place both states are visible |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Plain <http://localhost:3000> lists these links (development only). `*.localhost` addresses work in any
+browser with no setup. A state portal never shows or links to the other state; a user of one state can't
+sign in on the other's portal, and sessions only work on the portal that issued them.
 
-## Learn More
+For production, point each address at the same deployment and set them in `.env`:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+PORTAL_HOST_RJ="rajasthan.cmo-monitor.in"
+PORTAL_HOST_MH="maharashtra.cmo-monitor.in"
+PORTAL_HOST_ADMIN="admin.cmo-monitor.in"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Unknown addresses get "Not found". Behind a reverse proxy, forward the public host (`X-Forwarded-Host`).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+> npm 11 blocks dependency install scripts unless approved. The ones this project needs
+> (`better-sqlite3`, `prisma`, `@prisma/engines`, `esbuild`, `unrs-resolver`) are already listed
+> under `allowScripts` in `package.json`.
 
-## Deploy on Vercel
+`AUTH_SECRET` encrypts the login session cookie. Generate one with `openssl rand -base64 33` and paste it
+into `.env`. Changing it signs everyone out.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Useful scripts:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script | What it does |
+|---|---|
+| `npm run db:seed` | Wipes and re-seeds all data (safe to re-run) |
+| `npm run db:reset` | Drops the DB, re-applies migrations and re-seeds |
+| `npm run db:studio` | Opens Prisma Studio to browse the data |
+| `npm run check:scopes` | Verifies each demo user sees only the data in their scope |
+| `npm run geo:build` | Regenerates the district boundary files in `public/geo/` |
+| `npm run imagery:migrate` | One-off: moves imagery from the old public `public/uploads/` into private storage (keeps all data) |
+
+## Demo users
+
+All demo users have the password **`Demo@123`**. Each portal's login page has a clickable "Demo accounts"
+list with only that portal's accounts; hide it with `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS="false"` in `.env`.
+
+Admin: `admin@demo.gov.in` on the **admin portal**.
+
+| Role | Rajasthan portal | Maharashtra portal |
+|---|---|---|
+| CM / CMO / Chief Secretary | `cmo.rj@demo.gov.in` | `cmo.mh@demo.gov.in` |
+| Department Head (PWD) | `pwd.rj@demo.gov.in` | `pwd.mh@demo.gov.in` |
+| District Collector | `collector.jaipur@demo.gov.in` | `collector.pune@demo.gov.in` |
+| Field Officer | `field.jaipur@demo.gov.in` | `field.pune@demo.gov.in` |
+
+## Demo data
+
+- **Districts:** Rajasthan 41 (post Dec-2024 reorganisation), Maharashtra 36 — all seeded with English + local names.
+- **Departments (per state):** PWD, Metro, Drainage & Sewer, Urban, Roads & Buildings, Rural, MGNREGA.
+- **Projects:** 64 across Jaipur, Jodhpur, Udaipur, Kota, Mumbai Suburban, Pune, Nagpur and Nashik,
+  with a mix of On-Going / Completed / Delayed / Stalled / Not Started.
+- Each project has monthly progress updates, 2–4 dated imagery captures, and (for delayed/stalled ones)
+  pending issues tagged to the last review meeting. CMO directives exist per state, some overdue.
+- Seed data lives in `prisma/seed-data/` — edit those files to change names, budgets or statuses.
+
+## Authentication and access control
+
+- **Login:** Auth.js v5 (credentials, JWT cookie, 8-hour session). Config in `auth.config.ts` / `auth.ts`.
+- **Portals** (`config/portals.ts`): the request's address decides the portal. Logins are only accepted from
+  that portal's users, and each session records its portal and is rejected anywhere else.
+- **`proxy.ts`** routes per portal with cookie-only checks: logged out → `/login`; on a state portal, clean URLs
+  (`/district/jaipur`) are rewritten to the internal `/rj/...` routes, and other states' or admin paths are "not
+  found". It is *not* the security boundary.
+- **`lib/auth/dal.ts`** is: every page and server action gets the user via `requireUser()` /
+  `requirePermission()` / `requireStateAccess()`, which re-load the user from the database on each request.
+- **`lib/auth/scope.ts`** turns the user's role into database filters. Every query for projects, issues,
+  directives, districts or departments must include the matching scope:
+
+| Role | Sees |
+|---|---|
+| Admin (admin portal) | Everything in the selected state; can switch states |
+| CMO / CS | Whole state |
+| Department Head | Own department, all districts in the state |
+| District Collector | Own district, all departments |
+| Field Officer | Only projects assigned to them |
+
+Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins (including
+attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
+
+## Issues and directives
+
+The header of every state page links to **Overview**, **Issues** (with the open count) and **Directives** (with the
+overdue count in red).
+
+- **Issues** are raised from a project's page (*Raise issue*) by Collectors, Department Heads, Field Officers (on
+  their assigned projects) and Admin, with a priority and an optional review-meeting date. The Issues page filters by
+  status, priority, district, department and review meeting. Collectors, Department Heads, the CMO and Admin change
+  status (Pending → In progress → Resolved → Archived, or reopen); resolving or reopening needs a note.
+- **Directives** are issued by the CMO / Chief Secretary or Admin to a district, department and/or project, with a
+  **responsible officer** (the Collector of that district or Head of that department) and a due date. The owner (or a
+  Collector / Department Head in scope) marks it *In progress* or *Complied* (compliance note required); the CMO then
+  *accepts and closes* it or *reopens* it. Open directives past their due date show as **Overdue**.
+- Every status change is kept in a **history timeline** on the issue / directive page, and in the audit log.
+- Review meetings are an optional date on each issue for now; a separate Meeting record can be added later.
+
+## Users, roles and the audit log
+
+The **admin portal** header has **States**, **Users**, **Roles** and **Audit log**.
+
+- **Users** (`/admin/users`): search and filter by state, role and active/deactivated. *Add user* asks for the role
+  and the scope it needs — CMO: state; Department Head: state + department; Collector and Field Officer: state +
+  district; Admin: none — plus a **temporary password** (*Generate* makes one). On first sign-in the person must
+  choose their own password before they can do anything else.
+- A user's page lets the Admin edit details, role and scope, **set a new temporary password**, **deactivate /
+  reactivate** (takes effect on the person's next click — they are signed out), and for Field Officers **assign
+  projects** from their district. Changing someone's role or state also signs them out. You can't deactivate
+  yourself, remove your own Admin role, or leave the system without an active Admin.
+- **Roles** (`/admin/roles`): a table of what each role may do; tick and *Save permissions*. The Admin role always
+  has everything; managing users, master data and switching states stay Admin-only; *View projects* is always on.
+  Which **data** a person sees is set by their scope, not by these permissions.
+- **Audit log** (`/admin/audit`): every sign-in (and failed attempt), project edit, progress update, upload,
+  verification, issue, directive and user/role change, in plain language with links. Filter by date, person,
+  category and state, or show failed sign-ins only; *Download CSV* exports the current filter.
+- **Activity log** (state portals): the CMO / Chief Secretary sees the same log limited to their state, from
+  *Activity log* in the header. Give or remove this with the *View activity log* permission on the Roles page.
+- **Everyone** can change their own password from the user menu (top right). Passwords need at least 10
+  characters with a letter and a number. (The seeded demo users keep `Demo@123` and aren't asked to change it.)
+
+## Languages (English, हिन्दी, मराठी)
+
+Each state portal can be used in English or the state's language — **Hindi on the Rajasthan portal, Marathi on
+the Maharashtra portal** — using the **English | हिन्दी** (or **मराठी**) switch in the header, on the login page, or in
+the user menu on phones. The choice is remembered per portal in the browser. The admin portal is English only.
+
+- Everything on the state portals is translated: navigation, the map, dashboards, project pages, imagery, comparison,
+  issues, directives, the activity log (and its CSV), form errors and confirmations. Dates use Hindi / Marathi month
+  names; budgets read ₹25 करोड़ / ₹25 कोटी. Figures stay in Latin digits so they match reports.
+- District, department and project names show the local-language name first (with English alongside) when one exists.
+  Data typed by users — descriptions, notes, issue titles — is shown as entered.
+- Translations live in `messages/en.json`, `messages/hi.json` and `messages/mr.json`. `npm run check:messages` checks
+  that Hindi and Marathi have every English message with the same `{placeholders}`; a missing message falls back to
+  English rather than breaking the page.
+- How it works: Proxy reads the `NEXT_LOCALE` cookie and serves each page under a hidden language segment
+  (`app/[locale]/…`), so URLs stay the same in every language. Server actions and the CSV export read the cookie.
+- Adding a language for a new state: set `locale` in `config/states.ts`, add it to `LOCALES` in `lib/i18n/config.ts`,
+  and add `messages/<locale>.json`.
+
+## Deploying the demo to Vercel (no database needed)
+
+For demos the app can run in **demo mode**: the repo ships a ready-made demo database and its imagery in
+`demo/`, so there is no database or storage service to set up.
+
+- With `DEMO_MODE=true` the app copies `demo/` into a temporary folder on the server and works from that
+  copy. Everything works — signing in, editing, raising issues, uploading photos — but **changes are
+  temporary**: when the host recycles the server (after some idle time, or when it starts another
+  copy) the original demo data comes back. A "Demo · changes reset" badge shows in the header.
+- Dates are moved forward by the snapshot's age when the copy is made, so the demo always looks the same
+  (due dates, "3 days ago", planned progress don't drift).
+- After changing the seed data, rebuild the snapshot with `npm run demo:snapshot` and commit `demo/`.
+  (It uses its own files; `dev.db` and `storage/` are not touched.)
+- On Vercel each request can carry at most ~4.5 MB, so upload one or two normal photos at a time.
+
+**Steps**
+
+1. vercel.com → Add New → Project → import this repository. Settings → General → Node.js **22.x**.
+2. Settings → Domains → add three addresses to the same project, e.g. `cmo-rajasthan.vercel.app`,
+   `cmo-maharashtra.vercel.app`, `cmo-admin.vercel.app` (or `rj.` / `mh.` / `admin.` on your own domain).
+3. Settings → Environment Variables:
+
+   | Variable | Value |
+   |---|---|
+   | `DEMO_MODE` | `true` |
+   | `AUTH_SECRET` | a new secret — run `npx auth secret` and paste it |
+   | `PORTAL_HOST_RJ` / `PORTAL_HOST_MH` / `PORTAL_HOST_ADMIN` | the three addresses (no `https://`) |
+   | `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS` | `true` |
+
+4. Deploy, then open each address and sign in with the demo accounts (`Demo@123`).
+5. Map tiles: create a free Stadia Maps account and register the three addresses (see `config/map.ts`).
+
+## Where things live
+
+| Path | Purpose |
+|---|---|
+| `config/states.ts` | Per-state config (names, interface language, GeoJSON path, map centre/zoom, colour) |
+| `lib/constants.ts` | Status / priority / source enums, roles and permissions |
+| `lib/db.ts` | Shared Prisma client (server only) |
+| `lib/auth/` | Data access layer (`dal.ts`) and role scoping (`scope.ts`) |
+| `auth.ts`, `auth.config.ts`, `proxy.ts` | Auth.js setup and per-portal routing |
+| `config/portals.ts` | Portal addresses (state and admin) |
+| `prisma/schema.prisma` | Data model |
+| `prisma/seed.ts` | Seed script; `prisma/demo-imagery.ts` draws the placeholder images |
+| `public/geo/` | District boundary GeoJSON (generated by `npm run geo:build`) |
+| `storage/` | Uploaded imagery — **private**, git-ignored; `storage/demo/` is regenerated by the seed |
+| `lib/storage/` | Storage interface (local disk now; swap in S3 by implementing it) |
+| `app/api/imagery/[id]` | Serves imagery only after the same access checks as project pages |
+| `app/[locale]/admin/`, `app/actions/admin.ts` | Admin portal: users, roles, audit log (and their server actions) |
+| `demo/`, `lib/demo.ts` | Demo-mode data snapshot and loader (`npm run demo:snapshot`) |
+| `lib/audit.ts` | Audit-log descriptions, filters and state scoping (pages and CSV export) |
+| `messages/`, `i18n/request.ts`, `lib/i18n/` | Translations, next-intl setup, language helpers (names, labels, switcher config) |
+
+## Manual setup
+
+### 1. District boundaries (already included)
+
+`public/geo/rajasthan-districts.geojson` and `public/geo/maharashtra-districts.geojson` are generated by
+`npm run geo:build` from [guneetnarula/indian-district-boundaries](https://github.com/guneetnarula/indian-district-boundaries)
+(MIT License, 2019 districts) and committed — you don't need to do anything. They are for visualisation, not official boundaries.
+
+- **Maharashtra:** all 36 districts.
+- **Rajasthan:** 33 shapes. The 8 districts created since (Balotra, Beawar, Deeg, Didwana-Kuchaman, Khairthal-Tijara,
+  Kotputli-Behror, Phalodi, Salumbar) appear in a "Not yet on map" list under the map.
+
+To use official boundaries later (e.g. Rajasthan's 41 districts from the state GIS cell or Bhuvan), replace the
+file. Each district feature only needs a **`geo_code`** property equal to its code in
+`prisma/seed-data/districts.ts` (e.g. `RJ-JAIPUR`); the property name is set per state by `geoCodeProperty`
+in `config/states.ts`. <https://mapshaper.org> can add the property, e.g.
+`-each 'geo_code = "RJ-" + district.toUpperCase().replace(/ /g, "-")'`.
+
+**Background map tiles** come from Stadia Maps (`config/map.ts`) and need internet. They work without an API key
+on `localhost`; a hosted deployment needs a free Stadia account with the domain registered.
+
+### 2. Imagery
+
+Imagery is uploaded from a project's page (**Upload imagery**): Satellite, Drone or Field photo, up to 10
+JPEG/PNG/WebP images of 20 MB each. On phones, *Field photo* can open the camera directly. Photos carrying GPS
+show their distance from the project site and are flagged when more than 2 km away; the capture date is taken
+from the photo when available. iPhone HEIC photos are not supported — set *Settings › Camera › Formats › Most
+Compatible* or upload a JPEG.
+
+Uploaded imagery is a permanent record: it **cannot be edited or deleted** by anyone.
+
+**Comparing imagery** (*Compare imagery* on a project or its gallery) opens a full-screen view of 2–4 dated
+images side by side. Zooming or panning any image (scroll/pinch, drag, double-click, `+` `−` `0`, arrow keys)
+moves all of them together, so the same spot stays aligned across dates. *Show changes* highlights in red the
+pixels that differ from the earliest selected image, with an approximate "% changed" — a simple pixel
+comparison (no AI), so captures with different framing, zoom or season also show as change. *Download* saves the
+current view as one PNG with dates and project name. The selection is kept in the URL so a comparison can be shared.
+
+**Verifications:** the CMO, Admin, Department Heads and Collectors can *Record verification* from the comparison
+— *Progress visible*, *No visible change* or *Discrepancy with reported progress* (note required) — which is saved
+with the compared images, listed on the project page with a link back to that comparison, and audit-logged.
+Field Officers collect imagery but don't record verifications.
+
+Files are stored privately under `storage/` (set `STORAGE_DIR` to move it) in three sizes (original,
+display ≤2400 px, thumbnail 480 px) and are served only through `/api/imagery/<id>` after a login, portal and
+scope check — there are no public image URLs. If you set up the project before this change, run
+`npm run imagery:migrate` once to move the old public demo images into private storage.
+
+The seed generates stylised placeholder images (marked "DEMO IMAGERY"). For a convincing demo, take
+screenshots of the same real construction site on two dates from Google Earth Pro (historical imagery slider)
+or Esri Wayback and upload them as *Satellite* imagery with the correct capture dates.
+
+> Free imagery (Sentinel-2, ISRO Bhuvan) is ~10 m resolution — not enough to see individual buildings.
+> Building-level verification in production needs paid high-resolution imagery or drone uploads.

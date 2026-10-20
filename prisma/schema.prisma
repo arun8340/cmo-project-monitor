@@ -1,0 +1,275 @@
+// CM Infrastructure Project Monitoring — data model.
+// SQLite for the POC. String "enum" fields are validated in lib/constants.ts;
+// switch them to Prisma enums when moving to PostgreSQL.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model State {
+  id          String       @id @default(cuid())
+  code        String       @unique // "RJ" | "MH" — matches config/states.ts
+  name        String
+  nameLocal   String
+  districts   District[]
+  departments Department[]
+  users       User[]
+}
+
+model District {
+  id        String @id @default(cuid())
+  stateId   String
+  state     State  @relation(fields: [stateId], references: [id])
+  name      String
+  nameLocal String
+  geoCode   String @unique // matches the GeoJSON feature property (see config/states.ts)
+  latitude  Float?
+  longitude Float?
+
+  projects   Project[]
+  users      User[]
+  directives Directive[]
+
+  @@index([stateId])
+}
+
+model Department {
+  id        String @id @default(cuid())
+  stateId   String
+  state     State  @relation(fields: [stateId], references: [id])
+  code      String // PWD, METRO, DRAINAGE, URBAN, RNB, RURAL, MGNREGA
+  name      String
+  nameLocal String
+
+  projects   Project[]
+  users      User[]
+  directives Directive[]
+
+  @@unique([stateId, code])
+}
+
+model Project {
+  id              String     @id @default(cuid())
+  districtId      String
+  district        District   @relation(fields: [districtId], references: [id])
+  departmentId    String
+  department      Department @relation(fields: [departmentId], references: [id])
+  name            String
+  nameLocal       String?
+  description     String?
+  latitude        Float
+  longitude       Float
+  sitePolygon     String? // optional GeoJSON Polygon, stored as JSON text
+  budgetLakhs     Float? // budget in ₹ lakh
+  startDate       DateTime?
+  plannedEndDate  DateTime?
+  status          String     @default("NOT_STARTED") // ProjectStatus
+  progressPercent Int        @default(0)
+  createdById     String?
+  createdBy       User?      @relation("ProjectCreatedBy", fields: [createdById], references: [id])
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  imagery          ImageryCapture[]
+  progressUpdates  ProgressUpdate[]
+  issues           Issue[]
+  directives       Directive[]
+  assignedOfficers User[]           @relation("FieldOfficerProjects")
+  verifications    Verification[]
+
+  @@index([districtId, departmentId])
+  @@index([status])
+}
+
+model ImageryCapture {
+  id            String    @id @default(cuid())
+  projectId     String
+  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  captureDate   DateTime
+  source        String // ImagerySource: SATELLITE | DRONE | FIELD_PHOTO
+  filePath      String // storage key of the original, e.g. imagery/<projectId>/<uuid>/original.jpg (see lib/storage)
+  mimeType      String?
+  width         Int?
+  height        Int?
+  sizeBytes     Int?
+  notes         String?
+  // EXIF metadata for geotagged field photos (improvement list)
+  exifLatitude  Float?
+  exifLongitude Float?
+  exifTakenAt   DateTime?
+  uploadedById  String?
+  uploadedBy    User?     @relation(fields: [uploadedById], references: [id])
+  createdAt     DateTime  @default(now())
+
+  @@index([projectId, captureDate])
+}
+
+// The result of comparing dated imagery against reported progress
+// (recorded from the comparison screen).
+model Verification {
+  id          String   @id @default(cuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  outcome     String // VerificationOutcome
+  notes       String?
+  imageIds    String // JSON array of the ImageryCapture ids that were compared, oldest first
+  fromDate    DateTime // capture date of the earliest compared image
+  toDate      DateTime // capture date of the latest compared image
+  createdById String
+  createdBy   User     @relation(fields: [createdById], references: [id])
+  createdAt   DateTime @default(now())
+
+  @@index([projectId, createdAt])
+}
+
+model ProgressUpdate {
+  id              String   @id @default(cuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date            DateTime
+  progressPercent Int
+  notes           String?
+  updatedById     String?
+  updatedBy       User?    @relation(fields: [updatedById], references: [id])
+  createdAt       DateTime @default(now())
+
+  @@index([projectId, date])
+}
+
+// Issues belong to a project. `meetingDate` is optional for now; a Meeting
+// model can be added later with a nullable meetingId without reworking this.
+model Issue {
+  id          String        @id @default(cuid())
+  projectId   String
+  project     Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  status      String        @default("PENDING") // IssueStatus
+  priority    String        @default("MEDIUM") // IssuePriority
+  meetingDate DateTime?
+  resolvedAt  DateTime?
+  createdById String?
+  createdBy   User?         @relation(fields: [createdById], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  updates     IssueUpdate[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// History of an issue: raised, then each status change with an optional note.
+model IssueUpdate {
+  id         String   @id @default(cuid())
+  issueId    String
+  issue      Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  fromStatus String? // null when the issue was raised
+  toStatus   String
+  note       String?
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  createdAt  DateTime @default(now())
+
+  @@index([issueId, createdAt])
+}
+
+// A directive targets any combination of district / department / project.
+model Directive {
+  id           String            @id @default(cuid())
+  fromUserId   String
+  fromUser     User              @relation("DirectiveFrom", fields: [fromUserId], references: [id])
+  ownerId      String? // responsible officer
+  owner        User?             @relation("DirectiveOwner", fields: [ownerId], references: [id])
+  districtId   String?
+  district     District?         @relation(fields: [districtId], references: [id])
+  departmentId String?
+  department   Department?       @relation(fields: [departmentId], references: [id])
+  projectId    String?
+  project      Project?          @relation(fields: [projectId], references: [id])
+  text         String
+  dueDate      DateTime?
+  status       String            @default("OPEN") // DirectiveStatus
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  updates      DirectiveUpdate[]
+
+  @@index([districtId])
+  @@index([departmentId])
+}
+
+// History of a directive: issued, responses (in progress / complied) and closure.
+model DirectiveUpdate {
+  id          String    @id @default(cuid())
+  directiveId String
+  directive   Directive @relation(fields: [directiveId], references: [id], onDelete: Cascade)
+  fromStatus  String? // null when the directive was issued
+  toStatus    String
+  note        String?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id])
+  createdAt   DateTime  @default(now())
+
+  @@index([directiveId, createdAt])
+}
+
+model Role {
+  id          String  @id @default(cuid())
+  key         String  @unique // RoleKey
+  name        String
+  description String?
+  permissions String // JSON array of Permission strings
+  users       User[]
+}
+
+model User {
+  id                 String      @id @default(cuid())
+  name               String
+  email              String      @unique
+  passwordHash       String
+  designation        String?
+  roleId             String
+  role               Role        @relation(fields: [roleId], references: [id])
+  stateId            String? // null only for Admin
+  state              State?      @relation(fields: [stateId], references: [id])
+  districtId         String?
+  district           District?   @relation(fields: [districtId], references: [id])
+  departmentId       String?
+  department         Department? @relation(fields: [departmentId], references: [id])
+  active             Boolean     @default(true)
+  /// Set when an Admin creates the user or resets their password; cleared when they choose their own.
+  mustChangePassword Boolean     @default(false)
+  passwordChangedAt  DateTime?
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  assignedProjects Project[]         @relation("FieldOfficerProjects")
+  createdProjects  Project[]         @relation("ProjectCreatedBy")
+  imageryUploads   ImageryCapture[]
+  progressUpdates  ProgressUpdate[]
+  issuesCreated    Issue[]
+  directivesIssued Directive[]       @relation("DirectiveFrom")
+  directivesOwned  Directive[]       @relation("DirectiveOwner")
+  auditLogs        AuditLog[]
+  verifications    Verification[]
+  issueUpdates     IssueUpdate[]
+  directiveUpdates DirectiveUpdate[]
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+  action     String // e.g. "project.update", "imagery.upload"
+  entityType String
+  entityId   String?
+  details    String? // JSON
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
