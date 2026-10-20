@@ -1,12 +1,14 @@
 import "server-only";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { Prisma, PrismaClient } from "@/generated/prisma/client";
+import { demoPaths } from "@/lib/demo";
 
 // Reuse one client across hot reloads in development.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 function createClient() {
-  const adapter = new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" });
+  const demo = demoPaths(); // demo mode: a temporary copy of the bundled demo database
+  const adapter = new PrismaBetterSqlite3({ url: demo ? `file:${demo.dbFile}` : (process.env.DATABASE_URL ?? "file:./dev.db") });
   return new PrismaClient({ adapter });
 }
 

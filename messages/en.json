@@ -34,7 +34,9 @@
     "switchState": "Switch state",
     "signOut": "Sign out",
     "signingOut": "Signing out…",
-    "language": "Language"
+    "language": "Language",
+    "demoBadge": "Demo · changes reset",
+    "demoHint": "Sample data for demonstration. Changes you make are temporary and the original demo data comes back."
   },
   "nav": {
     "sections": "Sections",

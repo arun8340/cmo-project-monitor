@@ -164,6 +164,38 @@ the user menu on phones. The choice is remembered per portal in the browser. The
 - Adding a language for a new state: set `locale` in `config/states.ts`, add it to `LOCALES` in `lib/i18n/config.ts`,
   and add `messages/<locale>.json`.
 
+## Deploying the demo to Vercel (no database needed)
+
+For demos the app can run in **demo mode**: the repo ships a ready-made demo database and its imagery in
+`demo/`, so there is no database or storage service to set up.
+
+- With `DEMO_MODE=true` the app copies `demo/` into a temporary folder on the server and works from that
+  copy. Everything works — signing in, editing, raising issues, uploading photos — but **changes are
+  temporary**: when the host recycles the server (after some idle time, or when it starts another
+  copy) the original demo data comes back. A "Demo · changes reset" badge shows in the header.
+- Dates are moved forward by the snapshot's age when the copy is made, so the demo always looks the same
+  (due dates, "3 days ago", planned progress don't drift).
+- After changing the seed data, rebuild the snapshot with `npm run demo:snapshot` and commit `demo/`.
+  (It uses its own files; `dev.db` and `storage/` are not touched.)
+- On Vercel each request can carry at most ~4.5 MB, so upload one or two normal photos at a time.
+
+**Steps**
+
+1. vercel.com → Add New → Project → import this repository. Settings → General → Node.js **22.x**.
+2. Settings → Domains → add three addresses to the same project, e.g. `cmo-rajasthan.vercel.app`,
+   `cmo-maharashtra.vercel.app`, `cmo-admin.vercel.app` (or `rj.` / `mh.` / `admin.` on your own domain).
+3. Settings → Environment Variables:
+
+   | Variable | Value |
+   |---|---|
+   | `DEMO_MODE` | `true` |
+   | `AUTH_SECRET` | a new secret — run `npx auth secret` and paste it |
+   | `PORTAL_HOST_RJ` / `PORTAL_HOST_MH` / `PORTAL_HOST_ADMIN` | the three addresses (no `https://`) |
+   | `NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS` | `true` |
+
+4. Deploy, then open each address and sign in with the demo accounts (`Demo@123`).
+5. Map tiles: create a free Stadia Maps account and register the three addresses (see `config/map.ts`).
+
 ## Where things live
 
 | Path | Purpose |
@@ -181,6 +213,7 @@ the user menu on phones. The choice is remembered per portal in the browser. The
 | `lib/storage/` | Storage interface (local disk now; swap in S3 by implementing it) |
 | `app/api/imagery/[id]` | Serves imagery only after the same access checks as project pages |
 | `app/[locale]/admin/`, `app/actions/admin.ts` | Admin portal: users, roles, audit log (and their server actions) |
+| `demo/`, `lib/demo.ts` | Demo-mode data snapshot and loader (`npm run demo:snapshot`) |
 | `lib/audit.ts` | Audit-log descriptions, filters and state scoping (pages and CSV export) |
 | `messages/`, `i18n/request.ts`, `lib/i18n/` | Translations, next-intl setup, language helpers (names, labels, switcher config) |
 

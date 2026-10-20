@@ -3,6 +3,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { SatelliteIcon, ClipboardCheckIcon, MapIcon, ShieldIcon } from "lucide-react";
 import { APP_NAMES, BrandMark } from "@/components/app-shell/brand";
+import { DemoBadge } from "@/components/app-shell/app-header";
+import { DEMO_MODE } from "@/lib/demo";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
@@ -76,7 +78,8 @@ async function PortalLogin() {
       </section>
 
       <section className="flex flex-col bg-background px-4 py-6 sm:px-8">
-        <div className="flex min-h-7 justify-end">
+        <div className="flex min-h-7 items-center justify-end gap-2">
+          {DEMO_MODE && <DemoBadge tone="light" />}
           <LanguageSwitcher locales={portalLocales(portal)} tone="light" />
         </div>
         <div className="flex flex-1 items-center justify-center py-6">
