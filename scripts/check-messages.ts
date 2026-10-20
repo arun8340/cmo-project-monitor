@@ -1,6 +1,7 @@
 /**
  * Checks the Hindi and Marathi catalogues against English: every key present,
- * no stray keys, the same {placeholders}, and valid ICU syntax.
+ * no stray keys, the same {placeholders}, valid ICU syntax, and no `#` in
+ * Marathi plurals (it would print Devanagari digits).
  *   npm run check:messages
  */
 import { IntlMessageFormat } from "intl-messageformat";
@@ -41,6 +42,10 @@ for (const [locale, tree] of Object.entries({ hi, mr })) {
     const want = [...args(english)].sort().join(",");
     const got = [...args(text)].sort().join(",");
     if (want !== got) report(`${key}: placeholders {${got}} ≠ English {${want}}`);
+    // Marathi's default number format uses Devanagari digits; `#` in a plural would
+    // print them, while every other number in the app uses Latin digits. Use the
+    // argument itself instead (e.g. "{count} प्रकल्प").
+    if (locale === "mr" && text.includes("#")) report(`${key}: use the argument (e.g. {count}) instead of # so digits stay Latin`);
     try {
       new IntlMessageFormat(text, locale);
     } catch (e) {
