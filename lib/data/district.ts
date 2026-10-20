@@ -19,7 +19,7 @@ const COUNT_KEY: Record<ProjectStatus, keyof Omit<StatusCounts, "total">> = {
 };
 const OPEN_ISSUE = { in: ["PENDING", "IN_PROGRESS"] };
 const OPEN_DIRECTIVE = { in: ["OPEN", "IN_PROGRESS"] };
-const DEPT_ORDER = ["PWD", "METRO", "DRAINAGE", "URBAN", "RNB", "RURAL", "MGNREGA"];
+import { DEPT_ORDER } from "@/lib/departments";
 
 function addCount(c: StatusCounts, status: string, n: number) {
   const key = COUNT_KEY[status as ProjectStatus];
@@ -48,11 +48,14 @@ export type DepartmentCard = {
 export type ProjectPin = {
   id: string;
   name: string;
+  nameLocal: string | null;
   latitude: number;
   longitude: number;
   status: ProjectStatus;
   progressPercent: number;
+  departmentCode: string;
   departmentName: string;
+  departmentNameLocal: string | null;
 };
 
 export async function getDistrictView(user: CurrentUser, state: StateConfig, slug: string) {
@@ -70,11 +73,12 @@ export async function getDistrictView(user: CurrentUser, state: StateConfig, slu
       select: {
         id: true,
         name: true,
+        nameLocal: true,
         latitude: true,
         longitude: true,
         status: true,
         progressPercent: true,
-        department: { select: { name: true } },
+        department: { select: { code: true, name: true, nameLocal: true } },
       },
     }),
     db.issue.count({ where: { AND: [issueScope(user, state.code), { project: { districtId: district.id } }, { status: OPEN_ISSUE }] } }),
@@ -125,11 +129,14 @@ export async function getDistrictView(user: CurrentUser, state: StateConfig, slu
     pins: pins.map((p) => ({
       id: p.id,
       name: p.name,
+      nameLocal: p.nameLocal,
       latitude: p.latitude,
       longitude: p.longitude,
       status: p.status as ProjectStatus,
       progressPercent: p.progressPercent,
+      departmentCode: p.department.code,
       departmentName: p.department.name,
+      departmentNameLocal: p.department.nameLocal,
     })) satisfies ProjectPin[],
   };
 }
@@ -139,7 +146,11 @@ export type ProjectRow = {
   id: string;
   name: string;
   nameLocal: string | null;
+  latitude: number;
+  longitude: number;
+  departmentCode: string;
   departmentName: string;
+  departmentNameLocal: string | null;
   status: ProjectStatus;
   progressPercent: number;
   plannedPercent: number | null;
@@ -184,7 +195,7 @@ export async function getProjectList(user: CurrentUser, state: StateConfig, dist
     db.project.findMany({
       where: { AND: [...base, ...(status ? [{ status }] : [])] },
       include: {
-        department: { select: { name: true } },
+        department: { select: { code: true, name: true, nameLocal: true } },
         imagery: { select: { captureDate: true }, orderBy: { captureDate: "desc" }, take: 1 },
         _count: { select: { issues: { where: { status: OPEN_ISSUE } } } },
       },
@@ -201,7 +212,11 @@ export async function getProjectList(user: CurrentUser, state: StateConfig, dist
       id: p.id,
       name: p.name,
       nameLocal: p.nameLocal,
+      latitude: p.latitude,
+      longitude: p.longitude,
+      departmentCode: p.department.code,
       departmentName: p.department.name,
+      departmentNameLocal: p.department.nameLocal,
       status: p.status as ProjectStatus,
       progressPercent: p.progressPercent,
       plannedPercent: planned,

@@ -213,7 +213,8 @@
     "siteStatus": "प्रकल्प स्थळाची स्थिती",
     "noSites": "तुमच्या दृश्यात कोणतेही प्रकल्प स्थळ नाही",
     "panelTitle": "जिल्हे",
-    "panelHint": "रंग विलंबित किंवा रखडलेल्या प्रकल्पांचे प्रमाण दाखवतो. संख्यांसाठी होव्हर करा, उघडण्यासाठी क्लिक करा."
+    "panelHint": "रंग विलंबित किंवा रखडलेल्या प्रकल्पांचे प्रमाण दाखवतो. संख्यांसाठी होव्हर करा, उघडण्यासाठी क्लिक करा.",
+    "byDepartment": "विभागनिहाय प्रकल्प"
   },
   "district": {
     "inView": "{count, plural, one {तुमच्या दृश्यात {count} प्रकल्प} other {तुमच्या दृश्यात {count} प्रकल्प}}",
@@ -229,7 +230,8 @@
     "title": "{district} जिल्हा",
     "collector": "जिल्हाधिकारी: {name}",
     "projectsAcross": "{departments, plural, one {{departments} विभागात} other {{departments} विभागांमध्ये}} {count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}}",
-    "deptMeta": "{count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}}"
+    "deptMeta": "{count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}}",
+    "projectSitesHint": "जिल्ह्यातील प्रत्येक प्रकल्प, विभागाच्या रंगात. एखाद्या विभागावर होव्हर केल्यास त्याची स्थळे ठळक दिसतील."
   },
   "projectList": {
     "allDepartments": "सर्व विभाग",
@@ -260,7 +262,10 @@
       "progress": "प्रगती",
       "budget": "अंदाजपत्रक",
       "end": "नियोजित समाप्ती दिनांक"
-    }
+    },
+    "mapTitle": "प्रकल्प स्थळे",
+    "mapHint": "या यादीतील प्रकल्प. नकाशावर शोधण्यासाठी एखाद्या ओळीवर होव्हर करा.",
+    "imageryOn": "प्रतिमा {date}"
   },
   "progress": {
     "plan": "नियोजन {planned}%",
