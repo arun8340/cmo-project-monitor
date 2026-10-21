@@ -14,7 +14,7 @@ import { ROLE_DEFINITIONS, ROLE_KEYS, type IssuePriority, type IssueStatus, type
 import { DISTRICTS } from "./seed-data/districts";
 import { departmentsFor } from "./seed-data/departments";
 import { PROJECTS, type ProjectSeed } from "./seed-data/projects";
-import { generateDemoImagery, demoImagePath, demoImageMeta, stageForProgress, VARIANTS } from "./demo-imagery";
+import { storeSiteImage } from "./site-imagery";
 
 const db = new PrismaClient({
   adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" }),
@@ -58,6 +58,28 @@ const STATUS_FROM_CODE: Record<ProjectSeed["s"], ProjectStatus> = {
   D: "DELAYED",
   S: "STALLED",
 };
+
+/** Map a progress percentage to a construction stage (picks progress-note wording). */
+function stageForProgress(p: number) {
+  if (p <= 0) return 0;
+  if (p < 25) return 1;
+  if (p < 55) return 2;
+  if (p < 95) return 3;
+  return 4;
+}
+
+/** Seeded imagery dates are calendar days in India. */
+const istDate = (day: string) => new Date(`${day}T10:30:00+05:30`);
+
+/**
+ * A project with real site imagery starts two weeks after its first (baseline)
+ * image, whatever day the seed runs; others start `startedMonthsAgo` before NOW.
+ */
+function withSiteStart(p: ProjectSeed): ProjectSeed {
+  const first = p.site?.imagery[0];
+  if (!first) return p;
+  return { ...p, startedMonthsAgo: (NOW.getTime() - addDays(istDate(first.date), 14).getTime()) / MONTH };
+}
 
 /** How many months before NOW a stalled project stopped moving. */
 const STALLED_FOR_MONTHS = 4;
@@ -125,9 +147,6 @@ async function wipe() {
 }
 
 async function main() {
-  console.log("Generating demo imagery → storage/demo …");
-  await generateDemoImagery();
-
   console.log("Clearing existing data …");
   await wipe();
 
@@ -211,7 +230,7 @@ async function main() {
 
     const createdProjects: { id: string; seed: ProjectSeed; status: ProjectStatus; districtId: string; departmentId: string }[] = [];
 
-    for (const p of PROJECTS[code]) {
+    for (const p of PROJECTS[code].map(withSiteStart)) {
       const district = districts.get(p.district);
       const departmentId = departments.get(p.dept);
       if (!district || !departmentId) throw new Error(`Unknown district/department in seed: ${p.district} / ${p.dept}`);
@@ -221,10 +240,9 @@ async function main() {
       const start = p.s === "N" ? addMonths(NOW, 1) : addMonths(NOW, -p.startedMonthsAgo);
       const plannedEnd = addMonths(start, p.durationMonths);
       const progress = p.s === "N" ? 0 : progressAt(p, pace, NOW);
-      // Scatter sites within ~8 km of the district HQ
-      const lat = district.center[0] + between(-0.07, 0.07);
-      const lng = district.center[1] + between(-0.07, 0.07);
-      const variant = Math.floor(rand() * VARIANTS);
+      // Real sites at their own location; the rest scattered within ~8 km of the district HQ
+      const lat = p.site?.lat ?? district.center[0] + between(-0.07, 0.07);
+      const lng = p.site?.lng ?? district.center[1] + between(-0.07, 0.07);
       const isCollectorDistrict = p.district === plan.collectorDistrict;
 
       const project = await db.project.create({
@@ -285,29 +303,15 @@ async function main() {
         }
       }
 
-      // Imagery: baseline before start, a mid-point, and a recent capture
-      const captureDates: Date[] =
-        p.s === "N"
-          ? [addMonths(NOW, -3), addDays(NOW, -Math.round(between(5, 20)))]
-          : [
-              addMonths(start, -1),
-              addMonths(start, Math.min(p.startedMonthsAgo, p.durationMonths) * 0.4),
-              addMonths(start, Math.min(p.startedMonthsAgo, p.durationMonths) * 0.75),
-              addDays(NOW, -Math.round(between(3, 20))),
-            ];
-      for (const [i, date] of captureDates.entries()) {
-        const value = p.s === "N" ? 0 : i === 0 ? 0 : p.s === "C" && i === captureDates.length - 1 ? 100 : progressAt(p, pace, date);
-        const latest = i === captureDates.length - 1;
-        const source = latest && rand() < 0.4 ? "DRONE" : "SATELLITE";
+      // Imagery: only real sites have it — a baseline before work started and a recent capture
+      for (const [i, img] of (p.site?.imagery ?? []).entries()) {
         await db.imageryCapture.create({
           data: {
             projectId: project.id,
-            captureDate: date,
-            source,
-            filePath: demoImagePath(p.layout, stageForProgress(value), variant),
-            mimeType: "image/jpeg",
-            ...demoImageMeta.get(demoImagePath(p.layout, stageForProgress(value), variant)),
-            notes: i === 0 ? "Baseline imagery before work start" : `Progress reported at capture time: ${value}%`,
+            captureDate: istDate(img.date),
+            source: "SATELLITE",
+            ...(await storeSiteImage(img.file)),
+            notes: i === 0 ? "Baseline imagery before work start (Google Earth historical imagery)" : "Site progress (Google Earth historical imagery)",
             uploadedById: isCollectorDistrict ? collector.id : null,
           },
         });
@@ -417,12 +421,13 @@ async function main() {
 
     // A few CMO verifications from the comparison screen.
     const VERIFY: { status: ProjectStatus; outcome: string; notes: string }[] = [
-      { status: "STALLED", outcome: "DISCREPANCY", notes: "No new work visible in recent imagery although earlier progress was reported. Seek explanation from the contractor." },
-      { status: "DELAYED", outcome: "NO_VISIBLE_CHANGE", notes: "Little visible change between the last two captures." },
-      { status: "COMPLETED", outcome: "PROGRESS_VISIBLE", notes: "Completed structure visible, consistent with reported progress." },
+      { status: "DELAYED", outcome: "PROGRESS_VISIBLE", notes: "Deck work visible along the corridor, but well short of the planned schedule. Seek a recovery plan." },
+      { status: "COMPLETED", outcome: "PROGRESS_VISIBLE", notes: "Completed road visible where there was only a dirt track, consistent with reported progress." },
+      { status: "ONGOING", outcome: "PROGRESS_VISIBLE", notes: "Construction visible on site, consistent with reported progress." },
     ];
     for (const v of VERIFY) {
-      const target = createdProjects.find((p) => p.status === v.status);
+      // Only projects with real imagery can be verified
+      const target = createdProjects.find((p) => p.status === v.status && (p.seed.site?.imagery.length ?? 0) >= 2);
       if (!target) continue;
       const imgs = await db.imageryCapture.findMany({ where: { projectId: target.id }, orderBy: { captureDate: "asc" } });
       if (imgs.length < 2) continue;
