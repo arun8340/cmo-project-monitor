@@ -10,7 +10,8 @@
  *
  * All dates are moved forward by the snapshot's age (whole days), so the demo
  * always looks as it did on the day it was made: due dates, "3 days ago",
- * planned progress and overdue counts don't drift.
+ * planned progress and overdue counts don't drift. The exception is the real
+ * site imagery: its capture dates are printed on the images themselves.
  */
 import "server-only";
 import fs from "node:fs";
@@ -21,6 +22,13 @@ import Database from "better-sqlite3";
 export const DEMO_MODE = process.env.DEMO_MODE === "true";
 
 const DAY = 86_400_000;
+
+/** Columns not shifted, with the rows they are kept for (SQL condition). Must match prisma/site-imagery.ts. */
+const KEEP_DATES: Record<string, Record<string, string>> = {
+  ImageryCapture: { captureDate: `"filePath" LIKE 'sites/%'` },
+  // A seeded verification compares two of those images.
+  Verification: { fromDate: "1", toDate: "1" },
+};
 
 type DemoPaths = { dbFile: string; storageDir: string };
 let prepared: DemoPaths | null = null;
@@ -72,9 +80,10 @@ function shiftDates(file: string, snapshot: Date | null) {
       for (const { name } of tables) {
         const columns = db.prepare(`PRAGMA table_info("${name}")`).all() as { name: string; type: string }[];
         for (const col of columns.filter((c) => c.type.toUpperCase() === "DATETIME")) {
+          const keep = KEEP_DATES[name]?.[col.name];
           // Same text format Prisma stores: 2026-10-16T16:07:33.744+00:00
           db.prepare(
-            `UPDATE "${name}" SET "${col.name}" = strftime('%Y-%m-%dT%H:%M:%f+00:00', "${col.name}", ?) WHERE "${col.name}" IS NOT NULL`,
+            `UPDATE "${name}" SET "${col.name}" = strftime('%Y-%m-%dT%H:%M:%f+00:00', "${col.name}", ?) WHERE "${col.name}" IS NOT NULL${keep ? ` AND NOT (${keep})` : ""}`,
           ).run(`+${days} days`);
         }
       }
