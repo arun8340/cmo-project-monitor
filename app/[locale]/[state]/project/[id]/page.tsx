@@ -9,8 +9,12 @@ import {
   PencilIcon,
   ScrollTextIcon,
   PlusIcon,
+  RadioIcon,
+  SatelliteIcon,
   UploadIcon,
 } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { DateCompare } from "@/components/imagery/date-compare";
 import { OUTCOME_STYLE } from "@/components/compare/outcome-style";
 import { DirectiveStatusBadge, IssueStatusBadge, pill, PriorityBadge, TONE_PILL } from "@/components/workflow/badges";
 import { FactCard, PageHeader, Panel, PanelLink } from "@/components/app-shell/page-parts";
@@ -30,7 +34,8 @@ import { assertCanAccessProject, requireStateAccess } from "@/lib/auth/dal";
 import { getProjectDetail } from "@/lib/data/project";
 import { districtSlug } from "@/lib/district-slug";
 import { STATUS_COLOR } from "@/lib/district-health";
-import { formatBudget, formatDate } from "@/lib/format";
+import { formatBudget, formatDate, relativeDays } from "@/lib/format";
+import type { Locale } from "@/lib/i18n/config";
 import { imageryUrl } from "@/lib/imagery/url";
 import { toDateInput, todayIST } from "@/lib/dates";
 import type { DirectiveStatus, ImagerySource, IssuePriority, IssueStatus } from "@/lib/constants";
@@ -76,7 +81,10 @@ async function Project({ params }: { params: Params["params"] }) {
 
   const reportedBehind = behind > BEHIND_THRESHOLD;
   const compareHref = `${basePath}/project/${project.id}/compare?from=project`;
-  const latestImageId = project.imagery[0]?.id ?? null;
+  const hasImagery = project._count.imagery > 0;
+  const livePath = `${basePath}/project/${project.id}/live`;
+  const uploadHref = `${basePath}/project/${project.id}/imagery/upload`;
+  const tt = await getTranslations("tracking");
 
   return (
     <div className="grid gap-5">
@@ -105,6 +113,24 @@ async function Project({ params }: { params: Params["params"] }) {
         }
         actions={
           <>
+            {hasImagery && (
+              <Button nativeButton={false} render={<Link href={livePath} />}>
+                <RadioIcon />
+                {tt("title")}
+              </Button>
+            )}
+            {project._count.imagery >= 2 && (
+              <Button variant="outline" nativeButton={false} render={<Link href={compareHref} />}>
+                <ColumnsIcon />
+                {t("compareImagery")}
+              </Button>
+            )}
+            {can.uploadImagery && (
+              <Button variant="outline" nativeButton={false} render={<Link href={uploadHref} />}>
+                <UploadIcon />
+                {tt("addImages")}
+              </Button>
+            )}
             {can.edit && (
               <Button variant="outline" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/edit`} />}>
                 <PencilIcon />
@@ -121,14 +147,16 @@ async function Project({ params }: { params: Params["params"] }) {
                 today={todayIST(now)}
               />
             )}
-            {project._count.imagery >= 2 && (
-              <Button nativeButton={false} render={<Link href={compareHref} />}>
-                <ColumnsIcon />
-                {t("compareImagery")}
-              </Button>
-            )}
           </>
         }
+      />
+
+      <LatestImagery
+        images={project.imagery.map((i) => ({ id: i.id, date: i.captureDate, source: labels.source[i.source as ImagerySource] }))}
+        livePath={livePath}
+        compareHref={compareHref}
+        uploadHref={can.uploadImagery ? uploadHref : null}
+        galleryHref={`${basePath}/project/${project.id}/imagery`}
       />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
@@ -150,58 +178,6 @@ async function Project({ params }: { params: Params["params"] }) {
               {reportedBehind ? t("pointsBehind", { points: behind }) : timeElapsed != null ? t("timeElapsed", { percent: timeElapsed }) : null}
             </p>
             {project.description && <p className="mt-4 border-t pt-4 text-sm text-muted-foreground">{project.description}</p>}
-          </Panel>
-
-          <Panel
-            title={t("siteImagery")}
-            id="imagery-heading"
-            action={
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[13px] text-muted-foreground">{t("captures", { count: project._count.imagery })}</span>
-                {can.uploadImagery && (
-                  <Button variant="outline" size="sm" nativeButton={false} render={<Link href={`${basePath}/project/${project.id}/imagery/upload`} />}>
-                    <UploadIcon />
-                    {t("uploadImagery")}
-                  </Button>
-                )}
-                <PanelLink href={`${basePath}/project/${project.id}/imagery`}>{t("viewAll")}</PanelLink>
-              </div>
-            }
-          >
-            {project.imagery.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noImagery")}</p>
-            ) : (
-              <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {project.imagery.map((img) => (
-                  <li key={img.id} className="grid gap-1.5">
-                    <Link href={`${basePath}/project/${project.id}/imagery`} className="block overflow-hidden rounded-lg border hover:shadow-sm">
-                      {/* Access-checked API image (see app/api/imagery). */}
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={imageryUrl(img.id, "thumb")}
-                        alt={t("imageAlt", { source: labels.source[img.source as ImagerySource], date: fmt(img.captureDate) })}
-                        loading="lazy"
-                        className="aspect-4/3 w-full bg-muted object-cover"
-                      />
-                    </Link>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 text-[13px] leading-tight">
-                        <div className="font-bold text-navy">{fmt(img.captureDate)}</div>
-                        <div className="text-muted-foreground">{labels.source[img.source as ImagerySource]}</div>
-                      </div>
-                      {project._count.imagery >= 2 && latestImageId && (
-                        <Link
-                          href={img.id === latestImageId ? compareHref : `${compareHref}&images=${img.id},${latestImageId}`}
-                          className="shrink-0 rounded-md border bg-card px-2 py-0.5 text-xs font-semibold text-navy hover:bg-muted"
-                        >
-                          {t("compareShort")}
-                        </Link>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
           </Panel>
 
           <Panel title={t("progressOverTime")} id="progress-heading">
@@ -410,6 +386,112 @@ async function Project({ params }: { params: Params["params"] }) {
         </aside>
       </div>
     </div>
+  );
+}
+
+/**
+ * The latest satellite image of the site, at the top of the project page: the
+ * tracking view. Lists every capture date (opening Live tracking at that
+ * date) and a two-date compare; prompts for imagery when there is none.
+ */
+function LatestImagery({
+  images,
+  livePath,
+  compareHref,
+  uploadHref,
+  galleryHref,
+}: {
+  /** Newest first. */
+  images: { id: string; date: Date; source: string }[];
+  livePath: string;
+  compareHref: string;
+  uploadHref: string | null;
+  galleryHref: string;
+}) {
+  const t = useTranslations("tracking");
+  const locale = useLocale();
+  const latest = images[0];
+  const now = new Date();
+
+  if (!latest) {
+    return (
+      <section className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card px-4 py-12 text-center">
+        <SatelliteIcon className="size-8 text-muted-foreground" />
+        <div>
+          <p className="font-semibold text-navy">{t("noImagery")}</p>
+          <p className="mt-1 text-sm text-muted-foreground">{t("noImageryHint")}</p>
+        </div>
+        {uploadHref && (
+          <Button nativeButton={false} render={<Link href={uploadHref} />}>
+            <UploadIcon />
+            {t("addImages")}
+          </Button>
+        )}
+      </section>
+    );
+  }
+
+  return (
+    <section aria-label={t("latestImage")} className="grid overflow-hidden rounded-xl border bg-card lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+      <Link href={livePath} className="group relative block aspect-[16/10] bg-[#0d1726]">
+        {/* Access-checked API image (see app/api/imagery). */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageryUrl(latest.id, "display")}
+          alt={t("imageAlt", { date: formatDate(latest.date, locale) })}
+          className="absolute inset-0 size-full object-cover transition-opacity group-hover:opacity-95"
+        />
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
+          <span className="rounded-md bg-amber px-2 py-1 text-xs font-bold text-navy uppercase">{t("latest")}</span>
+          <span className="rounded-md bg-black/65 px-2.5 py-1 text-sm font-semibold text-white">
+            {formatDate(latest.date, locale)} · {latest.source}
+          </span>
+          <span className="rounded-md bg-black/65 px-2.5 py-1 text-xs text-white/85">{relativeDays(latest.date, now, locale as Locale)}</span>
+        </div>
+        <span className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-md bg-navy/90 px-3 py-1.5 text-sm font-semibold text-white shadow">
+          <RadioIcon className="size-4 text-amber" />
+          {t("openLive")}
+        </span>
+      </Link>
+
+      <div className="flex min-w-0 flex-col gap-4 p-4 sm:p-5">
+        <div>
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h2 className="font-bold text-navy">{t("availableDates", { count: images.length })}</h2>
+            <PanelLink href={galleryHref}>{t("viewAll")}</PanelLink>
+          </div>
+          <ul className="grid max-h-56 gap-1 overflow-y-auto">
+            {images.map((img, i) => (
+              <li key={img.id}>
+                <Link href={`${livePath}?image=${img.id}`} className="flex items-center gap-3 rounded-lg p-1.5 hover:bg-muted">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={imageryUrl(img.id, "thumb")} alt="" loading="lazy" className="h-11 w-14 shrink-0 rounded bg-muted object-cover" />
+                  <span className="min-w-0 text-sm leading-tight">
+                    <span className="block font-semibold text-navy">{formatDate(img.date, locale)}</span>
+                    <span className="block text-xs text-muted-foreground">
+                      {img.source}
+                      {i === 0 && <> · {t("latest")}</>}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+        {images.length > 1 && (
+          <div className="mt-auto border-t pt-4">
+            <h2 className="mb-2 font-bold text-navy">{t("compareDates")}</h2>
+            <DateCompare options={[...images].reverse().map((i) => ({ id: i.id, label: formatDate(i.date, locale) }))} compareHref={compareHref} />
+          </div>
+        )}
+        {uploadHref && (
+          <Button variant="outline" className={images.length > 1 ? "" : "mt-auto"} nativeButton={false} render={<Link href={uploadHref} />}>
+            <UploadIcon />
+            {t("addImages")}
+          </Button>
+        )}
+      </div>
+    </section>
   );
 }
 

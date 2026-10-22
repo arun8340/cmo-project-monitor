@@ -69,8 +69,8 @@ export const ROLE_DEFINITIONS: Record<
   },
   CMO: {
     name: "CM / CMO / Chief Secretary",
-    description: "Whole-state view; issues directives",
-    permissions: ["projects.view", "verification.record", "directives.issue", "directives.update", "issues.update", "audit.view"],
+    description: "Whole-state view; issues directives; can add imagery",
+    permissions: ["projects.view", "imagery.upload", "verification.record", "directives.issue", "directives.update", "issues.update", "audit.view"],
   },
   DEPARTMENT_HEAD: {
     name: "Department Head",

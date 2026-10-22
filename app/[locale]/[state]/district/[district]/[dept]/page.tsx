@@ -11,7 +11,7 @@ import { MapHighlightProvider } from "@/components/district-map/highlight";
 import { ListControls } from "@/components/project/list-controls";
 import { Chip, EmptyState, ProjectCards, ProjectTable } from "@/components/project/project-table";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canCreateProject } from "@/lib/auth/project-permissions";
+import { canCreateProject, canUploadImagery } from "@/lib/auth/project-permissions";
 import { getProjectList } from "@/lib/data/district";
 import type { ProjectStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -126,8 +126,8 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
               <EmptyState searched={!!filters.q || !!filters.status} clearHref={listPath} emptyText={t("noneInDepartment")} />
             ) : (
               <>
-                <ProjectTable rows={rows} basePath={basePath} showDepartment={!department} />
-                <ProjectCards rows={rows} basePath={basePath} showDepartment={!department} />
+                <ProjectTable rows={rows} basePath={basePath} showDepartment={!department} canUpload={canUploadImagery(user)} />
+                <ProjectCards rows={rows} basePath={basePath} showDepartment={!department} canUpload={canUploadImagery(user)} />
               </>
             )}
           </div>

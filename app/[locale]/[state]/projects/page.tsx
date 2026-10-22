@@ -10,7 +10,7 @@ import { ListControls } from "@/components/project/list-controls";
 import { Chip, EmptyState, ProjectCards, ProjectTable } from "@/components/project/project-table";
 import { MapHighlightProvider } from "@/components/district-map/highlight";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canCreateProject } from "@/lib/auth/project-permissions";
+import { canCreateProject, canUploadImagery } from "@/lib/auth/project-permissions";
 import { filtersQuery, getStateProjects, parseProjectFilters } from "@/lib/data/projects";
 import type { ProjectStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -117,8 +117,8 @@ async function Projects({ params, searchParams }: { params: Params["params"]; se
         <EmptyState searched={filtered} clearHref={path} emptyText={t("none")} />
       ) : (
         <MapHighlightProvider>
-          <ProjectTable rows={rows} basePath={basePath} showDepartment showDistrict />
-          <ProjectCards rows={rows} basePath={basePath} showDepartment showDistrict />
+          <ProjectTable rows={rows} basePath={basePath} showDepartment showDistrict canUpload={canUploadImagery(user)} />
+          <ProjectCards rows={rows} basePath={basePath} showDepartment showDistrict canUpload={canUploadImagery(user)} />
         </MapHighlightProvider>
       )}
     </div>
