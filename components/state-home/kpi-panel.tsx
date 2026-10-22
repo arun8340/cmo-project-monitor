@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { Panel, PanelLink, StatCard } from "@/components/app-shell/page-parts";
+import { Panel, PanelLink } from "@/components/app-shell/page-parts";
 import { IssueStatusBadge, pill, TONE_PILL } from "@/components/workflow/badges";
 import type { StateOverview } from "@/lib/data/state-overview";
 import type { IssueStatus } from "@/lib/constants";
@@ -9,25 +9,50 @@ import { localName } from "@/lib/i18n/names";
 
 const pct = (part: number, whole: number) => (whole ? Math.round((part / whole) * 100) : 0);
 
-/** The headline numbers across the top of the state dashboard. */
+/**
+ * The headline numbers in one bar across the top of the state dashboard, over
+ * satellite imagery. Every figure opens the matching list (Projects, Issues,
+ * Imagery), keeping the department filter.
+ */
 export function KpiRow({ overview, basePath }: { overview: StateOverview; basePath: string }) {
   const t = useTranslations("kpi");
   const { totals, issues } = overview;
-  const behind = totals.delayed + totals.stalled;
+  const dept = overview.department ? `dept=${overview.department.code.toLowerCase()}` : "";
+  const projects = (status?: string) => {
+    const qs = [status && `status=${status}`, dept].filter(Boolean).join("&");
+    return `${basePath}/projects${qs ? `?${qs}` : ""}`;
+  };
+  const items: { label: string; value: number; hint: string; href: string; tone: string }[] = [
+    { label: t("totalProjects"), value: totals.total, hint: t("acrossDepartments", { count: overview.departments.length }), href: projects(), tone: "text-white" },
+    { label: t("completed"), value: totals.completed, hint: t("ofTotal", { percent: pct(totals.completed, totals.total) }), href: projects("completed"), tone: "text-[#8fe0b0]" },
+    { label: t("ongoing"), value: totals.ongoing, hint: t("ofTotal", { percent: pct(totals.ongoing, totals.total) }), href: projects("ongoing"), tone: "text-[#9cc8f5]" },
+    { label: t("delayedStalled"), value: totals.delayed + totals.stalled, hint: t("behindSchedule"), href: projects("delayed,stalled"), tone: "text-[#ffa58f]" },
+    {
+      label: t("openIssues"),
+      value: issues.openTotal,
+      hint: issues.lastMeetingDate ? t("pendingAtMeeting", { count: issues.pendingAtLastMeeting }) : t("noMeetings"),
+      href: `${basePath}/issues`,
+      tone: "text-amber",
+    },
+    { label: t("withImagery"), value: overview.withImagery, hint: t("withImageryHint"), href: `${basePath}/imagery${dept ? `?${dept}` : ""}`, tone: "text-white" },
+  ];
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-      <StatCard label={t("totalProjects")} value={totals.total} hint={t("acrossDepartments", { count: overview.departments.length })} />
-      <StatCard label={t("completed")} value={totals.completed} tone="ok" hint={t("ofTotal", { percent: pct(totals.completed, totals.total) })} />
-      <StatCard label={t("ongoing")} value={totals.ongoing} tone="info" hint={t("ofTotal", { percent: pct(totals.ongoing, totals.total) })} />
-      <StatCard label={t("delayedStalled")} value={behind} tone="bad" hint={t("behindSchedule")} />
-      <StatCard
-        label={t("openIssues")}
-        value={issues.openTotal}
-        tone="warn"
-        hint={issues.lastMeetingDate ? t("pendingAtMeeting", { count: issues.pendingAtLastMeeting }) : t("noMeetings")}
-        href={`${basePath}/issues`}
-      />
-    </div>
+    <section aria-label={t("summary")} className="relative overflow-hidden rounded-xl bg-navy text-white shadow-sm">
+      {/* eslint-disable-next-line @next/next/no-img-element -- decorative background */}
+      <img src="/landing/02.webp" alt="" aria-hidden className="absolute inset-0 size-full object-cover" />
+      <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-navy/90 via-navy/82 to-navy/78" />
+      <ul className="relative grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
+        {items.map((it, i) => (
+          <li key={it.label} className={`border-white/15 ${i > 0 ? "xl:border-l" : ""} ${i % 2 ? "border-l sm:border-l-0" : ""} ${i % 3 ? "sm:border-l" : ""}`}>
+            <Link href={it.href} className="block h-full px-4 py-3.5 transition-colors [text-shadow:0_1px_2px_rgb(0_0_0/0.6)] hover:bg-white/10 sm:px-5 sm:py-4">
+              <div className="text-[13px] font-semibold text-white/90">{it.label}</div>
+              <div className={`mt-1 text-[30px] leading-none font-bold tracking-tight tabular-nums ${it.tone}`}>{it.value}</div>
+              <div className="mt-1.5 text-xs text-white/80">{it.hint}</div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

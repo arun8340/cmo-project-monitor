@@ -41,6 +41,8 @@
   "nav": {
     "sections": "विभाग",
     "overview": "आढावा",
+    "projects": "प्रकल्प",
+    "imagery": "प्रतिमा",
     "issues": "समस्या",
     "directives": "निर्देश",
     "activity": "क्रियाकलाप नोंद",
@@ -181,7 +183,10 @@
     "noOpenDirectives": "कोणतेही खुले निर्देश नाहीत.",
     "overdueOn": "मुदत उलटली · {date}",
     "dueOn": "मुदत {date}",
-    "overdueCount": "{count} मुदत उलटलेले"
+    "overdueCount": "{count} मुदत उलटलेले",
+    "summary": "सारांश",
+    "withImagery": "प्रतिमा असलेली स्थळे",
+    "withImageryHint": "नवीनतम उपग्रह प्रतिमा पाहा"
   },
   "map": {
     "loading": "नकाशा लोड होत आहे…",
@@ -759,5 +764,27 @@
       "action": "क्रिया",
       "details": "तपशील"
     }
+  },
+  "projects": {
+    "title": "प्रकल्प",
+    "titleStatus": "{status} प्रकल्प",
+    "summary": "{count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}} · {state}",
+    "district": "जिल्हा",
+    "allDistricts": "सर्व जिल्हे",
+    "department": "विभाग",
+    "none": "अद्याप कोणतेही प्रकल्प नाहीत"
+  },
+  "imageryIndex": {
+    "title": "प्रतिमा",
+    "summary": "{count, plural, one {प्रतिमा असलेले {count} प्रकल्प स्थळ} other {प्रतिमा असलेली {count} प्रकल्प स्थळे}}, नवीनतम आधी",
+    "none": "अद्याप कोणतीही प्रतिमा अपलोड केलेली नाही",
+    "captures": "{count, plural, one {{count} प्रतिमा} other {{count} प्रतिमा}}",
+    "latest": "नवीनतम {when}",
+    "since": "{date} पासून",
+    "viewImages": "प्रतिमा पाहा",
+    "compare": "तुलना करा",
+    "latestAlt": "{name} ची नवीनतम प्रतिमा, {date}",
+    "withoutImagery": "{count, plural, one {{count} प्रकल्पाची} other {{count} प्रकल्पांची}} अद्याप प्रतिमा नाही.",
+    "seeAllProjects": "सर्व प्रकल्प पाहा"
   }
 }

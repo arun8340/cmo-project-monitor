@@ -268,3 +268,19 @@
     animation: none;
   }
 }
+
+/* App pages: a light colour satellite image (Taj Mahal gardens), clearer at the top and fading out lower down (fixed) */
+.app-backdrop {
+  position: relative;
+  isolation: isolate;
+}
+.app-backdrop::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgb(244 242 236 / 0.72) 0, rgb(244 242 236 / 0.86) 320px, rgb(244 242 236 / 0.94) 75%),
+    url("/landing/05.webp") center 30% / cover no-repeat;
+}
