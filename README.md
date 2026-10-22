@@ -1,4 +1,4 @@
-# CM Infrastructure Project Monitor (POC)
+# CMO Infrastructure Project Monitor (POC)
 
 Verification layer for government infrastructure projects in **Rajasthan** and **Maharashtra**:
 every project has a site, dated satellite / drone / field imagery, progress history, issues and directives.

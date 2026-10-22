@@ -2,9 +2,9 @@ import type { Locale } from "@/lib/i18n/config";
 
 /** The app's name in each interface language (shown under the name in the other language). */
 export const APP_NAMES: Record<Locale, string> = {
-  en: "CM Project Monitor",
-  hi: "मुख्यमंत्री परियोजना निगरानी प्रणाली",
-  mr: "मुख्यमंत्री प्रकल्प देखरेख प्रणाली",
+  en: "CMO Project Monitor",
+  hi: "मुख्यमंत्री कार्यालय परियोजना निगरानी प्रणाली",
+  mr: "मुख्यमंत्री कार्यालय प्रकल्प देखरेख प्रणाली",
 };
 
 /** Map-pin in an amber tile — the app's mark. */
