@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "CM Project Monitor",
-    "description": "Infrastructure project monitoring and verification for the Chief Minister's Office"
+    "name": "CMO Project Monitor",
+    "description": "Project monitoring and review by the Chief Minister's Office (CMO) using satellite imagery"
   },
   "common": {
     "cancel": "Cancel",
@@ -106,8 +106,8 @@
     "featureMap": "State and district view of every reported project",
     "featureImagery": "Dated satellite, drone and field imagery for each site",
     "featureTracking": "Progress, issues and directives in one place",
-    "brandState": "CM Project Monitor · {state}",
-    "brandAdmin": "CM Project Monitor · Administration",
+    "brandState": "CMO Project Monitor · {state}",
+    "brandAdmin": "CMO Project Monitor · Administration",
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "adminSignIn": "Administrator sign in",
@@ -121,8 +121,10 @@
     "errorMissing": "Enter your email and password.",
     "errorInvalid": "Invalid email or password.",
     "errorFailed": "Sign-in failed. Please try again.",
-    "heroTitle": "See every project site, not just its status report.",
-    "heroBody": "District-wise project tracking for the Chief Minister's Office, verified with dated satellite, drone and field imagery."
+    "heroTitle": "Project Monitoring & Review by the CMO – Chief Minister's Office,",
+    "heroBody": "District-wise tracking of every reported project, verified with dated satellite, drone and field imagery of the site.",
+    "heroTitleImagery": "using On-Demand Instant Satellite Imagery",
+    "imageryCredit": "Satellite imagery © Maxar Technologies, courtesy Globe Imagery"
   },
   "account": {
     "changeTitle": "Change password",
