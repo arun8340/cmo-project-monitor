@@ -45,6 +45,7 @@
     "imagery": "Imagery",
     "issues": "Issues",
     "directives": "Directives",
+    "meetings": "Meetings",
     "activity": "Activity log",
     "openCount": "{count} open",
     "overdueCount": "{count} overdue"
@@ -96,6 +97,11 @@
       "DEPARTMENT_HEAD": "Department Head",
       "DISTRICT_COLLECTOR": "District Collector",
       "FIELD_OFFICER": "Field Officer"
+    },
+    "meetingStatus": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "CANCELLED": "Cancelled"
     }
   },
   "login": {
@@ -308,7 +314,12 @@
       "user_password_reset": "Temporary password set",
       "user_projects": "Project assignments changed (+{added}, −{removed})",
       "role_update": "Permissions changed",
-      "role_update_parts": "Permissions changed: {parts}"
+      "role_update_parts": "Permissions changed: {parts}",
+      "meeting_create": "Scheduled a review meeting",
+      "meeting_update": "Edited a review meeting",
+      "meeting_publish": "Published a meeting agenda",
+      "meeting_cancel": "Cancelled a review meeting",
+      "meeting_restore": "Restored a cancelled meeting as draft"
     },
     "failedReason": {
       "unknown_user": "unknown email",
@@ -460,7 +471,15 @@
       "projectNotInDepartment": "That project isn't in the chosen department",
       "ownerFits": "Choose an officer responsible for the chosen district or department",
       "describeAction": "Describe the action taken",
-      "explainNote": "Add a note explaining this"
+      "explainNote": "Add a note explaining this",
+      "meetingTitle": "Enter a title (at least 5 characters).",
+      "meetingDate": "Choose the meeting date.",
+      "meetingPast": "The meeting date can’t be in the past.",
+      "meetingTime": "Enter the time, e.g. 11:00.",
+      "agendaEmpty": "Add at least one agenda point before publishing.",
+      "agendaItemTitle": "Each agenda point needs a title (3–300 characters); notes up to 1000.",
+      "agendaTooMany": "At most {max} agenda points.",
+      "agendaRef": "An agenda point links to a project, issue or directive you can’t access."
     },
     "filesRejected": "Some files couldn't be accepted. Nothing was uploaded.",
     "uploadFailed": "The upload failed. Please try again.",
@@ -477,7 +496,11 @@
     "transitionNotAllowed": "That status change isn't allowed.",
     "issueMarked": "Issue marked {status}",
     "directiveTransitionNotAllowed": "You can't make that change to this directive.",
-    "directiveMarked": "Directive {status}"
+    "directiveMarked": "Directive {status}",
+    "meetingPublished": "Agenda published.",
+    "meetingCancelled": "Meeting cancelled.",
+    "meetingRestored": "Meeting restored as a draft.",
+    "meetingTransitionNotAllowed": "That change is not allowed for this meeting."
   },
   "projectForm": {
     "project": "Project",
@@ -737,7 +760,8 @@
       "verifications": "Verifications",
       "issues": "Issues",
       "directives": "Directives",
-      "admin": "User admin"
+      "admin": "User admin",
+      "meetings": "Meetings"
     },
     "from": "From",
     "to": "To",
@@ -810,5 +834,74 @@
     "viewAll": "View all images",
     "openLive": "Open live tracking",
     "none": "None yet"
+  },
+  "meetings": {
+    "title": "Review meetings",
+    "intro": "CMO review meetings and their published agenda.",
+    "new": "Schedule a meeting",
+    "newIntro": "Set the date and add agenda points. Save as a draft, or publish it for everyone in the state to see.",
+    "edit": "Edit meeting",
+    "agenda": "Agenda",
+    "agendaHint": "Numbered points in order. Link a point to a project, issue or directive to show its latest status on the agenda.",
+    "agendaCount": "{count, plural, one {Agenda · # point} other {Agenda · # points}}",
+    "itemCount": "{count, plural, one {# agenda point} other {# agenda points}}",
+    "upcoming": "Upcoming",
+    "past": "Past meetings",
+    "noUpcoming": "No meetings scheduled.",
+    "noPast": "No past meetings.",
+    "noItems": "No agenda points yet.",
+    "fTitle": "Title",
+    "fTitlePlaceholder": "e.g. Monthly infrastructure review",
+    "fDate": "Date",
+    "fTime": "Time (IST)",
+    "fVenue": "Venue",
+    "fVenuePlaceholder": "e.g. CMO Conference Hall",
+    "fChairedBy": "Chaired by",
+    "fChairedByPlaceholder": "e.g. Hon'ble Chief Minister",
+    "fNotes": "Notes for participants",
+    "fNotesPlaceholder": "Optional: documents to bring, who should attend…",
+    "defaultTitle": "Monthly infrastructure review meeting",
+    "defaultChair": "Hon'ble Chief Minister",
+    "suggestions": "Suggested points (delayed or stalled projects, high-priority issues, overdue directives) — click to add",
+    "kind": {
+      "none": "Not linked",
+      "project": "Project",
+      "issue": "Issue",
+      "directive": "Directive"
+    },
+    "titleProject": "Progress review: {name}",
+    "titleIssue": "Issue: {name}",
+    "titleDirective": "Compliance: {name}",
+    "itemTitle": "Agenda point",
+    "itemTitleLabel": "Agenda point {n}",
+    "itemNotes": "Notes (optional)",
+    "linkTo": "Linked to",
+    "choose": "Choose…",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove",
+    "addItem": "Add agenda point",
+    "saveDraft": "Save draft",
+    "publish": "Publish agenda",
+    "saveChanges": "Save changes",
+    "cancelMeeting": "Cancel meeting",
+    "restore": "Restore as draft",
+    "confirmCancel": "Cancel this meeting? Everyone in the state will see it as cancelled.",
+    "print": "Print agenda",
+    "savedPublished": "Agenda published. Everyone in the state can see it.",
+    "savedDraft": "Saved as a draft — only those who manage meetings can see it until it is published.",
+    "when": "Date & time",
+    "held": "Held",
+    "publishedBy": "Published by {name} · {date}",
+    "createdBy": "Draft by {name}",
+    "progress": "{percent}% done",
+    "due": "due {date}",
+    "directiveRef": "Directive",
+    "nextMeeting": "Next CMO review meeting",
+    "noneScheduled": "No review meeting scheduled.",
+    "allMeetings": "All meetings",
+    "schedule": "Schedule",
+    "viewFullAgenda": "View full agenda",
+    "viewFullAgendaMore": "View full agenda (+{count} more)"
   }
 }

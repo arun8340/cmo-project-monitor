@@ -10,7 +10,8 @@ import { startTransition, type FormEvent } from "react";
 export function submitKeepingValues(action: (formData: FormData) => void) {
   return (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    // Include the clicked submit button's name/value (e.g. intent=publish).
+    const formData = new FormData(e.currentTarget, (e.nativeEvent as SubmitEvent).submitter);
     startTransition(() => action(formData));
   };
 }

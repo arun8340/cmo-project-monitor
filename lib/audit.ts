@@ -20,6 +20,7 @@ export const AUDIT_CATEGORIES = {
   verifications: { actions: ["verification.record"] },
   issues: { actions: ["issue.create", "issue.status"] },
   directives: { actions: ["directive.issue", "directive.status"] },
+  meetings: { actions: ["meeting.create", "meeting.update", "meeting.publish", "meeting.cancel", "meeting.restore"] },
   admin: { actions: ["user.create", "user.update", "user.activate", "user.deactivate", "user.password_reset", "user.projects", "role.update"] },
 } as const;
 export type AuditCategory = keyof typeof AUDIT_CATEGORIES;
@@ -97,6 +98,12 @@ export async function getSummarizer(): Promise<Summarize> {
         return t("action.verification_record", { outcome: label(labels.outcome, d.outcome) });
       case "imagery.upload":
         return t("action.imagery_upload", { count: Number(d.count ?? 0) });
+      case "meeting.create":
+      case "meeting.update":
+      case "meeting.publish":
+      case "meeting.cancel":
+      case "meeting.restore":
+        return t(`action.${action.replace(".", "_")}`);
       case "directive.status":
         return t("action.directive_status", { from: label(labels.directiveStatus, d.from), to: label(labels.directiveStatus, d.to) });
       case "user.create":
@@ -161,7 +168,7 @@ export function parseAuditFilters(sp: Record<string, string | string[] | undefin
  * only in the admin's unscoped view.
  */
 async function stateWhere(stateCode: StateCode): Promise<Prisma.AuditLogWhereInput> {
-  const [projects, directives, users] = await Promise.all([
+  const [projects, directives, users, meetings] = await Promise.all([
     db.project.findMany({ where: { district: { state: { code: stateCode } } }, select: { id: true } }),
     db.directive.findMany({
       where: {
@@ -174,9 +181,11 @@ async function stateWhere(stateCode: StateCode): Promise<Prisma.AuditLogWhereInp
       select: { id: true },
     }),
     db.user.findMany({ where: { state: { code: stateCode } }, select: { id: true } }),
+    db.meeting.findMany({ where: { state: { code: stateCode } }, select: { id: true } }),
   ]);
   return {
     OR: [
+      { entityType: "Meeting", entityId: { in: meetings.map((m) => m.id) } },
       { entityType: "Project", entityId: { in: projects.map((p) => p.id) } },
       { entityType: "Directive", entityId: { in: directives.map((d) => d.id) } },
       { entityType: "User", entityId: { in: users.map((u) => u.id) } },
@@ -218,7 +227,7 @@ export type AuditRow = {
  */
 async function resolveTargets(rows: { entityType: string; entityId: string | null; details: string | null }[], portal: Portal) {
   const ids = (type: string) => [...new Set(rows.filter((r) => r.entityType === type && r.entityId).map((r) => r.entityId!))];
-  const [projects, directives, users, labels, locale] = await Promise.all([
+  const [projects, directives, users, meetings, labels, locale] = await Promise.all([
     db.project.findMany({
       where: { id: { in: ids("Project") } },
       select: { id: true, name: true, nameLocal: true, district: { select: { state: { select: { code: true } } } } },
@@ -234,6 +243,7 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
       },
     }),
     db.user.findMany({ where: { id: { in: ids("User") } }, select: { id: true, name: true, email: true, state: { select: { code: true } } } }),
+    db.meeting.findMany({ where: { id: { in: ids("Meeting") } }, select: { id: true, title: true, state: { select: { code: true } } } }),
     getLabels(),
     getLocale(),
   ]);
@@ -254,6 +264,10 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
   }
   for (const u of users) {
     map.set(`User:${u.id}`, { label: u.name, href: portal.kind === "admin" ? `/admin/users/${u.id}` : null, stateCode: (u.state?.code as StateCode) ?? null });
+  }
+  for (const m of meetings) {
+    const code = m.state.code as StateCode;
+    map.set(`Meeting:${m.id}`, { label: m.title, href: `${stateBasePath(portal, code)}/meetings/${m.id}`, stateCode: code });
   }
   for (const r of roles) map.set(`Role:${r.id}`, { label: labels.role[r.key as RoleKey] ?? r.key, href: portal.kind === "admin" ? "/admin/roles" : null, stateCode: null });
   return map;

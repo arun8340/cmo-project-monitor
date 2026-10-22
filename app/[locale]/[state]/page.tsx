@@ -2,16 +2,25 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PasswordChangedToast } from "@/components/account/password-changed-toast";
 import { StateMapPanel } from "@/components/state-map/state-map-panel";
-import { DashboardSide, KpiRow } from "@/components/state-home/kpi-panel";
+import {
+  DashboardBelow,
+  DashboardSide,
+  KpiRow,
+} from "@/components/state-home/kpi-panel";
 import { PageHeader } from "@/components/app-shell/page-parts";
 import { DepartmentFilter } from "@/components/state-home/department-filter";
 import { requireStateAccess, type CurrentUser } from "@/lib/auth/dal";
 import { getStateOverview } from "@/lib/data/state-overview";
+import { getNextMeeting } from "@/lib/data/meetings";
+import { canManageMeetings } from "@/lib/auth/project-permissions";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localName, localNames } from "@/lib/i18n/names";
 import type { Locale } from "@/lib/i18n/config";
 
-export default function StateHomePage({ params, searchParams }: PageProps<"/[locale]/[state]">) {
+export default function StateHomePage({
+  params,
+  searchParams,
+}: PageProps<"/[locale]/[state]">) {
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-7">
       <Suspense>
@@ -24,7 +33,11 @@ export default function StateHomePage({ params, searchParams }: PageProps<"/[loc
   );
 }
 
-function scopeText(user: CurrentUser, stateName: string, t: Awaited<ReturnType<typeof getTranslations<"home">>>) {
+function scopeText(
+  user: CurrentUser,
+  stateName: string,
+  t: Awaited<ReturnType<typeof getTranslations<"home">>>,
+) {
   switch (user.roleKey) {
     case "DEPARTMENT_HEAD":
       return t("scopeDepartment", { department: user.departmentName ?? "" });
@@ -44,11 +57,23 @@ async function StateHome({
   params: PageProps<"/[locale]/[state]">["params"];
   searchParams: PageProps<"/[locale]/[state]">["searchParams"];
 }) {
-  const [{ state: stateParam }, { dept }] = await Promise.all([params, searchParams]);
+  const [{ state: stateParam }, { dept }] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
-  const overview = await getStateOverview(user, state, typeof dept === "string" ? dept : undefined);
-  const allProjects = overview.departments.reduce((sum, d) => sum + d.projects, 0);
-  const [t, locale] = await Promise.all([getTranslations("home"), getLocale() as Promise<Locale>]);
+  const [overview, nextMeeting] = await Promise.all([
+    getStateOverview(user, state, typeof dept === "string" ? dept : undefined),
+    getNextMeeting(user, state),
+  ]);
+  const allProjects = overview.departments.reduce(
+    (sum, d) => sum + d.projects,
+    0,
+  );
+  const [t, locale] = await Promise.all([
+    getTranslations("home"),
+    getLocale() as Promise<Locale>,
+  ]);
   const title = localNames(locale, state.name, state.nameLocal);
 
   return (
@@ -61,8 +86,15 @@ async function StateHome({
             {scopeText(user, title.primary, t)}
             {overview.department && (
               <>
-                {" "}· {t("showing")}{" "}
-                <span className="font-semibold text-foreground">{localName(locale, overview.department.name, overview.department.nameLocal)}</span>
+                {" "}
+                · {t("showing")}{" "}
+                <span className="font-semibold text-foreground">
+                  {localName(
+                    locale,
+                    overview.department.name,
+                    overview.department.nameLocal,
+                  )}
+                </span>
               </>
             )}
           </>
@@ -88,8 +120,15 @@ async function StateHome({
           districts={overview.districts}
           styleKey={overview.department?.code ?? "all"}
         />
-        <DashboardSide overview={overview} basePath={basePath} />
+        <DashboardSide
+          overview={overview}
+          basePath={basePath}
+          nextMeeting={nextMeeting}
+          canManageMeetings={canManageMeetings(user)}
+        />
       </div>
+
+      <DashboardBelow overview={overview} basePath={basePath} />
     </div>
   );
 }

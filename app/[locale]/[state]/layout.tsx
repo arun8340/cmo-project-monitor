@@ -45,6 +45,7 @@ async function StateHeader({ params }: { params: LayoutProps<"/[locale]/[state]"
     imagery: t("imagery"),
     issues: t("issues"),
     directives: t("directives"),
+    meetings: t("meetings"),
     activity: t("activity"),
   };
   return (
@@ -60,7 +61,7 @@ async function StateHeader({ params }: { params: LayoutProps<"/[locale]/[state]"
   );
 }
 
-type NavLabels = Record<"overview" | "projects" | "imagery" | "issues" | "directives" | "activity", string>;
+type NavLabels = Record<"overview" | "projects" | "imagery" | "issues" | "directives" | "meetings" | "activity", string>;
 
 function navItems(base: string, l: NavLabels, counts?: { openIssues: number; overdueDirectives: number }, showActivity = false): NavItem[] {
   return [
@@ -69,6 +70,7 @@ function navItems(base: string, l: NavLabels, counts?: { openIssues: number; ove
     { key: "imagery", href: `${base}/imagery`, label: l.imagery },
     { key: "issues", href: `${base}/issues`, label: l.issues, count: counts?.openIssues },
     { key: "directives", href: `${base}/directives`, label: l.directives, count: counts?.overdueDirectives, danger: true },
+    { key: "meetings", href: `${base}/meetings`, label: l.meetings },
     ...(showActivity ? [{ key: "activity", href: `${base}/activity`, label: l.activity }] : []),
   ];
 }
