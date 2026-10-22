@@ -40,6 +40,8 @@ export type StateOverview = {
   districts: DistrictSummary[];
   issues: { lastMeetingDate: Date | null; pendingAtLastMeeting: number; resolvedAtLastMeeting: number; openTotal: number };
   directives: { open: number; overdue: number };
+  /** Projects in view that have at least one imagery capture. */
+  withImagery: number;
   /** A few open issues (highest priority first) and open directives (soonest due first) for the dashboard. */
   recentIssues: OverviewIssue[];
   recentDirectives: OverviewDirective[];
@@ -88,7 +90,7 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
 
   const now = new Date();
   const named = { select: { name: true, nameLocal: true } } as const;
-  const [districtRows, accessibleRows, grouped, lastMeeting, openIssues, openDirectives, overdueDirectives, issueRows, directiveRows] = await Promise.all([
+  const [districtRows, accessibleRows, grouped, lastMeeting, openIssues, openDirectives, overdueDirectives, issueRows, directiveRows, withImagery] = await Promise.all([
     db.district.findMany({ where: { state: { code } }, orderBy: { name: "asc" } }),
     db.district.findMany({ where: districtScope(user, code), select: { id: true } }),
     db.project.groupBy({ by: ["districtId", "status"], where: projectWhere, _count: true }),
@@ -119,6 +121,7 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
       orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
       take: 3,
     }),
+    db.project.count({ where: { AND: [projectWhere, { imagery: { some: {} } }] } }),
   ]);
   const PRIORITY_RANK: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
   const recentIssues: OverviewIssue[] = issueRows
@@ -195,6 +198,7 @@ export async function getStateOverview(user: CurrentUser, state: StateConfig, de
     districts,
     issues: { lastMeetingDate, pendingAtLastMeeting, resolvedAtLastMeeting, openTotal: openIssues },
     directives: { open: openDirectives, overdue: overdueDirectives },
+    withImagery,
     recentIssues,
     recentDirectives,
   };

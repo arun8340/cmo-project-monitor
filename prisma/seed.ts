@@ -46,6 +46,7 @@ const DAY = 86_400_000;
 const MONTH = 30.4 * DAY;
 const addMonths = (d: Date, m: number) => new Date(d.getTime() + m * MONTH);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * DAY);
+const ymdIST = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 /** Review meetings used to tag issues ("pending/resolved issues of last meeting"). */
 const LAST_MEETING = addDays(NOW, -12);
@@ -133,6 +134,8 @@ const ISSUE_TEMPLATES: { title: string; priority: IssuePriority }[] = [
 
 async function wipe() {
   await db.auditLog.deleteMany();
+  await db.meetingAgendaItem.deleteMany();
+  await db.meeting.deleteMany();
   await db.verification.deleteMany();
   await db.directive.deleteMany();
   await db.issue.deleteMany();
@@ -442,6 +445,89 @@ async function main() {
           toDate: pair[1].captureDate,
           createdById: cmo.id,
           createdAt: addDays(NOW, -Math.round(between(2, 10))),
+        },
+      });
+    }
+
+    // CMO review meetings: the two past meetings the issues are tagged with,
+    // the next one (agenda published) and a draft for the month after.
+    const VENUE: Record<StateCode, string> = {
+      RJ: "Conference Hall, Chief Minister's Office, Jaipur",
+      MH: "Conference Room, Mantralaya, Mumbai",
+    };
+    const at11 = (d: Date) => new Date(`${ymdIST(d)}T11:00:00+05:30`);
+    const stateIssues = await db.issue.findMany({
+      where: { project: { district: { stateId: state.id } } },
+      include: { project: { select: { name: true } } },
+      orderBy: { createdAt: "asc" },
+    });
+    const PRIORITY_RANK: Record<string, number> = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+    type Item = { title: string; notes?: string; projectId?: string; issueId?: string; directiveId?: string };
+    const meetings: { title: string; at: Date; status: string; items: Item[] }[] = [];
+
+    for (const date of [PREVIOUS_MEETING, LAST_MEETING]) {
+      const tagged = stateIssues.filter((i) => i.meetingDate?.getTime() === date.getTime()).slice(0, 6);
+      meetings.push({
+        title: "Monthly infrastructure review meeting",
+        at: at11(date),
+        status: "PUBLISHED",
+        items: [
+          { title: "Action taken on decisions of the previous meeting" },
+          ...tagged.map((i) => ({ title: `Issue: ${i.title} – ${i.project.name}`, issueId: i.id })),
+        ],
+      });
+    }
+
+    const openIssues = stateIssues
+      .filter((i) => i.status === "PENDING" || i.status === "IN_PROGRESS")
+      .sort((a, b) => (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9));
+    const imaged = createdProjects.filter((p) => p.seed.site && (p.status === "DELAYED" || p.status === "STALLED"));
+    const lagging = createdProjects.filter((p) => (p.status === "DELAYED" || p.status === "STALLED") && !p.seed.site);
+    const overdue = await db.directive.findMany({
+      where: { status: { in: ["OPEN", "IN_PROGRESS"] }, dueDate: { lt: NOW }, OR: [{ district: { stateId: state.id } }, { department: { stateId: state.id } }] },
+      take: 2,
+    });
+    meetings.push({
+      title: "Monthly infrastructure review meeting",
+      at: at11(addDays(NOW, 6)),
+      status: "PUBLISHED",
+      items: [
+        { title: "Action taken on decisions of the last meeting" },
+        ...imaged.map((p) => ({
+          title: `Progress review: ${p.seed.name}`,
+          notes: "Latest satellite imagery to be shown; department to explain the gap between planned and actual progress.",
+          projectId: p.id,
+        })),
+        ...lagging.slice(0, 3).map((p) => ({ title: `Progress review: ${p.seed.name}`, projectId: p.id })),
+        ...openIssues.slice(0, 3).map((i) => ({ title: `Issue: ${i.title} – ${i.project.name}`, issueId: i.id })),
+        ...overdue.map((d) => ({ title: "Compliance of overdue directive", notes: d.text, directiveId: d.id })),
+        { title: "Any other matter with the permission of the Chair" },
+      ],
+    });
+    meetings.push({
+      title: "Quarterly review of flagship projects",
+      at: at11(addDays(NOW, 34)),
+      status: "DRAFT",
+      items: [
+        { title: "Flagship projects above ₹100 crore: physical and financial progress" },
+        { title: "Land acquisition cases pending for more than six months" },
+      ],
+    });
+
+    for (const m of meetings) {
+      await db.meeting.create({
+        data: {
+          stateId: state.id,
+          title: m.title,
+          meetingAt: m.at,
+          venue: VENUE[code],
+          chairedBy: "Hon'ble Chief Minister",
+          notes: m.status === "PUBLISHED" && m.at > NOW ? "Department heads and District Collectors to attend with updated status reports." : null,
+          status: m.status,
+          publishedAt: m.status === "PUBLISHED" ? addDays(m.at, -7) : null,
+          createdById: cmo.id,
+          createdAt: addDays(m.at, -10),
+          items: { create: m.items.map((it, n) => ({ position: n + 1, ...it })) },
         },
       });
     }

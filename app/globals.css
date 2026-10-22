@@ -10,7 +10,7 @@
   --font-sans: var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-public-sans), var(--font-devanagari), ui-sans-serif, system-ui, sans-serif;
-  /* CM Project Monitor palette (see the UI prototype) */
+  /* CMO Project Monitor palette (see the UI prototype) */
   --color-navy: var(--navy);
   --color-navy-soft: var(--navy-soft);
   --color-amber: var(--amber);
@@ -245,4 +245,46 @@
 }
 .leaflet-container.leaflet-container {
   background: #f7f5f0;
+}
+
+/* Landing page: satellite rows drifting left to right (see components/landing) */
+@keyframes landing-drift {
+  from {
+    transform: translateX(-50%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+.landing-drift {
+  animation: landing-drift 140s linear infinite;
+}
+.landing-drift-slow {
+  animation-duration: 190s;
+  animation-delay: -60s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-drift {
+    animation: none;
+  }
+}
+
+/* App pages: a light colour satellite image (Taj Mahal gardens), clearer at the top and fading out lower down (fixed) */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, rgb(244 242 236 / 0.72) 0, rgb(244 242 236 / 0.86) 320px, rgb(244 242 236 / 0.94) 75%),
+    url("/landing/05.webp") center 30% / cover no-repeat;
+}
+
+/* Printing a page (e.g. a meeting agenda): leave out the app chrome. */
+@media print {
+  body > header,
+  header.sticky,
+  .app-backdrop {
+    display: none !important;
+  }
 }

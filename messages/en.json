@@ -1,7 +1,7 @@
 {
   "app": {
-    "name": "CM Project Monitor",
-    "description": "Infrastructure project monitoring and verification for the Chief Minister's Office"
+    "name": "CMO Project Monitor",
+    "description": "Project monitoring and review by the Chief Minister's Office (CMO) using satellite imagery"
   },
   "common": {
     "cancel": "Cancel",
@@ -41,8 +41,11 @@
   "nav": {
     "sections": "Sections",
     "overview": "Overview",
+    "projects": "Projects",
+    "imagery": "Imagery",
     "issues": "Issues",
     "directives": "Directives",
+    "meetings": "Meetings",
     "activity": "Activity log",
     "openCount": "{count} open",
     "overdueCount": "{count} overdue"
@@ -94,6 +97,11 @@
       "DEPARTMENT_HEAD": "Department Head",
       "DISTRICT_COLLECTOR": "District Collector",
       "FIELD_OFFICER": "Field Officer"
+    },
+    "meetingStatus": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "CANCELLED": "Cancelled"
     }
   },
   "login": {
@@ -106,8 +114,8 @@
     "featureMap": "State and district view of every reported project",
     "featureImagery": "Dated satellite, drone and field imagery for each site",
     "featureTracking": "Progress, issues and directives in one place",
-    "brandState": "CM Project Monitor · {state}",
-    "brandAdmin": "CM Project Monitor · Administration",
+    "brandState": "CMO Project Monitor · {state}",
+    "brandAdmin": "CMO Project Monitor · Administration",
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "adminSignIn": "Administrator sign in",
@@ -121,8 +129,10 @@
     "errorMissing": "Enter your email and password.",
     "errorInvalid": "Invalid email or password.",
     "errorFailed": "Sign-in failed. Please try again.",
-    "heroTitle": "See every project site, not just its status report.",
-    "heroBody": "District-wise project tracking for the Chief Minister's Office, verified with dated satellite, drone and field imagery."
+    "heroTitle": "Project Monitoring & Review by the CMO – Chief Minister's Office,",
+    "heroBody": "District-wise tracking of every reported project, verified with dated satellite, drone and field imagery of the site.",
+    "heroTitleImagery": "using On-Demand Instant Satellite Imagery",
+    "imageryCredit": "Satellite imagery © Maxar Technologies, courtesy Globe Imagery"
   },
   "account": {
     "changeTitle": "Change password",
@@ -179,7 +189,10 @@
     "noOpenDirectives": "No open directives.",
     "overdueOn": "Overdue · {date}",
     "dueOn": "Due {date}",
-    "overdueCount": "{count} overdue"
+    "overdueCount": "{count} overdue",
+    "summary": "Summary",
+    "withImagery": "Sites with imagery",
+    "withImageryHint": "View latest satellite images"
   },
   "map": {
     "loading": "Loading map…",
@@ -301,7 +314,12 @@
       "user_password_reset": "Temporary password set",
       "user_projects": "Project assignments changed (+{added}, −{removed})",
       "role_update": "Permissions changed",
-      "role_update_parts": "Permissions changed: {parts}"
+      "role_update_parts": "Permissions changed: {parts}",
+      "meeting_create": "Scheduled a review meeting",
+      "meeting_update": "Edited a review meeting",
+      "meeting_publish": "Published a meeting agenda",
+      "meeting_cancel": "Cancelled a review meeting",
+      "meeting_restore": "Restored a cancelled meeting as draft"
     },
     "failedReason": {
       "unknown_user": "unknown email",
@@ -453,7 +471,15 @@
       "projectNotInDepartment": "That project isn't in the chosen department",
       "ownerFits": "Choose an officer responsible for the chosen district or department",
       "describeAction": "Describe the action taken",
-      "explainNote": "Add a note explaining this"
+      "explainNote": "Add a note explaining this",
+      "meetingTitle": "Enter a title (at least 5 characters).",
+      "meetingDate": "Choose the meeting date.",
+      "meetingPast": "The meeting date can’t be in the past.",
+      "meetingTime": "Enter the time, e.g. 11:00.",
+      "agendaEmpty": "Add at least one agenda point before publishing.",
+      "agendaItemTitle": "Each agenda point needs a title (3–300 characters); notes up to 1000.",
+      "agendaTooMany": "At most {max} agenda points.",
+      "agendaRef": "An agenda point links to a project, issue or directive you can’t access."
     },
     "filesRejected": "Some files couldn't be accepted. Nothing was uploaded.",
     "uploadFailed": "The upload failed. Please try again.",
@@ -470,7 +496,11 @@
     "transitionNotAllowed": "That status change isn't allowed.",
     "issueMarked": "Issue marked {status}",
     "directiveTransitionNotAllowed": "You can't make that change to this directive.",
-    "directiveMarked": "Directive {status}"
+    "directiveMarked": "Directive {status}",
+    "meetingPublished": "Agenda published.",
+    "meetingCancelled": "Meeting cancelled.",
+    "meetingRestored": "Meeting restored as a draft.",
+    "meetingTransitionNotAllowed": "That change is not allowed for this meeting."
   },
   "projectForm": {
     "project": "Project",
@@ -730,7 +760,8 @@
       "verifications": "Verifications",
       "issues": "Issues",
       "directives": "Directives",
-      "admin": "User admin"
+      "admin": "User admin",
+      "meetings": "Meetings"
     },
     "from": "From",
     "to": "To",
@@ -757,5 +788,120 @@
       "action": "Action",
       "details": "Details"
     }
+  },
+  "projects": {
+    "title": "Projects",
+    "titleStatus": "{status} projects",
+    "summary": "{count, plural, one {# project} other {# projects}} · {state}",
+    "district": "District",
+    "allDistricts": "All districts",
+    "department": "Department",
+    "none": "No projects yet"
+  },
+  "imageryIndex": {
+    "title": "Imagery",
+    "summary": "{count, plural, one {# project site with imagery} other {# project sites with imagery}}, latest first",
+    "none": "No imagery uploaded yet",
+    "captures": "{count, plural, one {# capture} other {# captures}}",
+    "latest": "latest {when}",
+    "since": "since {date}",
+    "viewImages": "View images",
+    "compare": "Compare",
+    "latestAlt": "Latest image of {name}, {date}",
+    "withoutImagery": "{count, plural, one {# project has} other {# projects have}} no imagery yet.",
+    "seeAllProjects": "See all projects"
+  },
+  "tracking": {
+    "title": "Live tracking",
+    "latest": "Latest",
+    "earlier": "Earlier image",
+    "reported": "Reported progress {percent}%",
+    "older": "Older image",
+    "newer": "Newer image",
+    "availableDates": "{count, plural, one {# image date available} other {# image dates available}}",
+    "compareDates": "Compare two dates",
+    "from": "From",
+    "to": "To",
+    "compare": "Compare",
+    "pickTwo": "Pick two different dates",
+    "addImages": "Add images",
+    "close": "Close",
+    "imageAlt": "Satellite image of the site, {date}",
+    "noImagery": "No images of this site yet",
+    "noImageryHint": "Add satellite, drone or field images to start tracking this site.",
+    "backToProject": "Back to project",
+    "latestImage": "Latest satellite image",
+    "viewAll": "View all images",
+    "openLive": "Open live tracking",
+    "none": "None yet"
+  },
+  "meetings": {
+    "title": "Review meetings",
+    "intro": "CMO review meetings and their published agenda.",
+    "new": "Schedule a meeting",
+    "newIntro": "Set the date and add agenda points. Save as a draft, or publish it for everyone in the state to see.",
+    "edit": "Edit meeting",
+    "agenda": "Agenda",
+    "agendaHint": "Numbered points in order. Link a point to a project, issue or directive to show its latest status on the agenda.",
+    "agendaCount": "{count, plural, one {Agenda · # point} other {Agenda · # points}}",
+    "itemCount": "{count, plural, one {# agenda point} other {# agenda points}}",
+    "upcoming": "Upcoming",
+    "past": "Past meetings",
+    "noUpcoming": "No meetings scheduled.",
+    "noPast": "No past meetings.",
+    "noItems": "No agenda points yet.",
+    "fTitle": "Title",
+    "fTitlePlaceholder": "e.g. Monthly infrastructure review",
+    "fDate": "Date",
+    "fTime": "Time (IST)",
+    "fVenue": "Venue",
+    "fVenuePlaceholder": "e.g. CMO Conference Hall",
+    "fChairedBy": "Chaired by",
+    "fChairedByPlaceholder": "e.g. Hon'ble Chief Minister",
+    "fNotes": "Notes for participants",
+    "fNotesPlaceholder": "Optional: documents to bring, who should attend…",
+    "defaultTitle": "Monthly infrastructure review meeting",
+    "defaultChair": "Hon'ble Chief Minister",
+    "suggestions": "Suggested points (delayed or stalled projects, high-priority issues, overdue directives) — click to add",
+    "kind": {
+      "none": "Not linked",
+      "project": "Project",
+      "issue": "Issue",
+      "directive": "Directive"
+    },
+    "titleProject": "Progress review: {name}",
+    "titleIssue": "Issue: {name}",
+    "titleDirective": "Compliance: {name}",
+    "itemTitle": "Agenda point",
+    "itemTitleLabel": "Agenda point {n}",
+    "itemNotes": "Notes (optional)",
+    "linkTo": "Linked to",
+    "choose": "Choose…",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove",
+    "addItem": "Add agenda point",
+    "saveDraft": "Save draft",
+    "publish": "Publish agenda",
+    "saveChanges": "Save changes",
+    "cancelMeeting": "Cancel meeting",
+    "restore": "Restore as draft",
+    "confirmCancel": "Cancel this meeting? Everyone in the state will see it as cancelled.",
+    "print": "Print agenda",
+    "savedPublished": "Agenda published. Everyone in the state can see it.",
+    "savedDraft": "Saved as a draft — only those who manage meetings can see it until it is published.",
+    "when": "Date & time",
+    "held": "Held",
+    "publishedBy": "Published by {name} · {date}",
+    "createdBy": "Draft by {name}",
+    "progress": "{percent}% done",
+    "due": "due {date}",
+    "directiveRef": "Directive",
+    "nextMeeting": "Next CMO review meeting",
+    "noneScheduled": "No review meeting scheduled.",
+    "allMeetings": "All meetings",
+    "schedule": "Schedule",
+    "viewFullAgenda": "View full agenda",
+    "viewFullAgendaMore": "View full agenda (+{count} more)"
   }
 }

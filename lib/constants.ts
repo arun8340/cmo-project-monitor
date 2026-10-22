@@ -30,6 +30,11 @@ export const DIRECTIVE_STATUSES = ["OPEN", "IN_PROGRESS", "COMPLIED", "CLOSED"] 
 export type DirectiveStatus = (typeof DIRECTIVE_STATUSES)[number];
 
 
+/** CMO review meeting: drafts are seen only by those who manage meetings. */
+export const MEETING_STATUSES = ["DRAFT", "PUBLISHED", "CANCELLED"] as const;
+export type MeetingStatus = (typeof MEETING_STATUSES)[number];
+
+
 export const ROLE_KEYS = [
   "ADMIN",
   "CMO",
@@ -54,6 +59,7 @@ export const PERMISSIONS = [
   "issues.update",
   "directives.issue",
   "directives.update",
+  "meetings.manage",
   "audit.view",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -69,8 +75,8 @@ export const ROLE_DEFINITIONS: Record<
   },
   CMO: {
     name: "CM / CMO / Chief Secretary",
-    description: "Whole-state view; issues directives",
-    permissions: ["projects.view", "verification.record", "directives.issue", "directives.update", "issues.update", "audit.view"],
+    description: "Whole-state view; issues directives; can add imagery",
+    permissions: ["projects.view", "imagery.upload", "verification.record", "directives.issue", "directives.update", "issues.update", "meetings.manage", "audit.view"],
   },
   DEPARTMENT_HEAD: {
     name: "Department Head",
@@ -138,6 +144,7 @@ export const PERMISSION_GROUPS: { group: string; items: { key: Permission; label
       { key: "issues.update", label: "Update issues", hint: "Change issue status (resolve, reopen, archive)" },
       { key: "directives.issue", label: "Issue directives", hint: "Issue, close and reopen directives" },
       { key: "directives.update", label: "Respond to directives", hint: "Mark directives in progress or complied" },
+      { key: "meetings.manage", label: "Manage review meetings", hint: "Schedule CMO review meetings and publish their agenda" },
     ],
   },
   {

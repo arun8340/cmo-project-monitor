@@ -18,7 +18,7 @@ export function LoginForm({ demoAccounts }: { demoAccounts: DemoAccount[] }) {
   const [state, formAction, pending] = useActionState<LoginState, FormData>(login, {});
   const [email, setEmail] = useState(state.email ?? "");
   const [password, setPassword] = useState("");
-  const [showDemo, setShowDemo] = useState(true);
+  const [showDemo, setShowDemo] = useState(false);
   const t = useTranslations("login");
   const th = useTranslations("header");
   const tr = useTranslations("enums.role");
