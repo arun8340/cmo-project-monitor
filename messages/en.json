@@ -41,6 +41,8 @@
   "nav": {
     "sections": "Sections",
     "overview": "Overview",
+    "projects": "Projects",
+    "imagery": "Imagery",
     "issues": "Issues",
     "directives": "Directives",
     "activity": "Activity log",
@@ -181,7 +183,10 @@
     "noOpenDirectives": "No open directives.",
     "overdueOn": "Overdue · {date}",
     "dueOn": "Due {date}",
-    "overdueCount": "{count} overdue"
+    "overdueCount": "{count} overdue",
+    "summary": "Summary",
+    "withImagery": "Sites with imagery",
+    "withImageryHint": "View latest satellite images"
   },
   "map": {
     "loading": "Loading map…",
@@ -759,5 +764,27 @@
       "action": "Action",
       "details": "Details"
     }
+  },
+  "projects": {
+    "title": "Projects",
+    "titleStatus": "{status} projects",
+    "summary": "{count, plural, one {# project} other {# projects}} · {state}",
+    "district": "District",
+    "allDistricts": "All districts",
+    "department": "Department",
+    "none": "No projects yet"
+  },
+  "imageryIndex": {
+    "title": "Imagery",
+    "summary": "{count, plural, one {# project site with imagery} other {# project sites with imagery}}, latest first",
+    "none": "No imagery uploaded yet",
+    "captures": "{count, plural, one {# capture} other {# captures}}",
+    "latest": "latest {when}",
+    "since": "since {date}",
+    "viewImages": "View images",
+    "compare": "Compare",
+    "latestAlt": "Latest image of {name}, {date}",
+    "withoutImagery": "{count, plural, one {# project has} other {# projects have}} no imagery yet.",
+    "seeAllProjects": "See all projects"
   }
 }

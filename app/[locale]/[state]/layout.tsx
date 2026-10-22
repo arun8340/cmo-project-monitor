@@ -24,7 +24,7 @@ export default function StateLayout({ children, params }: LayoutProps<"/[locale]
       <Suspense fallback={<AppHeaderSkeleton />}>
         <StateHeader params={params} />
       </Suspense>
-      <div className="flex-1 bg-background">{children}</div>
+      <div className="app-backdrop flex-1 bg-background">{children}</div>
     </>
   );
 }
@@ -37,7 +37,14 @@ async function StateHeader({ params }: { params: LayoutProps<"/[locale]/[state]"
   if (!config || !portal || (portal.kind === "state" && portal.stateCode !== config.code)) notFound();
   const base = stateBasePath(portal, config.code);
   const t = await getTranslations("nav");
-  const labels = { overview: t("overview"), issues: t("issues"), directives: t("directives"), activity: t("activity") };
+  const labels = {
+    overview: t("overview"),
+    projects: t("projects"),
+    imagery: t("imagery"),
+    issues: t("issues"),
+    directives: t("directives"),
+    activity: t("activity"),
+  };
   return (
     <AppHeader
       state={config}
@@ -51,11 +58,13 @@ async function StateHeader({ params }: { params: LayoutProps<"/[locale]/[state]"
   );
 }
 
-type NavLabels = Record<"overview" | "issues" | "directives" | "activity", string>;
+type NavLabels = Record<"overview" | "projects" | "imagery" | "issues" | "directives" | "activity", string>;
 
 function navItems(base: string, l: NavLabels, counts?: { openIssues: number; overdueDirectives: number }, showActivity = false): NavItem[] {
   return [
     { key: "overview", href: base || "/", label: l.overview, fallback: true },
+    { key: "projects", href: `${base}/projects`, label: l.projects },
+    { key: "imagery", href: `${base}/imagery`, label: l.imagery },
     { key: "issues", href: `${base}/issues`, label: l.issues, count: counts?.openIssues },
     { key: "directives", href: `${base}/directives`, label: l.directives, count: counts?.overdueDirectives, danger: true },
     ...(showActivity ? [{ key: "activity", href: `${base}/activity`, label: l.activity }] : []),

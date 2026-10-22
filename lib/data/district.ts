@@ -151,6 +151,8 @@ export type ProjectRow = {
   departmentCode: string;
   departmentName: string;
   departmentNameLocal: string | null;
+  districtName: string;
+  districtNameLocal: string | null;
   status: ProjectStatus;
   progressPercent: number;
   plannedPercent: number | null;
@@ -163,6 +165,65 @@ export type ProjectRow = {
 };
 
 type ListOptions = { status?: string; q?: string; sort?: string };
+
+/** What a project list row needs from the database. */
+export const ROW_INCLUDE = {
+  department: { select: { code: true, name: true, nameLocal: true } },
+  district: { select: { name: true, nameLocal: true, geoCode: true } },
+  imagery: { select: { captureDate: true }, orderBy: { captureDate: "desc" }, take: 1 },
+  _count: { select: { issues: { where: { status: OPEN_ISSUE } } } },
+} satisfies Prisma.ProjectInclude;
+
+type RowSource = Prisma.ProjectGetPayload<{ include: typeof ROW_INCLUDE }>;
+
+export function toRow(p: RowSource): ProjectRow {
+  const planned = plannedPercent(p.startDate, p.plannedEndDate, new Date());
+  return {
+    id: p.id,
+    name: p.name,
+    nameLocal: p.nameLocal,
+    latitude: p.latitude,
+    longitude: p.longitude,
+    departmentCode: p.department.code,
+    departmentName: p.department.name,
+    departmentNameLocal: p.department.nameLocal,
+    districtName: p.district.name,
+    districtNameLocal: p.district.nameLocal,
+    status: p.status as ProjectStatus,
+    progressPercent: p.progressPercent,
+    plannedPercent: planned,
+    behind: behindBy(p.status as ProjectStatus, p.progressPercent, planned),
+    budgetLakhs: p.budgetLakhs,
+    startDate: p.startDate,
+    plannedEndDate: p.plannedEndDate,
+    latestImagery: p.imagery[0]?.captureDate ?? null,
+    openIssues: p._count.issues,
+  };
+}
+
+const byName = (a: ProjectRow, b: ProjectRow) => a.name.localeCompare(b.name);
+const SEVERITY: Record<ProjectStatus, number> = { STALLED: 0, DELAYED: 1, ONGOING: 2, NOT_STARTED: 3, COMPLETED: 4 };
+const COMPARATORS: Record<SortKey, (a: ProjectRow, b: ProjectRow) => number> = {
+  behind: (a, b) => b.behind - a.behind || SEVERITY[a.status] - SEVERITY[b.status] || byName(a, b),
+  name: byName,
+  progress: (a, b) => b.progressPercent - a.progressPercent || byName(a, b),
+  budget: (a, b) => (b.budgetLakhs ?? 0) - (a.budgetLakhs ?? 0) || byName(a, b),
+  end: (a, b) => (a.plannedEndDate?.getTime() ?? Infinity) - (b.plannedEndDate?.getTime() ?? Infinity) || byName(a, b),
+};
+
+export function sortRows(rows: ProjectRow[], sort: SortKey) {
+  return rows.sort(COMPARATORS[sort]);
+}
+
+export function parseSort(sort: string | undefined): SortKey {
+  return sort && sort in SORTS ? (sort as SortKey) : "behind";
+}
+
+export function countByStatus(groups: { status: string; _count: number }[]) {
+  const counts: StatusCounts = { ...EMPTY_COUNTS };
+  for (const g of groups) addCount(counts, g.status, g._count);
+  return counts;
+}
 
 /**
  * Projects of one department (or "all") in a district, filtered and sorted.
@@ -183,7 +244,7 @@ export async function getProjectList(user: CurrentUser, state: StateConfig, dist
 
   const q = opts.q?.trim().slice(0, 100) ?? "";
   const status = PROJECT_STATUSES.find((s) => s === opts.status?.toUpperCase()) ?? null;
-  const sort: SortKey = opts.sort && opts.sort in SORTS ? (opts.sort as SortKey) : "behind";
+  const sort = parseSort(opts.sort);
 
   const base: Prisma.ProjectWhereInput[] = [projectScope(user, state.code), { districtId: district.id }];
   if (department) base.push({ departmentId: department.id });
@@ -194,51 +255,13 @@ export async function getProjectList(user: CurrentUser, state: StateConfig, dist
     db.project.groupBy({ by: ["status"], where: { AND: base }, _count: true }),
     db.project.findMany({
       where: { AND: [...base, ...(status ? [{ status }] : [])] },
-      include: {
-        department: { select: { code: true, name: true, nameLocal: true } },
-        imagery: { select: { captureDate: true }, orderBy: { captureDate: "desc" }, take: 1 },
-        _count: { select: { issues: { where: { status: OPEN_ISSUE } } } },
-      },
+      include: ROW_INCLUDE,
     }),
   ]);
 
-  const counts: StatusCounts = { ...EMPTY_COUNTS };
-  for (const g of statusGroups) addCount(counts, g.status, g._count);
+  const counts = countByStatus(statusGroups);
 
-  const now = new Date();
-  const rows: ProjectRow[] = projects.map((p) => {
-    const planned = plannedPercent(p.startDate, p.plannedEndDate, now);
-    return {
-      id: p.id,
-      name: p.name,
-      nameLocal: p.nameLocal,
-      latitude: p.latitude,
-      longitude: p.longitude,
-      departmentCode: p.department.code,
-      departmentName: p.department.name,
-      departmentNameLocal: p.department.nameLocal,
-      status: p.status as ProjectStatus,
-      progressPercent: p.progressPercent,
-      plannedPercent: planned,
-      behind: behindBy(p.status as ProjectStatus, p.progressPercent, planned),
-      budgetLakhs: p.budgetLakhs,
-      startDate: p.startDate,
-      plannedEndDate: p.plannedEndDate,
-      latestImagery: p.imagery[0]?.captureDate ?? null,
-      openIssues: p._count.issues,
-    };
-  });
-
-  const byName = (a: ProjectRow, b: ProjectRow) => a.name.localeCompare(b.name);
-  const severity: Record<ProjectStatus, number> = { STALLED: 0, DELAYED: 1, ONGOING: 2, NOT_STARTED: 3, COMPLETED: 4 };
-  const comparators: Record<SortKey, (a: ProjectRow, b: ProjectRow) => number> = {
-    behind: (a, b) => b.behind - a.behind || severity[a.status] - severity[b.status] || byName(a, b),
-    name: byName,
-    progress: (a, b) => b.progressPercent - a.progressPercent || byName(a, b),
-    budget: (a, b) => (b.budgetLakhs ?? 0) - (a.budgetLakhs ?? 0) || byName(a, b),
-    end: (a, b) => (a.plannedEndDate?.getTime() ?? Infinity) - (b.plannedEndDate?.getTime() ?? Infinity) || byName(a, b),
-  };
-  rows.sort(comparators[sort]);
+  const rows = sortRows(projects.map(toRow), sort);
 
   return { district, department, counts, rows, filters: { q, status, sort } };
 }

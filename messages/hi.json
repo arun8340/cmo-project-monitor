@@ -41,6 +41,8 @@
   "nav": {
     "sections": "अनुभाग",
     "overview": "अवलोकन",
+    "projects": "परियोजनाएँ",
+    "imagery": "चित्र",
     "issues": "समस्याएँ",
     "directives": "निर्देश",
     "activity": "गतिविधि लॉग",
@@ -181,7 +183,10 @@
     "noOpenDirectives": "कोई खुला निर्देश नहीं।",
     "overdueOn": "समय-सीमा पार · {date}",
     "dueOn": "नियत {date}",
-    "overdueCount": "{count} समय-सीमा पार"
+    "overdueCount": "{count} समय-सीमा पार",
+    "summary": "सारांश",
+    "withImagery": "चित्रों वाले स्थल",
+    "withImageryHint": "नवीनतम उपग्रह चित्र देखें"
   },
   "map": {
     "loading": "मानचित्र लोड हो रहा है…",
@@ -759,5 +764,27 @@
       "action": "क्रिया",
       "details": "विवरण"
     }
+  },
+  "projects": {
+    "title": "परियोजनाएँ",
+    "titleStatus": "{status} परियोजनाएँ",
+    "summary": "{count, plural, one {# परियोजना} other {# परियोजनाएँ}} · {state}",
+    "district": "जिला",
+    "allDistricts": "सभी जिले",
+    "department": "विभाग",
+    "none": "अभी कोई परियोजना नहीं"
+  },
+  "imageryIndex": {
+    "title": "चित्र",
+    "summary": "{count, plural, one {चित्रों वाला # परियोजना स्थल} other {चित्रों वाले # परियोजना स्थल}}, नवीनतम पहले",
+    "none": "अभी कोई चित्र अपलोड नहीं हुआ",
+    "captures": "{count, plural, one {# चित्र} other {# चित्र}}",
+    "latest": "नवीनतम {when}",
+    "since": "{date} से",
+    "viewImages": "चित्र देखें",
+    "compare": "तुलना करें",
+    "latestAlt": "{name} का नवीनतम चित्र, {date}",
+    "withoutImagery": "{count, plural, one {# परियोजना का} other {# परियोजनाओं का}} अभी कोई चित्र नहीं है।",
+    "seeAllProjects": "सभी परियोजनाएँ देखें"
   }
 }
