@@ -28,5 +28,8 @@ export const canRaiseIssue = (user: CurrentUser) => has(user, "issues.create");
 /** Collectors, Department Heads, CMO and Admin. */
 export const canUpdateIssue = (user: CurrentUser) => has(user, "issues.update");
 
+/** CMO / Chief Secretary and Admin schedule review meetings and publish their agenda. */
+export const canManageMeetings = (user: CurrentUser) => has(user, "meetings.manage");
+
 /** CMO / Chief Secretary and Admin issue, close and reopen directives. */
 export const canIssueDirective = (user: CurrentUser) => has(user, "directives.issue");

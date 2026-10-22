@@ -279,3 +279,12 @@
     linear-gradient(to bottom, rgb(244 242 236 / 0.72) 0, rgb(244 242 236 / 0.86) 320px, rgb(244 242 236 / 0.94) 75%),
     url("/landing/05.webp") center 30% / cover no-repeat;
 }
+
+/* Printing a page (e.g. a meeting agenda): leave out the app chrome. */
+@media print {
+  body > header,
+  header.sticky,
+  .app-backdrop {
+    display: none !important;
+  }
+}

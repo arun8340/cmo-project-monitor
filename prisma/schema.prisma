@@ -19,6 +19,7 @@ model State {
   districts   District[]
   departments Department[]
   users       User[]
+  meetings    Meeting[]
 }
 
 model District {
@@ -81,6 +82,7 @@ model Project {
   directives       Directive[]
   assignedOfficers User[]           @relation("FieldOfficerProjects")
   verifications    Verification[]
+  agendaItems      MeetingAgendaItem[]
 
   @@index([districtId, departmentId])
   @@index([status])
@@ -158,6 +160,7 @@ model Issue {
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
   updates     IssueUpdate[]
+  agendaItems MeetingAgendaItem[]
 
   @@index([projectId])
   @@index([status])
@@ -197,6 +200,7 @@ model Directive {
   createdAt    DateTime          @default(now())
   updatedAt    DateTime          @updatedAt
   updates      DirectiveUpdate[]
+  agendaItems  MeetingAgendaItem[]
 
   @@index([districtId])
   @@index([departmentId])
@@ -257,6 +261,7 @@ model User {
   auditLogs        AuditLog[]
   verifications    Verification[]
   issueUpdates     IssueUpdate[]
+  meetingsCreated  Meeting[]
   directiveUpdates DirectiveUpdate[]
 }
 
@@ -272,4 +277,45 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+// CMO review meeting for a state. Drafts are seen only by those who manage
+// meetings; published meetings (and their agenda) by everyone in the state.
+// Issues still carry their own optional meetingDate (see PROJECT_BRIEF §8).
+model Meeting {
+  id          String              @id @default(cuid())
+  stateId     String
+  state       State               @relation(fields: [stateId], references: [id])
+  title       String
+  meetingAt   DateTime
+  venue       String?
+  chairedBy   String?
+  notes       String?
+  status      String              @default("DRAFT") // MeetingStatus: DRAFT | PUBLISHED | CANCELLED
+  publishedAt DateTime?
+  createdById String
+  createdBy   User                @relation(fields: [createdById], references: [id])
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  items       MeetingAgendaItem[]
+
+  @@index([stateId, meetingAt])
+}
+
+// One numbered agenda point; optionally about a project, issue or directive.
+model MeetingAgendaItem {
+  id          String     @id @default(cuid())
+  meetingId   String
+  meeting     Meeting    @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  position    Int
+  title       String
+  notes       String?
+  projectId   String?
+  project     Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  issueId     String?
+  issue       Issue?     @relation(fields: [issueId], references: [id], onDelete: SetNull)
+  directiveId String?
+  directive   Directive? @relation(fields: [directiveId], references: [id], onDelete: SetNull)
+
+  @@index([meetingId, position])
 }

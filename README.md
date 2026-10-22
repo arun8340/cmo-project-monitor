@@ -80,6 +80,8 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
   with a mix of On-Going / Completed / Delayed / Stalled / Not Started.
 - Each project has monthly progress updates and (for delayed/stalled ones) pending issues tagged to the
   last review meeting. CMO directives exist per state, some overdue.
+- **Meetings (per state):** the two past monthly reviews (agendas of the issues tagged to them), next week's
+  review with a published agenda, and a draft quarterly review.
 - **Imagery:** six projects have real before/after satellite imagery (see [Imagery](#2-imagery)); the
   others have none until someone uploads it.
 - Seed data lives in `prisma/seed-data/` — edit those files to change names, budgets or statuses.
@@ -108,10 +110,10 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
 Out-of-scope URLs show "Page not found", so users can't probe for what exists. Logins, failed logins (including
 attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 
-## Issues and directives
+## Issues, directives and review meetings
 
-The header of every state page links to **Overview**, **Issues** (with the open count) and **Directives** (with the
-overdue count in red).
+The header of every state page links to **Overview**, **Projects**, **Imagery**, **Issues** (with the open count),
+**Directives** (with the overdue count in red) and **Meetings**.
 
 - **Issues** are raised from a project's page (*Raise issue*) by Collectors, Department Heads, Field Officers (on
   their assigned projects) and Admin, with a priority and an optional review-meeting date. The Issues page filters by
@@ -122,7 +124,13 @@ overdue count in red).
   Collector / Department Head in scope) marks it *In progress* or *Complied* (compliance note required); the CMO then
   *accepts and closes* it or *reopens* it. Open directives past their due date show as **Overdue**.
 - Every status change is kept in a **history timeline** on the issue / directive page, and in the audit log.
-- Review meetings are an optional date on each issue for now; a separate Meeting record can be added later.
+- **Review meetings** (*Meetings*): the CMO / Chief Secretary and Admin schedule a meeting (date, time, venue,
+  chair, notes) and build a numbered **agenda**. Each point can be linked to a project, issue or directive, and
+  then shows that item's current status. Delayed/stalled projects, high-priority issues and overdue directives are
+  suggested as one-click points. A meeting is saved as a **draft** (seen only by those who manage meetings) and
+  **published** for everyone in the state; it can be cancelled or printed (*Print agenda*). The home page shows
+  the **next CMO review meeting** with the start of its agenda. Issues keep their own optional review-meeting date,
+  which the "pending/resolved at last meeting" counts use.
 
 ## Users, roles and the audit log
 
