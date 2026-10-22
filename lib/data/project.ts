@@ -20,7 +20,7 @@ export async function getProjectDetail(user: CurrentUser, projectId: string, sta
       department: true,
       createdBy: { select: { name: true } },
       progressUpdates: { orderBy: { date: "asc" }, include: { updatedBy: { select: { name: true } } } },
-      imagery: { orderBy: { captureDate: "desc" }, take: 4 },
+      imagery: { orderBy: [{ captureDate: "desc" }, { createdAt: "desc" }], select: { id: true, captureDate: true, source: true, notes: true } },
       issues: { orderBy: [{ status: "asc" }, { createdAt: "desc" }] },
       _count: { select: { imagery: true } },
     },

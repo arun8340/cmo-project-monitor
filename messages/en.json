@@ -786,5 +786,29 @@
     "latestAlt": "Latest image of {name}, {date}",
     "withoutImagery": "{count, plural, one {# project has} other {# projects have}} no imagery yet.",
     "seeAllProjects": "See all projects"
+  },
+  "tracking": {
+    "title": "Live tracking",
+    "latest": "Latest",
+    "earlier": "Earlier image",
+    "reported": "Reported progress {percent}%",
+    "older": "Older image",
+    "newer": "Newer image",
+    "availableDates": "{count, plural, one {# image date available} other {# image dates available}}",
+    "compareDates": "Compare two dates",
+    "from": "From",
+    "to": "To",
+    "compare": "Compare",
+    "pickTwo": "Pick two different dates",
+    "addImages": "Add images",
+    "close": "Close",
+    "imageAlt": "Satellite image of the site, {date}",
+    "noImagery": "No images of this site yet",
+    "noImageryHint": "Add satellite, drone or field images to start tracking this site.",
+    "backToProject": "Back to project",
+    "latestImage": "Latest satellite image",
+    "viewAll": "View all images",
+    "openLive": "Open live tracking",
+    "none": "None yet"
   }
 }

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CircleAlertIcon, SearchXIcon } from "lucide-react";
+import { CircleAlertIcon, RadioIcon, SearchXIcon, UploadIcon } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
 import { Highlight } from "@/components/district-map/highlight";
 import { StatusBadge } from "@/components/project/status-badge";
@@ -28,7 +28,41 @@ export function Chip({ href, active, label, count, color }: { href: string; acti
   );
 }
 
-type RowOptions = { basePath: string; showDepartment: boolean; showDistrict?: boolean };
+type RowOptions = {
+  basePath: string;
+  showDepartment: boolean;
+  showDistrict?: boolean;
+  /** Show an "Add images" link on each row (users who may upload). */
+  canUpload?: boolean;
+};
+
+/** Latest imagery date (opens Live tracking) and, for uploaders, an "Add images" link. */
+function ImageryCell({ row, basePath, canUpload }: { row: ProjectRow; basePath: string; canUpload?: boolean }) {
+  const t = useTranslations("tracking");
+  const locale = useLocale();
+  const projectPath = `${basePath}/project/${row.id}`;
+  return (
+    <div className="flex flex-col items-start gap-1 text-xs">
+      {row.latestImagery ? (
+        <Link href={`${projectPath}/live`} className="inline-flex items-center gap-1 font-semibold whitespace-nowrap text-link hover:underline">
+          <RadioIcon className="size-3.5" />
+          {formatDate(row.latestImagery, locale)}
+        </Link>
+      ) : (
+        <span className="text-muted-foreground">{t("none")}</span>
+      )}
+      {canUpload && (
+        <Link
+          href={`${projectPath}/imagery/upload`}
+          className="inline-flex items-center gap-1 rounded-md border bg-card px-1.5 py-0.5 font-semibold whitespace-nowrap text-navy hover:bg-muted"
+        >
+          <UploadIcon className="size-3" />
+          {t("addImages")}
+        </Link>
+      )}
+    </div>
+  );
+}
 
 function ProjectName({ row, basePath, showDepartment, showDistrict }: RowOptions & { row: ProjectRow }) {
   const locale = useLocale();
@@ -63,6 +97,7 @@ export function ProjectTable({ rows, ...opts }: RowOptions & { rows: ProjectRow[
             <th className="px-4 py-3 font-semibold">{t("colStatus")}</th>
             <th className="px-4 py-3 font-semibold">{t("colProgress")}</th>
             <th className="px-4 py-3 font-semibold">{t("colTimeline")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colImagery")}</th>
             <th className="px-4 py-3 text-right font-semibold">{t("colIssues")}</th>
           </tr>
         </thead>
@@ -82,7 +117,9 @@ export function ProjectTable({ rows, ...opts }: RowOptions & { rows: ProjectRow[
               <td className="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground">
                 <div>{formatDate(r.startDate, locale)} →</div>
                 <div>{formatDate(r.plannedEndDate, locale)}</div>
-                {r.latestImagery && <div className="mt-1 text-foreground/70">{t("imageryOn", { date: formatDate(r.latestImagery, locale) })}</div>}
+              </td>
+              <td className="px-4 py-3">
+                <ImageryCell row={r} basePath={opts.basePath} canUpload={opts.canUpload} />
               </td>
               <td className="px-4 py-3 text-right tabular-nums">
                 {r.openIssues > 0 ? (
@@ -128,6 +165,9 @@ export function ProjectCards({ rows, ...opts }: RowOptions & { rows: ProjectRow[
               <dd className={`font-medium ${r.openIssues > 0 ? "text-red-700" : ""}`}>{r.openIssues}</dd>
             </div>
           </dl>
+          <div className="border-t pt-2">
+            <ImageryCell row={r} basePath={opts.basePath} canUpload={opts.canUpload} />
+          </div>
         </Highlight>
       ))}
     </ul>

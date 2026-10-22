@@ -243,7 +243,13 @@ on `localhost`; a hosted deployment needs a free Stadia account with the domain 
 
 ### 2. Imagery
 
-Imagery is uploaded from a project's page (**Upload imagery**): Satellite, Drone or Field photo, up to 10
+A project's page opens with its **latest satellite image**, the list of available image dates and a two-date
+*Compare*. **Live tracking** (button at the top of the project page, and on the Imagery page) shows the latest
+image full-screen; step through earlier dates or pick two to compare. "Live" means the latest image uploaded —
+in the POC images are added by hand.
+
+Imagery is added with **Add images** (on the project page, project lists, the Imagery page and Live tracking) by
+Collectors, Department Heads, Field Officers, the CMO and Admin: Satellite, Drone or Field photo, up to 10
 JPEG/PNG/WebP images of 20 MB each. On phones, *Field photo* can open the camera directly. Photos carrying GPS
 show their distance from the project site and are flagged when more than 2 km away; the capture date is taken
 from the photo when available. iPhone HEIC photos are not supported — set *Settings › Camera › Formats › Most

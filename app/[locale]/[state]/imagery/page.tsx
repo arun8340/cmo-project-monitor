@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowLeftRightIcon, ImagesIcon, SatelliteIcon } from "lucide-react";
+import { ArrowLeftRightIcon, RadioIcon, SatelliteIcon, UploadIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/project/project-table";
 import { StatusBadge } from "@/components/project/status-badge";
 import { SOURCE_META } from "@/components/imagery/source-meta";
 import { requireStateAccess } from "@/lib/auth/dal";
+import { canUploadImagery } from "@/lib/auth/project-permissions";
 import { filtersQuery, getImageryProjects, parseProjectFilters } from "@/lib/data/projects";
 import type { ImagerySource } from "@/lib/constants";
 import { deptColor } from "@/lib/departments";
@@ -41,8 +42,10 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
   const [{ state: stateParam }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
   const { options, filters, items, withoutImagery } = await getImageryProjects(user, state, parseProjectFilters(sp));
-  const [t, tp, tl, labels, locale] = await Promise.all([
+  const canUpload = canUploadImagery(user);
+  const [t, tt, tp, tl, labels, locale] = await Promise.all([
     getTranslations("imageryIndex"),
+    getTranslations("tracking"),
     getTranslations("projects"),
     getTranslations("projectList"),
     getLabels(),
@@ -91,7 +94,7 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
             const projectHref = `${basePath}/project/${p.id}`;
             return (
               <li key={p.id} className="flex flex-col overflow-hidden rounded-xl border bg-card shadow-xs">
-                <Link href={`${projectHref}/imagery`} className="group relative block aspect-[4/3] overflow-hidden bg-muted">
+                <Link href={`${projectHref}/live`} className="group relative block aspect-[4/3] overflow-hidden bg-muted">
                   {/* Access-checked API image (see app/api/imagery). */}
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -126,14 +129,20 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
                     {p.captures > 1 && <> · {t("since", { date: formatDate(p.first.captureDate, locale) })}</>}
                   </p>
                   <div className="mt-auto flex flex-wrap gap-2">
-                    <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`${projectHref}/imagery`} />}>
-                      <ImagesIcon />
-                      {t("viewImages")}
+                    <Button size="sm" nativeButton={false} render={<Link href={`${projectHref}/live`} />}>
+                      <RadioIcon />
+                      {tt("title")}
                     </Button>
                     {p.captures > 1 && (
-                      <Button size="sm" nativeButton={false} render={<Link href={`${projectHref}/compare`} />}>
+                      <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`${projectHref}/compare`} />}>
                         <ArrowLeftRightIcon />
                         {t("compare")}
+                      </Button>
+                    )}
+                    {canUpload && (
+                      <Button size="sm" variant="outline" nativeButton={false} render={<Link href={`${projectHref}/imagery/upload`} />}>
+                        <UploadIcon />
+                        {tt("addImages")}
                       </Button>
                     )}
                   </div>

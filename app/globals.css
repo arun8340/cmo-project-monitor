@@ -271,11 +271,6 @@
 
 /* App pages: a light colour satellite image (Taj Mahal gardens), clearer at the top and fading out lower down (fixed) */
 .app-backdrop {
-  position: relative;
-  isolation: isolate;
-}
-.app-backdrop::before {
-  content: "";
   position: fixed;
   inset: 0;
   z-index: -1;

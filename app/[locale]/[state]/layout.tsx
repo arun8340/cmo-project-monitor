@@ -24,7 +24,9 @@ export default function StateLayout({ children, params }: LayoutProps<"/[locale]
       <Suspense fallback={<AppHeaderSkeleton />}>
         <StateHeader params={params} />
       </Suspense>
-      <div className="app-backdrop flex-1 bg-background">{children}</div>
+      {/* Page background image; a plain fixed layer so full-screen views (compare, live tracking) can still cover the header. */}
+      <div aria-hidden className="app-backdrop" />
+      <div className="flex-1">{children}</div>
     </>
   );
 }
