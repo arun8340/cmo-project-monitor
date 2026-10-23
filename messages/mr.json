@@ -42,11 +42,13 @@
     "sections": "विभाग",
     "overview": "आढावा",
     "projects": "प्रकल्प",
-    "imagery": "प्रतिमा",
+    "districts": "जिल्हे",
+    "imagery": "लाइव्ह प्रतिमा",
     "issues": "समस्या",
     "directives": "निर्देश",
     "meetings": "बैठका",
     "activity": "क्रियाकलाप नोंद",
+    "departments": "विभाग",
     "openCount": "{count} खुल्या",
     "overdueCount": "{count} मुदत उलटलेले"
   },
@@ -161,7 +163,11 @@
     "scopeState": "{state} मधील सर्व जिल्हे आणि विभाग",
     "showing": "दाखवत आहे:",
     "filterByDepartment": "विभागानुसार फिल्टर करा",
-    "allDepartments": "सर्व विभाग"
+    "filterByDepartmentHint": "संपूर्ण डॅशबोर्ड एका विभागासाठी दाखवते.",
+    "allDepartments": "सर्व विभाग",
+    "liveImagery": "लाइव्ह प्रतिमा",
+    "liveImageryHint": "प्रत्येक प्रकल्प स्थळाची नवीनतम उपग्रह प्रतिमा — लाइव्ह ट्रॅकिंग उघडण्यासाठी क्लिक करा.",
+    "liveImageryAll": "सर्व पाहा ({count})"
   },
   "kpi": {
     "projects": "प्रकल्प",
@@ -279,7 +285,7 @@
       "end": "नियोजित समाप्ती दिनांक"
     },
     "mapTitle": "प्रकल्प स्थळे",
-    "mapHint": "या यादीतील प्रकल्प. नकाशावर शोधण्यासाठी एखाद्या ओळीवर होव्हर करा.",
+    "mapHint": "या यादीतील प्रकल्प. नकाशावर शोधण्यासाठी कार्डवर होव्हर करा.",
     "imageryOn": "प्रतिमा {date}"
   },
   "progress": {
@@ -799,7 +805,7 @@
     "none": "अद्याप कोणतेही प्रकल्प नाहीत"
   },
   "imageryIndex": {
-    "title": "प्रतिमा",
+    "title": "लाइव्ह प्रतिमा",
     "summary": "{count, plural, one {प्रतिमा असलेले {count} प्रकल्प स्थळ} other {प्रतिमा असलेली {count} प्रकल्प स्थळे}}, नवीनतम आधी",
     "none": "अद्याप कोणतीही प्रतिमा अपलोड केलेली नाही",
     "captures": "{count, plural, one {{count} प्रतिमा} other {{count} प्रतिमा}}",
@@ -869,7 +875,7 @@
       "issue": "समस्या",
       "directive": "निर्देश"
     },
-    "titleProject": "प्रगती आढावा: {name}",
+    "titleProject": "प्रगती आढावा",
     "titleIssue": "समस्या: {name}",
     "titleDirective": "अनुपालन: {name}",
     "itemTitle": "विषयसूचीचा मुद्दा",
@@ -902,6 +908,27 @@
     "allMeetings": "सर्व बैठका",
     "schedule": "ठरवा",
     "viewFullAgenda": "संपूर्ण विषयसूची पाहा",
-    "viewFullAgendaMore": "संपूर्ण विषयसूची पाहा (+{count} आणखी)"
+    "viewFullAgendaMore": "संपूर्ण विषयसूची पाहा (+{count} आणखी)",
+    "pointsDiscussed": "{count, plural, one {{count} मुद्द्यावर चर्चा} other {{count} मुद्द्यांवर चर्चा}}"
+  },
+  "browse": {
+    "districtsTitle": "जिल्हे",
+    "districtsSummary": "{count, plural, one {प्रकल्प असलेला {count} जिल्हा} other {प्रकल्प असलेले {count} जिल्हे}}",
+    "departmentsTitle": "विभाग",
+    "departmentsSummary": "{count, plural, one {{count} विभाग} other {{count} विभाग}}; प्रकल्प पाहण्यासाठी विभाग उघडा",
+    "deptMeta": "{budget} · {count, plural, one {{count} जिल्हा} other {{count} जिल्हे}}",
+    "latestImage": "नवीनतम {date}",
+    "noImagery": "अद्याप प्रतिमा नाही",
+    "completed": "पूर्ण",
+    "ongoing": "सुरू",
+    "behind": "विलंबित / रखडलेले",
+    "projectsCount": "{count, plural, one {<b>{count}</b> प्रकल्प} other {<b>{count}</b> प्रकल्प}}",
+    "otherDepartments": "इतर विभाग — अद्याप प्रकल्प नाहीत ({count})"
+  },
+  "projectCard": {
+    "live": "लाइव्ह",
+    "awaiting": "उपग्रह प्रतिमांची प्रतीक्षा",
+    "awaitingHint": "अपलोड झाल्यावर प्रतिमा येथे दिसतील",
+    "addImages": "प्रतिमा जोडा"
   }
 }

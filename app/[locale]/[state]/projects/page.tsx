@@ -7,11 +7,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { PageHeader } from "@/components/app-shell/page-parts";
 import { ListControls } from "@/components/project/list-controls";
-import { Chip, EmptyState, ProjectCards, ProjectTable } from "@/components/project/project-table";
+import { Chip, EmptyState } from "@/components/project/project-table";
+import { ProjectCard } from "@/components/project/project-card";
 import { MapHighlightProvider } from "@/components/district-map/highlight";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canCreateProject, canUploadImagery } from "@/lib/auth/project-permissions";
-import { filtersQuery, getStateProjects, parseProjectFilters } from "@/lib/data/projects";
+import {
+  canCreateProject,
+  canUploadImagery,
+} from "@/lib/auth/project-permissions";
+import {
+  filtersQuery,
+  getStateProjects,
+  parseProjectFilters,
+} from "@/lib/data/projects";
 import type { ProjectStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localName } from "@/lib/i18n/names";
@@ -26,7 +34,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default function ProjectsPage({ params, searchParams }: Params) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+    <main className="mx-auto w-full max-w-[1680px] px-4 py-6 lg:px-6">
       <Suspense fallback={<ListSkeleton />}>
         <Projects params={params} searchParams={searchParams} />
       </Suspense>
@@ -41,24 +49,61 @@ const COUNT_KEY: Record<ProjectStatus, keyof Omit<StatusCounts, "total">> = {
   COMPLETED: "completed",
   NOT_STARTED: "notStarted",
 };
-const CHIP_ORDER: ProjectStatus[] = ["ONGOING", "DELAYED", "STALLED", "COMPLETED", "NOT_STARTED"];
+const CHIP_ORDER: ProjectStatus[] = [
+  "ONGOING",
+  "DELAYED",
+  "STALLED",
+  "COMPLETED",
+  "NOT_STARTED",
+];
 
-async function Projects({ params, searchParams }: { params: Params["params"]; searchParams: Params["searchParams"] }) {
+async function Projects({
+  params,
+  searchParams,
+}: {
+  params: Params["params"];
+  searchParams: Params["searchParams"];
+}) {
   const [{ state: stateParam }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
-  const { options, filters, counts, rows } = await getStateProjects(user, state, parseProjectFilters(sp));
-  const [t, tl, labels, locale] = await Promise.all([getTranslations("projects"), getTranslations("projectList"), getLabels(), getLocale()]);
+  const { options, filters, counts, rows } = await getStateProjects(
+    user,
+    state,
+    parseProjectFilters(sp),
+  );
+  const [t, tl, labels, locale] = await Promise.all([
+    getTranslations("projects"),
+    getTranslations("projectList"),
+    getLabels(),
+    getLocale(),
+  ]);
   const path = `${basePath}/projects`;
   const stateName = localName(locale, state.name, state.nameLocal);
-  const statusLabel = filters.statuses.map((s) => labels.projectStatus[s]).join(" + ");
-  const filtered = !!(filters.statuses.length || filters.district || filters.dept || filters.q);
+  const statusLabel = filters.statuses
+    .map((s) => labels.projectStatus[s])
+    .join(" + ");
+  const filtered = !!(
+    filters.statuses.length ||
+    filters.district ||
+    filters.dept ||
+    filters.q
+  );
 
   return (
     <div className="grid gap-5">
-      <Breadcrumbs items={[{ label: stateName, href: basePath || "/" }, { label: t("title") }]} />
+      <Breadcrumbs
+        items={[
+          { label: stateName, href: basePath || "/" },
+          { label: t("title") },
+        ]}
+      />
 
       <PageHeader
-        title={filters.statuses.length ? t("titleStatus", { status: statusLabel }) : t("title")}
+        title={
+          filters.statuses.length
+            ? t("titleStatus", { status: statusLabel })
+            : t("title")
+        }
         subtitle={
           <>
             {t("summary", { count: rows.length, state: stateName })}
@@ -67,7 +112,10 @@ async function Projects({ params, searchParams }: { params: Params["params"]; se
         }
         actions={
           canCreateProject(user) && (
-            <Button nativeButton={false} render={<Link href={`${basePath}/project/new`} />}>
+            <Button
+              nativeButton={false}
+              render={<Link href={`${basePath}/project/new`} />}
+            >
               <PlusIcon />
               {tl("addProject")}
             </Button>
@@ -76,8 +124,16 @@ async function Projects({ params, searchParams }: { params: Params["params"]; se
       />
 
       <div className="grid gap-3">
-        <nav aria-label={tl("filterByStatus")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <Chip href={`${path}${filtersQuery(filters, { status: null })}`} active={!filters.statuses.length} label={tl("all")} count={counts.total} />
+        <nav
+          aria-label={tl("filterByStatus")}
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+        >
+          <Chip
+            href={`${path}${filtersQuery(filters, { status: null })}`}
+            active={!filters.statuses.length}
+            label={tl("all")}
+            count={counts.total}
+          />
           {CHIP_ORDER.map((s) => (
             <Chip
               key={s}
@@ -93,32 +149,60 @@ async function Projects({ params, searchParams }: { params: Params["params"]; se
           action={path}
           q={filters.q}
           sort={filters.sort}
-          keep={filters.statuses.length ? { status: filters.statuses.map((s) => s.toLowerCase()).join(",") } : {}}
+          keep={
+            filters.statuses.length
+              ? {
+                  status: filters.statuses
+                    .map((s) => s.toLowerCase())
+                    .join(","),
+                }
+              : {}
+          }
           selects={[
             {
               name: "district",
               label: t("district"),
               allLabel: t("allDistricts"),
               value: filters.district ?? "",
-              options: options.districts.map((d) => ({ value: d.slug, label: localName(locale, d.name, d.nameLocal) })),
+              options: options.districts.map((d) => ({
+                value: d.slug,
+                label: localName(locale, d.name, d.nameLocal),
+              })),
             },
             {
               name: "dept",
               label: t("department"),
               allLabel: tl("allDepartments"),
               value: filters.dept ?? "",
-              options: options.departments.map((d) => ({ value: d.slug, label: localName(locale, d.name, d.nameLocal) })),
+              options: options.departments.map((d) => ({
+                value: d.slug,
+                label: localName(locale, d.name, d.nameLocal),
+              })),
             },
           ]}
         />
       </div>
 
       {rows.length === 0 ? (
-        <EmptyState searched={filtered} clearHref={path} emptyText={t("none")} />
+        <EmptyState
+          searched={filtered}
+          clearHref={path}
+          emptyText={t("none")}
+        />
       ) : (
         <MapHighlightProvider>
-          <ProjectTable rows={rows} basePath={basePath} showDepartment showDistrict canUpload={canUploadImagery(user)} />
-          <ProjectCards rows={rows} basePath={basePath} showDepartment showDistrict canUpload={canUploadImagery(user)} />
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {rows.map((r) => (
+              <ProjectCard
+                key={r.id}
+                row={r}
+                basePath={basePath}
+                showDepartment
+                showDistrict
+                canUpload={canUploadImagery(user)}
+              />
+            ))}
+          </ul>
         </MapHighlightProvider>
       )}
     </div>

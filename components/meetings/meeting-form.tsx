@@ -107,16 +107,19 @@ export function MeetingForm({
         kind,
         refId,
         notes: "",
-        title: refId ? suggestedTitle(kind, labelOf(kind, refId)) : "",
+        title: refId ? suggestedTitle(kind, refId) : "",
       },
     ]);
-  const suggestedTitle = (kind: Kind, label: string) =>
+  // The project is shown under each point, so titles don't repeat it.
+  const suggestedTitle = (kind: Kind, refId: string) =>
     kind === "project"
-      ? t("titleProject", { name: label })
+      ? t("titleProject")
       : kind === "issue"
-        ? t("titleIssue", { name: label })
+        ? t("titleIssue", {
+            name: options.issues.find((i) => i.id === refId)?.title ?? "",
+          })
         : kind === "directive"
-          ? t("titleDirective", { name: label })
+          ? t("titleDirective", { name: labelOf(kind, refId) })
           : "";
 
   const used = new Set(rows.map((r) => r.refId).filter(Boolean));
@@ -325,9 +328,7 @@ export function MeetingForm({
                       const refId = e.target.value;
                       update(r.key, {
                         refId,
-                        title:
-                          r.title ||
-                          suggestedTitle(r.kind, labelOf(r.kind, refId)),
+                        title: r.title || suggestedTitle(r.kind, refId),
                       });
                     }}
                     className={selectClass}

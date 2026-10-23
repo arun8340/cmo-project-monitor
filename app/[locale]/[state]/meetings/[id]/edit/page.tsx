@@ -69,9 +69,11 @@ async function EditMeeting({ params }: { params: Params["params"] }) {
     issues: keep(
       options.issues,
       meeting.items.flatMap((i) =>
-        i.issue ? [{ id: i.issue.id, label: i.issue.title }] : [],
+        i.issue
+          ? [{ id: i.issue.id, label: i.issue.title, title: i.issue.title }]
+          : [],
       ),
-      { priority: "LOW" as const },
+      { priority: "LOW" as const, title: "" },
     ),
     directives: keep(
       options.directives,

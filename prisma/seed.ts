@@ -22,6 +22,20 @@ const db = new PrismaClient({
 
 export const DEMO_PASSWORD = "Demo@123";
 
+/**
+ * Demo: seed the projects that have real site imagery (prisma/seed-data/
+ * imagery) plus the few listed in WITHOUT_IMAGERY, to show what a project
+ * awaiting imagery looks like. Set to false to seed every project in
+ * prisma/seed-data/projects.ts.
+ */
+const ONLY_IMAGED_PROJECTS = true;
+const WITHOUT_IMAGERY = new Set([
+  "Lake Pichola Sewer Interception Line",
+  "Community Health Centre, Jhadol",
+  "Sassoon Hospital New Wing",
+  "Zilla Parishad School Buildings, Mulshi",
+]);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -180,9 +194,26 @@ async function main() {
 
   // Per-state demo users. Collector / field officer district and the department
   // head's department are chosen so they have projects to see.
-  const USER_PLAN: Record<StateCode, { collectorDistrict: string; collectorName: string; cmoName: string; deptHeadName: string; fieldName: string }> = {
-    RJ: { collectorDistrict: "RJ-JAIPUR", collectorName: "Collector, Jaipur", cmoName: "CMO Rajasthan", deptHeadName: "Secretary, PWD Rajasthan", fieldName: "Field Officer, Jaipur" },
-    MH: { collectorDistrict: "MH-PUNE", collectorName: "Collector, Pune", cmoName: "CMO Maharashtra", deptHeadName: "Secretary, PWD Maharashtra", fieldName: "Field Officer, Pune" },
+  const USER_PLAN: Record<
+    StateCode,
+    { collectorDistrict: string; collectorName: string; cmoName: string; dept: string; deptHeadName: string; fieldName: string }
+  > = {
+    RJ: {
+      collectorDistrict: "RJ-JAIPUR",
+      collectorName: "Collector, Jaipur",
+      cmoName: "CMO Rajasthan",
+      dept: "RNB",
+      deptHeadName: "Secretary, Roads & Buildings Rajasthan",
+      fieldName: "Field Officer, Jaipur",
+    },
+    MH: {
+      collectorDistrict: "MH-MUMBAI-SUBURBAN",
+      collectorName: "Collector, Mumbai Suburban",
+      cmoName: "CMO Maharashtra",
+      dept: "PWD",
+      deptHeadName: "Secretary, PWD Maharashtra",
+      fieldName: "Field Officer, Mumbai Suburban",
+    },
   };
 
   let projectCount = 0;
@@ -222,7 +253,7 @@ async function main() {
       data: { name: plan.cmoName, email: `cmo.${s}@demo.gov.in`, passwordHash, designation: "Chief Minister's Office", roleId: roles.CMO.id, stateId: state.id },
     });
     const deptHead = await db.user.create({
-      data: { name: plan.deptHeadName, email: `pwd.${s}@demo.gov.in`, passwordHash, designation: "Department Head", roleId: roles.DEPARTMENT_HEAD.id, stateId: state.id, departmentId: departments.get("PWD")! },
+      data: { name: plan.deptHeadName, email: `${plan.dept.toLowerCase()}.${s}@demo.gov.in`, passwordHash, designation: "Department Head", roleId: roles.DEPARTMENT_HEAD.id, stateId: state.id, departmentId: departments.get(plan.dept)! },
     });
     const collector = await db.user.create({
       data: { name: plan.collectorName, email: `collector.${slug}@demo.gov.in`, passwordHash, designation: "District Collector", roleId: roles.DISTRICT_COLLECTOR.id, stateId: state.id, districtId: districts.get(plan.collectorDistrict)!.id },
@@ -233,7 +264,7 @@ async function main() {
 
     const createdProjects: { id: string; seed: ProjectSeed; status: ProjectStatus; districtId: string; departmentId: string }[] = [];
 
-    for (const p of PROJECTS[code].map(withSiteStart)) {
+    for (const p of PROJECTS[code].filter((p) => !ONLY_IMAGED_PROJECTS || p.site || WITHOUT_IMAGERY.has(p.name)).map(withSiteStart)) {
       const district = districts.get(p.district);
       const departmentId = departments.get(p.dept);
       if (!district || !departmentId) throw new Error(`Unknown district/department in seed: ${p.district} / ${p.dept}`);
@@ -323,12 +354,20 @@ async function main() {
 
       // Issues: delayed/stalled projects carry open issues from the last
       // review meeting; on-going ones have some resolved history.
-      const issueCount = p.s === "D" || p.s === "S" ? 2 : p.s === "O" ? (rand() < 0.5 ? 1 : 0) : 0;
+      // (With only the imaged projects seeded, each gets a few more so the dashboards aren't empty.)
+      const issueCount = ONLY_IMAGED_PROJECTS
+        ? { D: 3, S: 3, O: 2, C: 1, N: 0 }[p.s]
+        : p.s === "D" || p.s === "S" ? 2 : p.s === "O" ? (rand() < 0.5 ? 1 : 0) : 0;
+      const templates = [...ISSUE_TEMPLATES].sort(() => rand() - 0.5);
       for (let i = 0; i < issueCount; i++) {
-        const tpl = pick(ISSUE_TEMPLATES);
+        const tpl = templates[i % templates.length];
         let issueStatus: IssueStatus;
         let meetingDate: Date | null;
-        if (p.s === "D" || p.s === "S") {
+        if (ONLY_IMAGED_PROJECTS && p.s === "O" && i === 0) {
+          // Still open from the last review meeting.
+          issueStatus = pick(["PENDING", "IN_PROGRESS"] as const);
+          meetingDate = LAST_MEETING;
+        } else if (p.s === "D" || p.s === "S") {
           issueStatus = i === 0 ? "PENDING" : pick(["IN_PROGRESS", "PENDING"] as const);
           meetingDate = rand() < 0.75 ? LAST_MEETING : PREVIOUS_MEETING;
         } else {
@@ -381,14 +420,14 @@ async function main() {
         ownerId: collector.id,
       },
       {
-        departmentId: departments.get("DRAINAGE")!,
-        text: "Complete pre-monsoon desilting and inspection of all storm water drains under construction; upload geotagged field photos.",
+        departmentId: departments.get("URBAN")!,
+        text: "Complete third-party quality inspection of all housing blocks under construction; upload geotagged field photos.",
         dueDate: addDays(NOW, -10),
         status: "IN_PROGRESS",
       },
       {
-        departmentId: departments.get("PWD")!,
-        text: "Ensure third-party quality audit for all hospital and health infrastructure projects above ₹10 crore.",
+        departmentId: departments.get(plan.dept)!,
+        text: "Ensure third-party quality audit for all projects above ₹10 crore in the department.",
         dueDate: addDays(NOW, -25),
         status: "COMPLIED",
         ownerId: deptHead.id,
@@ -473,7 +512,7 @@ async function main() {
         status: "PUBLISHED",
         items: [
           { title: "Action taken on decisions of the previous meeting" },
-          ...tagged.map((i) => ({ title: `Issue: ${i.title} – ${i.project.name}`, issueId: i.id })),
+          ...tagged.map((i) => ({ title: `Issue: ${i.title}`, issueId: i.id })),
         ],
       });
     }
@@ -494,12 +533,12 @@ async function main() {
       items: [
         { title: "Action taken on decisions of the last meeting" },
         ...imaged.map((p) => ({
-          title: `Progress review: ${p.seed.name}`,
+          title: "Progress review with latest satellite imagery",
           notes: "Latest satellite imagery to be shown; department to explain the gap between planned and actual progress.",
           projectId: p.id,
         })),
-        ...lagging.slice(0, 3).map((p) => ({ title: `Progress review: ${p.seed.name}`, projectId: p.id })),
-        ...openIssues.slice(0, 3).map((i) => ({ title: `Issue: ${i.title} – ${i.project.name}`, issueId: i.id })),
+        ...lagging.slice(0, 3).map((p) => ({ title: "Progress review against the planned schedule", projectId: p.id })),
+        ...openIssues.slice(0, 3).map((i) => ({ title: `Issue: ${i.title}`, issueId: i.id })),
         ...overdue.map((d) => ({ title: "Compliance of overdue directive", notes: d.text, directiveId: d.id })),
         { title: "Any other matter with the permission of the Chair" },
       ],
