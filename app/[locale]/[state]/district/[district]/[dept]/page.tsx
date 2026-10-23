@@ -9,9 +9,13 @@ import { PageHeader, Panel } from "@/components/app-shell/page-parts";
 import { DistrictMapPanel } from "@/components/district-map/district-map-panel";
 import { MapHighlightProvider } from "@/components/district-map/highlight";
 import { ListControls } from "@/components/project/list-controls";
-import { Chip, EmptyState, ProjectCards, ProjectTable } from "@/components/project/project-table";
+import { Chip, EmptyState } from "@/components/project/project-table";
+import { ProjectCard } from "@/components/project/project-card";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canCreateProject, canUploadImagery } from "@/lib/auth/project-permissions";
+import {
+  canCreateProject,
+  canUploadImagery,
+} from "@/lib/auth/project-permissions";
 import { getProjectList } from "@/lib/data/district";
 import type { ProjectStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -23,7 +27,7 @@ type Params = PageProps<"/[locale]/[state]/district/[district]/[dept]">;
 
 export default function ProjectListPage({ params, searchParams }: Params) {
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-6">
+    <main className="mx-auto w-full max-w-[1680px] px-4 py-6 lg:px-6">
       <Suspense fallback={<ListSkeleton />}>
         <ProjectList params={params} searchParams={searchParams} />
       </Suspense>
@@ -38,11 +42,25 @@ const COUNT_KEY: Record<ProjectStatus, keyof Omit<StatusCounts, "total">> = {
   COMPLETED: "completed",
   NOT_STARTED: "notStarted",
 };
-const CHIP_ORDER: ProjectStatus[] = ["ONGOING", "DELAYED", "STALLED", "COMPLETED", "NOT_STARTED"];
-const str = (v: string | string[] | undefined) => (typeof v === "string" ? v : undefined);
+const CHIP_ORDER: ProjectStatus[] = [
+  "ONGOING",
+  "DELAYED",
+  "STALLED",
+  "COMPLETED",
+  "NOT_STARTED",
+];
+const str = (v: string | string[] | undefined) =>
+  typeof v === "string" ? v : undefined;
 
-async function ProjectList({ params, searchParams }: { params: Params["params"]; searchParams: Params["searchParams"] }) {
-  const [{ state: stateParam, district: districtSlug, dept: deptSlug }, sp] = await Promise.all([params, searchParams]);
+async function ProjectList({
+  params,
+  searchParams,
+}: {
+  params: Params["params"];
+  searchParams: Params["searchParams"];
+}) {
+  const [{ state: stateParam, district: districtSlug, dept: deptSlug }, sp] =
+    await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
   const list = await getProjectList(user, state, districtSlug, deptSlug, {
     status: str(sp.status),
@@ -54,8 +72,14 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
   const { district, department, counts, rows, filters } = list;
   const districtPath = `${basePath}/district/${districtSlug}`;
   const listPath = `${districtPath}/${deptSlug}`;
-  const [t, labels, locale] = await Promise.all([getTranslations("projectList"), getLabels(), getLocale()]);
-  const deptName = department ? localNames(locale, department.name, department.nameLocal) : null;
+  const [t, labels, locale] = await Promise.all([
+    getTranslations("projectList"),
+    getLabels(),
+    getLocale(),
+  ]);
+  const deptName = department
+    ? localNames(locale, department.name, department.nameLocal)
+    : null;
   const title = deptName ? deptName.primary : t("allDepartments");
   const districtName = localName(locale, district.name, district.nameLocal);
 
@@ -72,7 +96,10 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
     <div className="grid gap-5">
       <Breadcrumbs
         items={[
-          { label: localName(locale, state.name, state.nameLocal), href: basePath || "/" },
+          {
+            label: localName(locale, state.name, state.nameLocal),
+            href: basePath || "/",
+          },
           { label: districtName, href: districtPath },
           { label: title },
         ]}
@@ -92,7 +119,9 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
             <Button
               nativeButton={false}
               render={
-                <Link href={`${basePath}/project/new?district=${districtSlug}${department ? `&dept=${department.code.toLowerCase()}` : ""}`} />
+                <Link
+                  href={`${basePath}/project/new?district=${districtSlug}${department ? `&dept=${department.code.toLowerCase()}` : ""}`}
+                />
               }
             >
               <PlusIcon />
@@ -103,8 +132,16 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
       />
 
       <div className="grid gap-3">
-        <nav aria-label={t("filterByStatus")} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
-          <Chip href={href(null)} active={!filters.status} label={t("all")} count={counts.total} />
+        <nav
+          aria-label={t("filterByStatus")}
+          className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0"
+        >
+          <Chip
+            href={href(null)}
+            active={!filters.status}
+            label={t("all")}
+            count={counts.total}
+          />
           {CHIP_ORDER.map((s) => (
             <Chip
               key={s}
@@ -116,28 +153,27 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
             />
           ))}
         </nav>
-        <ListControls action={listPath} q={filters.q} sort={filters.sort} keep={filters.status ? { status: filters.status.toLowerCase() } : {}} />
+        <ListControls
+          action={listPath}
+          q={filters.q}
+          sort={filters.sort}
+          keep={filters.status ? { status: filters.status.toLowerCase() } : {}}
+        />
       </div>
 
       <MapHighlightProvider>
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <div className="min-w-0">
-            {rows.length === 0 ? (
-              <EmptyState searched={!!filters.q || !!filters.status} clearHref={listPath} emptyText={t("noneInDepartment")} />
-            ) : (
-              <>
-                <ProjectTable rows={rows} basePath={basePath} showDepartment={!department} canUpload={canUploadImagery(user)} />
-                <ProjectCards rows={rows} basePath={basePath} showDepartment={!department} canUpload={canUploadImagery(user)} />
-              </>
-            )}
-          </div>
-          <div className="order-first xl:sticky xl:top-32 xl:order-none">
+        {/* Map on the left (stays in view), project cards on the right. */}
+        <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="lg:sticky lg:top-[7.5rem]">
             <Panel title={t("mapTitle")} description={t("mapHint")}>
               <DistrictMapPanel
                 geojsonUrl={state.geojson}
                 geoCodeProperty={state.geoCodeProperty}
                 geoCode={district.geoCode}
-                center={[district.latitude ?? state.mapCenter[0], district.longitude ?? state.mapCenter[1]]}
+                center={[
+                  district.latitude ?? state.mapCenter[0],
+                  district.longitude ?? state.mapCenter[1],
+                ]}
                 pins={rows.map((r) => ({
                   id: r.id,
                   name: r.name,
@@ -151,9 +187,30 @@ async function ProjectList({ params, searchParams }: { params: Params["params"];
                   departmentNameLocal: r.departmentNameLocal,
                 }))}
                 basePath={basePath}
-                mapClassName="h-80 xl:h-[calc(100svh-19rem)] xl:min-h-[420px]"
+                mapClassName="h-80 lg:h-[max(34rem,calc(100svh-17rem))]"
               />
             </Panel>
+          </div>
+          <div className="min-w-0">
+            {rows.length === 0 ? (
+              <EmptyState
+                searched={!!filters.q || !!filters.status}
+                clearHref={listPath}
+                emptyText={t("noneInDepartment")}
+              />
+            ) : (
+              <ul className="grid gap-4 sm:grid-cols-2">
+                {rows.map((r) => (
+                  <ProjectCard
+                    key={r.id}
+                    row={r}
+                    basePath={basePath}
+                    showDepartment={!department}
+                    canUpload={canUploadImagery(user)}
+                  />
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </MapHighlightProvider>

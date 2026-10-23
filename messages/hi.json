@@ -42,11 +42,13 @@
     "sections": "अनुभाग",
     "overview": "अवलोकन",
     "projects": "परियोजनाएँ",
-    "imagery": "चित्र",
+    "districts": "जिले",
+    "imagery": "लाइव चित्र",
     "issues": "समस्याएँ",
     "directives": "निर्देश",
     "meetings": "बैठकें",
     "activity": "गतिविधि लॉग",
+    "departments": "विभाग",
     "openCount": "{count} खुली",
     "overdueCount": "{count} समय-सीमा पार"
   },
@@ -161,7 +163,11 @@
     "scopeState": "{state} के सभी जिले और विभाग",
     "showing": "दिखाया जा रहा है:",
     "filterByDepartment": "विभाग के अनुसार फ़िल्टर करें",
-    "allDepartments": "सभी विभाग"
+    "filterByDepartmentHint": "पूरा डैशबोर्ड एक विभाग के लिए दिखाता है।",
+    "allDepartments": "सभी विभाग",
+    "liveImagery": "लाइव चित्र",
+    "liveImageryHint": "हर परियोजना स्थल का नवीनतम उपग्रह चित्र — लाइव ट्रैकिंग खोलने के लिए क्लिक करें।",
+    "liveImageryAll": "सभी देखें ({count})"
   },
   "kpi": {
     "projects": "परियोजनाएँ",
@@ -279,7 +285,7 @@
       "end": "नियोजित समाप्ति तिथि"
     },
     "mapTitle": "परियोजना स्थल",
-    "mapHint": "इस सूची की परियोजनाएँ। मानचित्र पर ढूँढने के लिए किसी पंक्ति पर होवर करें।",
+    "mapHint": "इस सूची की परियोजनाएँ। मानचित्र पर खोजने के लिए किसी कार्ड पर होवर करें।",
     "imageryOn": "चित्र {date}"
   },
   "progress": {
@@ -799,7 +805,7 @@
     "none": "अभी कोई परियोजना नहीं"
   },
   "imageryIndex": {
-    "title": "चित्र",
+    "title": "लाइव चित्र",
     "summary": "{count, plural, one {चित्रों वाला # परियोजना स्थल} other {चित्रों वाले # परियोजना स्थल}}, नवीनतम पहले",
     "none": "अभी कोई चित्र अपलोड नहीं हुआ",
     "captures": "{count, plural, one {# चित्र} other {# चित्र}}",
@@ -869,7 +875,7 @@
       "issue": "समस्या",
       "directive": "निर्देश"
     },
-    "titleProject": "प्रगति समीक्षा: {name}",
+    "titleProject": "प्रगति समीक्षा",
     "titleIssue": "समस्या: {name}",
     "titleDirective": "अनुपालन: {name}",
     "itemTitle": "एजेंडा बिंदु",
@@ -902,6 +908,27 @@
     "allMeetings": "सभी बैठकें",
     "schedule": "निर्धारित करें",
     "viewFullAgenda": "पूरा एजेंडा देखें",
-    "viewFullAgendaMore": "पूरा एजेंडा देखें (+{count} और)"
+    "viewFullAgendaMore": "पूरा एजेंडा देखें (+{count} और)",
+    "pointsDiscussed": "{count, plural, one {# बिंदु पर चर्चा} other {# बिंदुओं पर चर्चा}}"
+  },
+  "browse": {
+    "districtsTitle": "जिले",
+    "districtsSummary": "{count, plural, one {परियोजनाओं वाला # जिला} other {परियोजनाओं वाले # जिले}}",
+    "departmentsTitle": "विभाग",
+    "departmentsSummary": "{count, plural, one {# विभाग} other {# विभाग}}; परियोजनाएँ देखने के लिए किसी को खोलें",
+    "deptMeta": "{budget} · {count, plural, one {# जिला} other {# जिले}}",
+    "latestImage": "नवीनतम {date}",
+    "noImagery": "अभी कोई चित्र नहीं",
+    "completed": "पूर्ण",
+    "ongoing": "जारी",
+    "behind": "विलंबित / रुकी",
+    "projectsCount": "{count, plural, one {<b>#</b> परियोजना} other {<b>#</b> परियोजनाएँ}}",
+    "otherDepartments": "अन्य विभाग — अभी कोई परियोजना नहीं ({count})"
+  },
+  "projectCard": {
+    "live": "लाइव",
+    "awaiting": "उपग्रह चित्रों की प्रतीक्षा",
+    "awaitingHint": "अपलोड होने पर चित्र यहाँ दिखेंगे",
+    "addImages": "चित्र जोड़ें"
   }
 }

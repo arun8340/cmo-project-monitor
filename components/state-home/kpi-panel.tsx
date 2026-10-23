@@ -1,13 +1,8 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { Panel, PanelLink } from "@/components/app-shell/page-parts";
-import {
-  IssueStatusBadge,
-  pill,
-  TONE_PILL,
-} from "@/components/workflow/badges";
+import { pill, TONE_PILL } from "@/components/workflow/badges";
 import type { StateOverview } from "@/lib/data/state-overview";
-import type { IssueStatus } from "@/lib/constants";
 import { formatDate } from "@/lib/format";
 import { localName } from "@/lib/i18n/names";
 import {
@@ -18,15 +13,12 @@ import {
 import type { NextMeeting } from "@/lib/data/meetings";
 import { CalendarDaysIcon, MapPinIcon, PlusIcon } from "lucide-react";
 
-const pct = (part: number, whole: number) =>
-  whole ? Math.round((part / whole) * 100) : 0;
-
 /**
- * The headline numbers in one bar across the top of the state dashboard, over
+ * The headline numbers as a compact card at the top of the side column, over
  * satellite imagery. Every figure opens the matching list (Projects, Issues,
- * Imagery), keeping the department filter.
+ * Live Imagery).
  */
-export function KpiRow({
+function AtAGlance({
   overview,
   basePath,
 }: {
@@ -35,65 +27,41 @@ export function KpiRow({
 }) {
   const t = useTranslations("kpi");
   const { totals, issues } = overview;
-  const dept = overview.department
-    ? `dept=${overview.department.code.toLowerCase()}`
-    : "";
-  const projects = (status?: string) => {
-    const qs = [status && `status=${status}`, dept].filter(Boolean).join("&");
-    return `${basePath}/projects${qs ? `?${qs}` : ""}`;
-  };
-  const items: {
-    label: string;
-    value: number;
-    hint: string;
-    href: string;
-    tone: string;
-  }[] = [
-    {
-      label: t("totalProjects"),
-      value: totals.total,
-      hint: t("acrossDepartments", { count: overview.departments.length }),
-      href: projects(),
-      tone: "text-white",
-    },
-    {
-      label: t("completed"),
-      value: totals.completed,
-      hint: t("ofTotal", { percent: pct(totals.completed, totals.total) }),
-      href: projects("completed"),
-      tone: "text-[#8fe0b0]",
-    },
-    {
-      label: t("ongoing"),
-      value: totals.ongoing,
-      hint: t("ofTotal", { percent: pct(totals.ongoing, totals.total) }),
-      href: projects("ongoing"),
-      tone: "text-[#9cc8f5]",
-    },
-    {
-      label: t("delayedStalled"),
-      value: totals.delayed + totals.stalled,
-      hint: t("behindSchedule"),
-      href: projects("delayed,stalled"),
-      tone: "text-[#ffa58f]",
-    },
-    {
-      label: t("openIssues"),
-      value: issues.openTotal,
-      hint: issues.lastMeetingDate
-        ? t("pendingAtMeeting", { count: issues.pendingAtLastMeeting })
-        : t("noMeetings"),
-      href: `${basePath}/issues`,
-      tone: "text-amber",
-    },
-    {
-      label: t("withImagery"),
-      value: overview.withImagery,
-      hint: t("withImageryHint"),
-      href: `${basePath}/imagery${dept ? `?${dept}` : ""}`,
-      tone: "text-white",
-    },
-  ];
+  const projects = (status?: string) =>
+    `${basePath}/projects${status ? `?status=${status}` : ""}`;
+  const items: { label: string; value: number; href: string; tone: string }[] =
+    [
+      {
+        label: t("totalProjects"),
+        value: totals.total,
+        href: projects(),
+        tone: "text-white",
+      },
+      {
+        label: t("completed"),
+        value: totals.completed,
+        href: projects("completed"),
+        tone: "text-[#8fe0b0]",
+      },
+      {
+        label: t("ongoing"),
+        value: totals.ongoing,
+        href: projects("ongoing"),
+        tone: "text-[#9cc8f5]",
+      },
+      {
+        label: t("delayedStalled"),
+        value: totals.delayed + totals.stalled,
+        href: projects("delayed,stalled"),
+        tone: "text-[#ffa58f]",
+      },
+      {
+        label: t("openIssues"),
+        value: issues.openTotal,
+        href: `${basePath}/issues`,
+        tone: "text-amber",
+      },
+    ];
   return (
     <section
       aria-label={t("summary")}
@@ -106,29 +74,23 @@ export function KpiRow({
         aria-hidden
         className="absolute inset-0 size-full object-cover"
       />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-r from-navy/90 via-navy/82 to-navy/78"
-      />
-      <ul className="relative grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6">
-        {items.map((it, i) => (
-          <li
-            key={it.label}
-            className={`border-white/15 ${i > 0 ? "xl:border-l" : ""} ${i % 2 ? "border-l sm:border-l-0" : ""} ${i % 3 ? "sm:border-l" : ""}`}
-          >
+      <div aria-hidden className="absolute inset-0 bg-navy/85" />
+      {/* Three per row; one row of five on wide screens. */}
+      <ul className="relative grid grid-cols-3 [&>li]:border-white/15 [&>li:nth-child(n+4)]:border-t [&>li:not(:nth-child(3n+1))]:border-l xl:grid-cols-5 xl:[&>li:nth-child(4)]:border-l xl:[&>li:nth-child(n+4)]:border-t-0">
+        {items.map((it) => (
+          <li key={it.label}>
             <Link
               href={it.href}
-              className="block h-full px-4 py-3.5 transition-colors [text-shadow:0_1px_2px_rgb(0_0_0/0.6)] hover:bg-white/10 sm:px-5 sm:py-4"
+              className="block h-full px-3 py-3 transition-colors hover:bg-white/10"
             >
-              <div className="text-[13px] font-semibold text-white/90">
-                {it.label}
-              </div>
               <div
-                className={`mt-1 text-[30px] leading-none font-bold tracking-tight tabular-nums ${it.tone}`}
+                className={`text-[24px] leading-none font-bold tracking-tight tabular-nums ${it.tone}`}
               >
                 {it.value}
               </div>
-              <div className="mt-1.5 text-xs text-white/80">{it.hint}</div>
+              <div className="mt-1 text-[11px] leading-tight font-semibold text-white/85">
+                {it.label}
+              </div>
             </Link>
           </li>
         ))}
@@ -137,94 +99,121 @@ export function KpiRow({
   );
 }
 
-/** Right-hand column beside the map: next review meeting and last review meeting. */
+/**
+ * Right-hand column beside the map: the figures at a glance, the next review
+ * meeting and the previous one, with their agenda points.
+ */
 export function DashboardSide({
   overview,
   basePath,
   nextMeeting,
+  previousMeeting,
   canManageMeetings,
 }: {
   overview: StateOverview;
   basePath: string;
   nextMeeting: NextMeeting | null;
+  previousMeeting: NextMeeting | null;
   canManageMeetings: boolean;
 }) {
-  const t = useTranslations("kpi");
-  const locale = useLocale();
-  const ln = (n: { name: string; nameLocal: string | null } | null) =>
-    n ? localName(locale, n.name, n.nameLocal) : "";
-  const { issues, recentIssues } = overview;
-
   return (
     <div className="grid content-start gap-4">
-      <NextMeetingPanel
-        meeting={nextMeeting}
-        basePath={basePath}
-        canManage={canManageMeetings}
-      />
+      <AtAGlance overview={overview} basePath={basePath} />
+      {/* Next and last meeting side by side on wide screens. */}
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+        <NextMeetingPanel
+          meeting={nextMeeting}
+          basePath={basePath}
+          canManage={canManageMeetings}
+        />
+        <PreviousMeetingPanel
+          meeting={previousMeeting}
+          overview={overview}
+          basePath={basePath}
+        />
+      </div>
+    </div>
+  );
+}
 
-      <Panel
-        title={t("lastMeeting")}
-        action={
-          issues.lastMeetingDate && (
-            <span className="text-sm text-muted-foreground">
-              {formatDate(issues.lastMeetingDate, locale)}
-            </span>
-          )
-        }
-      >
-        <div className="grid grid-cols-2 gap-3">
-          <Link
-            href={`${basePath}/issues`}
-            className="rounded-lg bg-warn-soft p-3 transition hover:brightness-[0.98]"
-          >
-            <div className="text-[28px] leading-none font-bold text-warn">
-              {issues.pendingAtLastMeeting}
-            </div>
-            <div className="mt-1.5 text-[13px] font-semibold text-warn">
-              {t("pendingIssues")}
-            </div>
-          </Link>
-          <Link
-            href={`${basePath}/issues?status=resolved`}
-            className="rounded-lg bg-ok-soft p-3 transition hover:brightness-[0.98]"
-          >
-            <div className="text-[28px] leading-none font-bold text-ok">
-              {issues.resolvedAtLastMeeting}
-            </div>
-            <div className="mt-1.5 text-[13px] font-semibold text-ok">
-              {t("resolvedIssues")}
-            </div>
-          </Link>
-        </div>
-        {!issues.lastMeetingDate && (
+/** The last review meeting: its pending / resolved issue counts and the points discussed. */
+function PreviousMeetingPanel({
+  meeting,
+  overview,
+  basePath,
+}: {
+  meeting: NextMeeting | null;
+  overview: StateOverview;
+  basePath: string;
+}) {
+  const t = useTranslations("kpi");
+  const tm = useTranslations("meetings");
+  const locale = useLocale();
+  const { issues } = overview;
+  const date = meeting?.meetingAt ?? issues.lastMeetingDate;
+  return (
+    <Panel
+      title={t("lastMeeting")}
+      action={
+        date && (
+          <span className="text-sm text-muted-foreground">
+            {formatDate(date, locale)}
+          </span>
+        )
+      }
+    >
+      <div className="grid grid-cols-2 gap-2">
+        <Link
+          href={`${basePath}/issues`}
+          className="rounded-lg bg-warn-soft px-3 py-2 transition hover:brightness-[0.98]"
+        >
+          <span className="text-[22px] leading-none font-bold text-warn">
+            {issues.pendingAtLastMeeting}
+          </span>
+          <span className="ml-1.5 text-[13px] font-semibold text-warn">
+            {t("pendingIssues")}
+          </span>
+        </Link>
+        <Link
+          href={`${basePath}/issues?status=resolved`}
+          className="rounded-lg bg-ok-soft px-3 py-2 transition hover:brightness-[0.98]"
+        >
+          <span className="text-[22px] leading-none font-bold text-ok">
+            {issues.resolvedAtLastMeeting}
+          </span>
+          <span className="ml-1.5 text-[13px] font-semibold text-ok">
+            {t("resolvedIssues")}
+          </span>
+        </Link>
+      </div>
+      {meeting ? (
+        <>
+          <p className="mt-3 mb-1 text-[13px] font-semibold text-muted-foreground">
+            {tm("pointsDiscussed", { count: meeting.items.length })}
+          </p>
+          <AgendaList
+            items={meeting.items.slice(0, AGENDA_PREVIEW)}
+            basePath={basePath}
+            compact
+          />
+          <div className="mt-1">
+            <PanelLink href={`${basePath}/meetings/${meeting.id}`}>
+              {meeting.items.length > AGENDA_PREVIEW
+                ? tm("viewFullAgendaMore", {
+                    count: meeting.items.length - AGENDA_PREVIEW,
+                  })
+                : tm("viewFullAgenda")}
+            </PanelLink>
+          </div>
+        </>
+      ) : (
+        !issues.lastMeetingDate && (
           <p className="mt-3 text-[13px] text-muted-foreground">
             {t("noMeetings")}
           </p>
-        )}
-        {recentIssues.length > 0 && (
-          <ul className="mt-3 divide-y border-t">
-            {recentIssues.slice(0, 2).map((i) => (
-              <li key={i.id} className="py-2.5">
-                <Link
-                  href={`${basePath}/issues/${i.id}`}
-                  className="text-sm leading-snug font-semibold text-navy hover:underline"
-                >
-                  {i.title} – {ln(i.project)}
-                </Link>
-                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted-foreground">
-                  {ln(i.department)} · {ln(i.district)} ·{" "}
-                  <IssueStatusBadge status={i.status as IssueStatus} />
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-1">
-          <PanelLink href={`${basePath}/issues`}>{t("viewAll")}</PanelLink>
-        </div>
-      </Panel>
-    </div>
+        )
+      )}
+    </Panel>
   );
 }
 
@@ -340,7 +329,7 @@ export function DashboardBelow({
   );
 }
 
-const AGENDA_PREVIEW = 3;
+const AGENDA_PREVIEW = 7;
 
 /** The next CMO review meeting and the start of its published agenda. */
 function NextMeetingPanel({

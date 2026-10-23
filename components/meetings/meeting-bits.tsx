@@ -50,8 +50,9 @@ export function formatMeetingTime(d: Date, locale: string) {
 }
 
 /**
- * Numbered agenda. Linked projects, issues and directives show their current
- * status, and link through when the viewer may open them.
+ * Numbered agenda. Each point shows the project it is about (opening the
+ * project), and any linked issue or directive with its current status. Links
+ * only appear for what the viewer may open.
  */
 export function AgendaList({
   items,
@@ -73,7 +74,9 @@ export function AgendaList({
           key={i.id}
           className={`flex gap-3 ${compact ? "py-2.5" : "py-3.5"}`}
         >
-          <span className="grid size-7 shrink-0 place-items-center rounded-full bg-navy text-xs font-bold text-white tabular-nums">
+          <span
+            className={`grid shrink-0 place-items-center rounded-full bg-navy font-bold text-white tabular-nums ${compact ? "size-6 text-[11px]" : "size-7 text-xs"}`}
+          >
             {i.position}
           </span>
           {compact ? (
@@ -81,34 +84,26 @@ export function AgendaList({
           ) : (
             <div className="min-w-0 flex-1">
               <p className="leading-snug font-semibold text-navy">{i.title}</p>
-              {!compact && i.notes && (
+              {i.notes && (
                 <p className="mt-1 text-sm whitespace-pre-line text-muted-foreground">
                   {i.notes}
                 </p>
               )}
-              {i.project && (
-                <div className="mt-1 flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                  <FolderKanbanIcon className="size-3.5" />
-                  <Ref
-                    href={
-                      i.project.linked
-                        ? `${basePath}/project/${i.project.id}`
-                        : null
-                    }
-                  >
-                    {localName(locale, i.project.name, i.project.nameLocal)} ·{" "}
+              {i.about && (
+                <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[13px]">
+                  <ProjectLink project={i.about} basePath={basePath} />
+                  <span className="text-muted-foreground">
+                    ·{" "}
                     {localName(
                       locale,
-                      i.project.district.name,
-                      i.project.district.nameLocal,
+                      i.about.district.name,
+                      i.about.district.nameLocal,
                     )}
-                  </Ref>
-                  <StatusBadge status={i.project.status} />
-                  {!compact && (
-                    <span>
-                      {t("progress", { percent: i.project.progressPercent })}
-                    </span>
-                  )}
+                  </span>
+                  <StatusBadge status={i.about.status} />
+                  <span className="text-xs text-muted-foreground">
+                    {t("progress", { percent: i.about.progressPercent })}
+                  </span>
                 </div>
               )}
               {i.issue && (
@@ -122,7 +117,7 @@ export function AgendaList({
                     {i.issue.title}
                   </Ref>
                   <IssueStatusBadge status={i.issue.status} />
-                  {!compact && <PriorityBadge priority={i.issue.priority} />}
+                  <PriorityBadge priority={i.issue.priority} />
                 </div>
               )}
               {i.directive && (
@@ -139,12 +134,7 @@ export function AgendaList({
                   </Ref>
                   <DirectiveStatusBadge
                     status={i.directive.status}
-                    overdue={
-                      !!i.directive.dueDate &&
-                      i.directive.dueDate < new Date() &&
-                      (i.directive.status === "OPEN" ||
-                        i.directive.status === "IN_PROGRESS")
-                    }
+                    overdue={isOverdue(i.directive)}
                   />
                   {i.directive.dueDate && (
                     <span>
@@ -163,7 +153,42 @@ export function AgendaList({
   );
 }
 
-/** Home-page preview: the point (linking to what it is about) and that item's current status. */
+const isOverdue = (d: { dueDate: Date | null; status: string }) =>
+  !!d.dueDate &&
+  d.dueDate < new Date() &&
+  (d.status === "OPEN" || d.status === "IN_PROGRESS");
+
+/** The project name, opening the project (plain text if the viewer can't open it). */
+function ProjectLink({
+  project,
+  basePath,
+}: {
+  project: NonNullable<AgendaItemView["about"]>;
+  basePath: string;
+}) {
+  const locale = useLocale();
+  const name = localName(locale, project.name, project.nameLocal);
+  const body = (
+    <>
+      <FolderKanbanIcon className="size-3.5 shrink-0" />
+      {name}
+    </>
+  );
+  return project.linked ? (
+    <Link
+      href={`${basePath}/project/${project.id}`}
+      className="inline-flex items-center gap-1 font-semibold text-link hover:underline"
+    >
+      {body}
+    </Link>
+  ) : (
+    <span className="inline-flex items-center gap-1 font-semibold text-foreground/80">
+      {body}
+    </span>
+  );
+}
+
+/** Home-page preview: the point, its status, and the project it is about (link). */
 function CompactItem({
   item: i,
   basePath,
@@ -171,42 +196,29 @@ function CompactItem({
   item: AgendaItemView;
   basePath: string;
 }) {
-  const href = i.project?.linked
-    ? `${basePath}/project/${i.project.id}`
-    : i.issue?.linked
-      ? `${basePath}/issues/${i.issue.id}`
-      : i.directive?.linked
-        ? `${basePath}/directives/${i.directive.id}`
-        : null;
-  const badge = i.project ? (
-    <StatusBadge status={i.project.status} />
-  ) : i.issue ? (
+  const badge = i.issue ? (
     <IssueStatusBadge status={i.issue.status} />
   ) : i.directive ? (
     <DirectiveStatusBadge
       status={i.directive.status}
-      overdue={
-        !!i.directive.dueDate &&
-        i.directive.dueDate < new Date() &&
-        (i.directive.status === "OPEN" || i.directive.status === "IN_PROGRESS")
-      }
+      overdue={isOverdue(i.directive)}
     />
+  ) : i.about ? (
+    <StatusBadge status={i.about.status} />
   ) : null;
   return (
-    <div className="flex min-w-0 flex-1 items-start justify-between gap-2">
-      {href ? (
-        <Link
-          href={href}
-          className="text-sm leading-snug font-semibold text-navy hover:underline"
-        >
-          {i.title}
-        </Link>
-      ) : (
+    <div className="min-w-0 flex-1">
+      <div className="flex items-start justify-between gap-2">
         <p className="text-sm leading-snug font-semibold text-navy">
           {i.title}
         </p>
+        {badge && <span className="shrink-0">{badge}</span>}
+      </div>
+      {i.about && (
+        <div className="mt-0.5 text-xs">
+          <ProjectLink project={i.about} basePath={basePath} />
+        </div>
       )}
-      {badge && <span className="shrink-0">{badge}</span>}
     </div>
   );
 }

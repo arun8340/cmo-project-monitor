@@ -16,11 +16,11 @@ export type DemoAccount = { email: string; role: RoleKey; scope: string; portal:
 export const DEMO_ACCOUNTS: DemoAccount[] = [
   { email: "admin@demo.gov.in", role: "ADMIN", scope: "ALL", portal: "ADMIN" },
   { email: "cmo.rj@demo.gov.in", role: "CMO", scope: "STATE", portal: "RJ" },
-  { email: "pwd.rj@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "PWD", portal: "RJ" },
+  { email: "rnb.rj@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "Roads & Buildings", portal: "RJ" },
   { email: "collector.jaipur@demo.gov.in", role: "DISTRICT_COLLECTOR", scope: "Jaipur", portal: "RJ" },
   { email: "field.jaipur@demo.gov.in", role: "FIELD_OFFICER", scope: "Jaipur", portal: "RJ" },
   { email: "cmo.mh@demo.gov.in", role: "CMO", scope: "STATE", portal: "MH" },
   { email: "pwd.mh@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "PWD", portal: "MH" },
-  { email: "collector.pune@demo.gov.in", role: "DISTRICT_COLLECTOR", scope: "Pune", portal: "MH" },
-  { email: "field.pune@demo.gov.in", role: "FIELD_OFFICER", scope: "Pune", portal: "MH" },
+  { email: "collector.mumbai-suburban@demo.gov.in", role: "DISTRICT_COLLECTOR", scope: "Mumbai Suburban", portal: "MH" },
+  { email: "field.mumbai-suburban@demo.gov.in", role: "FIELD_OFFICER", scope: "Mumbai Suburban", portal: "MH" },
 ];
