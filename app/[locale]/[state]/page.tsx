@@ -5,29 +5,28 @@ import { StateMapPanel } from "@/components/state-map/state-map-panel";
 import {
   DashboardBelow,
   DashboardSide,
-  KpiRow,
 } from "@/components/state-home/kpi-panel";
-import { PageHeader } from "@/components/app-shell/page-parts";
-import { DepartmentFilter } from "@/components/state-home/department-filter";
 import { requireStateAccess, type CurrentUser } from "@/lib/auth/dal";
 import { getStateOverview } from "@/lib/data/state-overview";
-import { getNextMeeting } from "@/lib/data/meetings";
+import { getNextMeeting, getPreviousMeeting } from "@/lib/data/meetings";
+import { getImageryProjects, parseProjectFilters } from "@/lib/data/projects";
+import { LiveImageryStrip } from "@/components/state-home/live-imagery-strip";
 import { canManageMeetings } from "@/lib/auth/project-permissions";
 import { getLocale, getTranslations } from "next-intl/server";
-import { localName, localNames } from "@/lib/i18n/names";
+import { localNames } from "@/lib/i18n/names";
 import type { Locale } from "@/lib/i18n/config";
 
 export default function StateHomePage({
   params,
-  searchParams,
 }: PageProps<"/[locale]/[state]">) {
+  // Wider than other pages: the map on the left, both meetings side by side on the right.
   return (
-    <main className="mx-auto w-full max-w-7xl px-4 py-7">
+    <main className="mx-auto w-full max-w-[1680px] px-4 py-7 lg:px-6">
       <Suspense>
         <PasswordChangedToast />
       </Suspense>
       <Suspense fallback={<HomeSkeleton />}>
-        <StateHome params={params} searchParams={searchParams} />
+        <StateHome params={params} />
       </Suspense>
     </main>
   );
@@ -52,24 +51,17 @@ function scopeText(
 
 async function StateHome({
   params,
-  searchParams,
 }: {
   params: PageProps<"/[locale]/[state]">["params"];
-  searchParams: PageProps<"/[locale]/[state]">["searchParams"];
 }) {
-  const [{ state: stateParam }, { dept }] = await Promise.all([
-    params,
-    searchParams,
-  ]);
+  const { state: stateParam } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
-  const [overview, nextMeeting] = await Promise.all([
-    getStateOverview(user, state, typeof dept === "string" ? dept : undefined),
+  const [overview, nextMeeting, previousMeeting, imagery] = await Promise.all([
+    getStateOverview(user, state),
     getNextMeeting(user, state),
+    getPreviousMeeting(user, state),
+    getImageryProjects(user, state, parseProjectFilters({})),
   ]);
-  const allProjects = overview.departments.reduce(
-    (sum, d) => sum + d.projects,
-    0,
-  );
   const [t, locale] = await Promise.all([
     getTranslations("home"),
     getLocale() as Promise<Locale>,
@@ -78,39 +70,12 @@ async function StateHome({
 
   return (
     <div className="grid gap-5">
-      <PageHeader
-        title={title.primary}
-        titleSecondary={title.secondary}
-        subtitle={
-          <>
-            {scopeText(user, title.primary, t)}
-            {overview.department && (
-              <>
-                {" "}
-                · {t("showing")}{" "}
-                <span className="font-semibold text-foreground">
-                  {localName(
-                    locale,
-                    overview.department.name,
-                    overview.department.nameLocal,
-                  )}
-                </span>
-              </>
-            )}
-          </>
-        }
-      />
+      {/* No visible heading: the map comes first. Screen readers still get one. */}
+      <h1 className="sr-only">
+        {title.primary} — {scopeText(user, title.primary, t)}
+      </h1>
 
-      <KpiRow overview={overview} basePath={basePath} />
-
-      <DepartmentFilter
-        basePath={basePath}
-        departments={overview.departments}
-        selected={overview.department?.code ?? null}
-        totalProjects={allProjects}
-      />
-
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_minmax(0,42rem)]">
         <StateMapPanel
           geojsonUrl={state.geojson}
           geoCodeProperty={state.geoCodeProperty}
@@ -118,15 +83,18 @@ async function StateHome({
           zoom={state.mapZoom}
           basePath={basePath}
           districts={overview.districts}
-          styleKey={overview.department?.code ?? "all"}
+          styleKey="all"
         />
         <DashboardSide
           overview={overview}
           basePath={basePath}
           nextMeeting={nextMeeting}
+          previousMeeting={previousMeeting}
           canManageMeetings={canManageMeetings(user)}
         />
       </div>
+
+      <LiveImageryStrip items={imagery.items} basePath={basePath} />
 
       <DashboardBelow overview={overview} basePath={basePath} />
     </div>
@@ -135,15 +103,13 @@ async function StateHome({
 
 function HomeSkeleton() {
   return (
-    <div className="grid gap-4">
-      <Skeleton className="h-12 w-72" />
-      <Skeleton className="h-9 w-full" />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <Skeleton className="h-105 sm:h-140 lg:h-160" />
-        <div className="grid content-start gap-4">
-          <Skeleton className="h-64" />
-          <Skeleton className="h-36" />
-          <Skeleton className="h-28" />
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-[minmax(0,1fr)_minmax(0,42rem)]">
+      <Skeleton className="h-105 sm:h-140 lg:h-[46rem]" />
+      <div className="grid content-start gap-4">
+        <Skeleton className="h-20" />
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Skeleton className="h-[34rem]" />
+          <Skeleton className="h-[34rem]" />
         </div>
       </div>
     </div>

@@ -42,11 +42,13 @@
     "sections": "Sections",
     "overview": "Overview",
     "projects": "Projects",
-    "imagery": "Imagery",
+    "districts": "Districts",
+    "imagery": "Live Imagery",
     "issues": "Issues",
     "directives": "Directives",
     "meetings": "Meetings",
     "activity": "Activity log",
+    "departments": "Departments",
     "openCount": "{count} open",
     "overdueCount": "{count} overdue"
   },
@@ -161,7 +163,11 @@
     "scopeState": "All districts and departments in {state}",
     "showing": "showing",
     "filterByDepartment": "Filter by department",
-    "allDepartments": "All departments"
+    "filterByDepartmentHint": "Shows the whole dashboard for one department.",
+    "allDepartments": "All departments",
+    "liveImagery": "Live imagery",
+    "liveImageryHint": "Latest satellite image of each project site — click to open live tracking.",
+    "liveImageryAll": "View all ({count})"
   },
   "kpi": {
     "projects": "Projects",
@@ -279,7 +285,7 @@
       "end": "Planned end date"
     },
     "mapTitle": "Project sites",
-    "mapHint": "The projects in this list. Hover a row to find it on the map.",
+    "mapHint": "The projects in this list. Hover a card to find it on the map.",
     "imageryOn": "Imagery {date}"
   },
   "progress": {
@@ -799,7 +805,7 @@
     "none": "No projects yet"
   },
   "imageryIndex": {
-    "title": "Imagery",
+    "title": "Live Imagery",
     "summary": "{count, plural, one {# project site with imagery} other {# project sites with imagery}}, latest first",
     "none": "No imagery uploaded yet",
     "captures": "{count, plural, one {# capture} other {# captures}}",
@@ -869,7 +875,7 @@
       "issue": "Issue",
       "directive": "Directive"
     },
-    "titleProject": "Progress review: {name}",
+    "titleProject": "Progress review",
     "titleIssue": "Issue: {name}",
     "titleDirective": "Compliance: {name}",
     "itemTitle": "Agenda point",
@@ -902,6 +908,27 @@
     "allMeetings": "All meetings",
     "schedule": "Schedule",
     "viewFullAgenda": "View full agenda",
-    "viewFullAgendaMore": "View full agenda (+{count} more)"
+    "viewFullAgendaMore": "View full agenda (+{count} more)",
+    "pointsDiscussed": "{count, plural, one {# point discussed} other {# points discussed}}"
+  },
+  "browse": {
+    "districtsTitle": "Districts",
+    "districtsSummary": "{count, plural, one {# district with projects} other {# districts with projects}}",
+    "departmentsTitle": "Departments",
+    "departmentsSummary": "{count, plural, one {# department} other {# departments}}; open one to see its projects",
+    "deptMeta": "{budget} · {count, plural, one {# district} other {# districts}}",
+    "latestImage": "Latest {date}",
+    "noImagery": "No imagery yet",
+    "completed": "completed",
+    "ongoing": "on-going",
+    "behind": "delayed / stalled",
+    "projectsCount": "{count, plural, one {<b>#</b> project} other {<b>#</b> projects}}",
+    "otherDepartments": "Other departments — no projects yet ({count})"
+  },
+  "projectCard": {
+    "live": "Live",
+    "awaiting": "Awaiting satellite imagery",
+    "awaitingHint": "Imagery will appear here once uploaded",
+    "addImages": "Add images"
   }
 }

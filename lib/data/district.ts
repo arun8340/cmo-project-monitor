@@ -161,6 +161,7 @@ export type ProjectRow = {
   startDate: Date | null;
   plannedEndDate: Date | null;
   latestImagery: Date | null;
+  latestImageId: string | null;
   openIssues: number;
 };
 
@@ -170,7 +171,7 @@ type ListOptions = { status?: string; q?: string; sort?: string };
 export const ROW_INCLUDE = {
   department: { select: { code: true, name: true, nameLocal: true } },
   district: { select: { name: true, nameLocal: true, geoCode: true } },
-  imagery: { select: { captureDate: true }, orderBy: { captureDate: "desc" }, take: 1 },
+  imagery: { select: { id: true, captureDate: true }, orderBy: { captureDate: "desc" }, take: 1 },
   _count: { select: { issues: { where: { status: OPEN_ISSUE } } } },
 } satisfies Prisma.ProjectInclude;
 
@@ -197,6 +198,7 @@ export function toRow(p: RowSource): ProjectRow {
     startDate: p.startDate,
     plannedEndDate: p.plannedEndDate,
     latestImagery: p.imagery[0]?.captureDate ?? null,
+    latestImageId: p.imagery[0]?.id ?? null,
     openIssues: p._count.issues,
   };
 }

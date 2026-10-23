@@ -68,22 +68,24 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
 | Role | Rajasthan portal | Maharashtra portal |
 |---|---|---|
 | CM / CMO / Chief Secretary | `cmo.rj@demo.gov.in` | `cmo.mh@demo.gov.in` |
-| Department Head (PWD) | `pwd.rj@demo.gov.in` | `pwd.mh@demo.gov.in` |
-| District Collector | `collector.jaipur@demo.gov.in` | `collector.pune@demo.gov.in` |
-| Field Officer | `field.jaipur@demo.gov.in` | `field.pune@demo.gov.in` |
+| Department Head | `rnb.rj@demo.gov.in` (Roads & Buildings) | `pwd.mh@demo.gov.in` (PWD) |
+| District Collector | `collector.jaipur@demo.gov.in` | `collector.mumbai-suburban@demo.gov.in` |
+| Field Officer | `field.jaipur@demo.gov.in` | `field.mumbai-suburban@demo.gov.in` |
 
 ## Demo data
 
 - **Districts:** Rajasthan 41 (post Dec-2024 reorganisation), Maharashtra 36 — all seeded with English + local names.
 - **Departments (per state):** PWD, Metro, Drainage & Sewer, Urban, Roads & Buildings, Rural, MGNREGA.
-- **Projects:** 65 across Jaipur, Jodhpur, Udaipur, Kota, Mumbai Suburban, Mumbai City, Pune, Nagpur and Nashik,
-  with a mix of On-Going / Completed / Delayed / Stalled / Not Started.
-- Each project has monthly progress updates and (for delayed/stalled ones) pending issues tagged to the
-  last review meeting. CMO directives exist per state, some overdue.
+- **Projects:** for the demo, **eight per state**: six with real satellite imagery and two still awaiting imagery
+  (Udaipur in Rajasthan, Pune in Maharashtra; listed in `WITHOUT_IMAGERY` in `prisma/seed.ts`). The six real before/after image sets (four from Jaipur, two from Mumbai) are each
+  used once in Rajasthan (Jaipur, Jodhpur) and once in Maharashtra (Mumbai Suburban, Mumbai City, Pune, Nagpur);
+  the copies carry local project names and locations, but the screenshots show the original site. `prisma/seed-data/projects.ts`
+  holds 65 projects; set `ONLY_IMAGED_PROJECTS = false` in `prisma/seed.ts` to seed them all.
+- Each project has monthly progress updates and issues (open ones tagged to the last review meeting). CMO
+  directives exist per state, some overdue.
 - **Meetings (per state):** the two past monthly reviews (agendas of the issues tagged to them), next week's
   review with a published agenda, and a draft quarterly review.
-- **Imagery:** six projects have real before/after satellite imagery (see [Imagery](#2-imagery)); the
-  others have none until someone uploads it.
+- **Imagery:** each seeded project has real before/after satellite imagery (see [Imagery](#2-imagery)).
 - Seed data lives in `prisma/seed-data/` — edit those files to change names, budgets or statuses.
 
 ## Authentication and access control
@@ -112,8 +114,9 @@ attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 
 ## Issues, directives and review meetings
 
-The header of every state page links to **Overview**, **Projects**, **Imagery**, **Issues** (with the open count),
-**Directives** (with the overdue count in red) and **Meetings**.
+The header of every state page links to **Overview**, **Projects**, **Districts**, **Live Imagery**, **Issues** (with
+the open count), **Directives** (with the overdue count in red), **Meetings**, **Activity log** (CMO) and
+**Departments**. Districts and Departments show a card for each, with its latest satellite image and project counts.
 
 - **Issues** are raised from a project's page (*Raise issue*) by Collectors, Department Heads, Field Officers (on
   their assigned projects) and Admin, with a priority and an optional review-meeting date. The Issues page filters by

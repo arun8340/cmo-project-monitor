@@ -31,43 +31,58 @@ export function meetingScope(
   };
 }
 
-const ITEM_INCLUDE = {
-  project: {
-    select: {
-      id: true,
-      name: true,
-      nameLocal: true,
-      status: true,
-      progressPercent: true,
-      district: { select: { name: true, nameLocal: true } },
-    },
+const PROJECT_SELECT = {
+  select: {
+    id: true,
+    name: true,
+    nameLocal: true,
+    status: true,
+    progressPercent: true,
+    district: { select: { name: true, nameLocal: true } },
   },
+} as const;
+
+const ITEM_INCLUDE = {
+  project: PROJECT_SELECT,
   issue: {
     select: {
       id: true,
       title: true,
       status: true,
       priority: true,
-      project: { select: { name: true, nameLocal: true } },
+      project: PROJECT_SELECT,
     },
   },
-  directive: { select: { id: true, text: true, status: true, dueDate: true } },
+  directive: {
+    select: {
+      id: true,
+      text: true,
+      status: true,
+      dueDate: true,
+      project: PROJECT_SELECT,
+    },
+  },
 } satisfies Prisma.MeetingAgendaItemInclude;
+
+type AgendaProject = {
+  id: string;
+  name: string;
+  nameLocal: string | null;
+  status: ProjectStatus;
+  progressPercent: number;
+  district: { name: string; nameLocal: string | null };
+  /** The viewer may open it. */
+  linked: boolean;
+};
 
 export type AgendaItemView = {
   id: string;
   position: number;
   title: string;
   notes: string | null;
-  project: {
-    id: string;
-    name: string;
-    nameLocal: string | null;
-    status: ProjectStatus;
-    progressPercent: number;
-    district: { name: string; nameLocal: string | null };
-    linked: boolean;
-  } | null;
+  /** The project this point is about: linked directly, or through its issue or directive. */
+  about: AgendaProject | null;
+  project: AgendaProject | null;
   issue: {
     id: string;
     title: string;
@@ -92,10 +107,13 @@ async function toItemViews(
 ) {
   const ids = (k: "projectId" | "issueId" | "directiveId") =>
     items.map((i) => i[k]).filter((x): x is string => !!x);
+  const aboutOf = (i: (typeof items)[number]) =>
+    i.project ?? i.issue?.project ?? i.directive?.project ?? null;
+  const projectIds = items.map(aboutOf).flatMap((p) => (p ? [p.id] : []));
   const [projects, issues, directives] = await Promise.all([
     db.project.findMany({
       where: {
-        AND: [projectScope(user, state.code), { id: { in: ids("projectId") } }],
+        AND: [projectScope(user, state.code), { id: { in: projectIds } }],
       },
       select: { id: true },
     }),
@@ -116,18 +134,18 @@ async function toItemViews(
     }),
   ]);
   const can = new Set([...projects, ...issues, ...directives].map((r) => r.id));
+  const view = (p: NonNullable<ReturnType<typeof aboutOf>>): AgendaProject => ({
+    ...p,
+    status: p.status as ProjectStatus,
+    linked: can.has(p.id),
+  });
   return items.map((i): AgendaItemView => ({
     id: i.id,
     position: i.position,
     title: i.title,
     notes: i.notes,
-    project: i.project
-      ? {
-          ...i.project,
-          status: i.project.status as ProjectStatus,
-          linked: can.has(i.project.id),
-        }
-      : null,
+    about: aboutOf(i) ? view(aboutOf(i)!) : null,
+    project: i.project ? view(i.project) : null,
     issue: i.issue
       ? {
           id: i.issue.id,
@@ -216,6 +234,30 @@ export type NextMeeting = NonNullable<
   Awaited<ReturnType<typeof getNextMeeting>>
 >;
 
+/** The most recent published meeting before today (the last review), with its agenda. */
+export async function getPreviousMeeting(
+  user: CurrentUser,
+  state: StateConfig,
+) {
+  const m = await db.meeting.findFirst({
+    where: {
+      AND: [
+        meetingScope(user, state),
+        { status: "PUBLISHED" },
+        { meetingAt: { lt: parseDateInput(todayIST())! } },
+      ],
+    },
+    include: { items: { include: ITEM_INCLUDE, orderBy: { position: "asc" } } },
+    orderBy: { meetingAt: "desc" },
+  });
+  if (!m) return null;
+  return {
+    ...m,
+    status: m.status as MeetingStatus,
+    items: await toItemViews(user, state, m.items),
+  };
+}
+
 /**
  * What can go on an agenda: projects, open issues and open directives in the
  * user's scope, plus suggestions (delayed/stalled projects, high-priority open
@@ -269,6 +311,7 @@ export async function getAgendaOptions(user: CurrentUser, state: StateConfig) {
       .sort((a, b) => (PRIORITY[a.priority] ?? 9) - (PRIORITY[b.priority] ?? 9))
       .map((i) => ({
         id: i.id,
+        title: i.title,
         label: `${i.title} – ${i.project.name}`,
         priority: i.priority as IssuePriority,
       })),

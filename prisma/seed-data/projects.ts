@@ -62,6 +62,9 @@ const RJ: ProjectSeed[] = [
   { district: "RJ-KOTA", dept: "RNB", name: "Underpass at Anantpura Junction", budgetLakhs: 2200, startedMonthsAgo: 20, durationMonths: 16, s: "D" },
   { district: "RJ-KOTA", dept: "RURAL", name: "Rural Water Supply Overhead Tank, Ladpura", budgetLakhs: 210, startedMonthsAgo: 9, durationMonths: 10, s: "O" },
   { district: "RJ-KOTA", dept: "MGNREGA", name: "Plantation & Contour Trenching, Sangod", budgetLakhs: 40, startedMonthsAgo: 6, durationMonths: 8, s: "O" },
+  // Demo: more sites for Rajasthan, reusing the Mumbai before/after image sets
+  { district: "RJ-JODHPUR", dept: "PWD", name: "District Court Building Extension, Jodhpur", nameLocal: "जिला न्यायालय भवन विस्तार, जोधपुर", budgetLakhs: 2900, startedMonthsAgo: 12, durationMonths: 24, s: "O", site: { lat: 26.2765, lng: 73.0118, imagery: [{ file: "andheri-west-2025-10-10.jpg", date: "2025-10-10" }, { file: "andheri-west-2026-06-04.jpg", date: "2026-06-04" }] } },
+  { district: "RJ-JODHPUR", dept: "URBAN", name: "Municipal Staff Housing, Sardarpura", nameLocal: "नगर निगम कर्मचारी आवास, सरदारपुरा", budgetLakhs: 5200, startedMonthsAgo: 21, durationMonths: 30, s: "O", site: { lat: 26.2894, lng: 73.0035, imagery: [{ file: "arthur-road-2025-01-02.jpg", date: "2025-01-02" }, { file: "arthur-road-2025-10-10.jpg", date: "2025-10-10" }] } },
 ];
 
 const MH: ProjectSeed[] = [
@@ -105,6 +108,11 @@ const MH: ProjectSeed[] = [
   { district: "MH-NASHIK", dept: "RURAL", name: "Primary Health Centre, Igatpuri", budgetLakhs: 450, startedMonthsAgo: 14, durationMonths: 12, s: "S" },
   { district: "MH-NASHIK", dept: "MGNREGA", name: "Cement Nala Bunds, Sinnar", nameLocal: "सिमेंट नाला बंधारे, सिन्नर", budgetLakhs: 52, startedMonthsAgo: 4, durationMonths: 6, s: "O" },
   { district: "MH-NASHIK", dept: "MGNREGA", name: "Horticulture Plantation, Dindori", budgetLakhs: 28, startedMonthsAgo: 12, durationMonths: 8, s: "C" },
+  // Demo: more sites for Maharashtra, reusing the Jaipur before/after image sets
+  { district: "MH-PUNE", dept: "URBAN", name: "Affordable Housing Block (PMAY-U), Hadapsar", nameLocal: "परवडणारी घरे (पीएमएवाय-यू), हडपसर", budgetLakhs: 5600, startedMonthsAgo: 21, durationMonths: 30, s: "O", site: { lat: 18.5089, lng: 73.926, imagery: [{ file: "vidhyadhar-nagar-housing-2025-01-02.jpg", date: "2025-01-02" }, { file: "vidhyadhar-nagar-housing-2026-07-18.jpg", date: "2026-07-18" }] } },
+  { district: "MH-PUNE", dept: "RNB", name: "Flyover at Nashik Phata Junction", nameLocal: "नाशिक फाटा चौक उड्डाणपूल", budgetLakhs: 8100, startedMonthsAgo: 12, durationMonths: 18, s: "D", site: { lat: 18.642, lng: 73.813, imagery: [{ file: "ajmer-road-flyover-2025-09-27.jpg", date: "2025-09-27" }, { file: "ajmer-road-flyover-2026-07-18.jpg", date: "2026-07-18" }] } },
+  { district: "MH-NAGPUR", dept: "RNB", name: "Government Girls College Building, Hingna", nameLocal: "शासकीय मुलींचे महाविद्यालय इमारत, हिंगणा", budgetLakhs: 1250, startedMonthsAgo: 18, durationMonths: 24, s: "O", site: { lat: 21.089, lng: 78.972, imagery: [{ file: "chomu-girls-college-2025-03-26.jpg", date: "2025-03-26" }, { file: "chomu-girls-college-2026-07-18.jpg", date: "2026-07-18" }] } },
+  { district: "MH-NAGPUR", dept: "RURAL", name: "PMGSY Rural Road, Kamptee–Mauda", nameLocal: "पीएमजीएसवाय ग्रामीण रस्ता, कामठी–मौदा", budgetLakhs: 690, startedMonthsAgo: 8, durationMonths: 6, s: "C", site: { lat: 21.221, lng: 79.201, imagery: [{ file: "phagi-renwal-road-2026-02-09.jpg", date: "2026-02-09" }, { file: "phagi-renwal-road-2026-07-18.jpg", date: "2026-07-18" }] } },
 ];
 
 export const PROJECTS: Record<StateCode, ProjectSeed[]> = { RJ, MH };
