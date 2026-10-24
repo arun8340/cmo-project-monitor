@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment } from "react";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ChevronDownIcon } from "lucide-react";
@@ -12,7 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export type NavSubItem = { href: string; label: string; hint?: string };
+export type NavSubItem = {
+  href: string;
+  label: string;
+  hint?: string;
+  /** A section heading (e.g. "Upcoming meetings"); a separator is drawn above it unless first. */
+  heading?: boolean;
+};
 
 export type NavItem = {
   key: string;
@@ -99,19 +106,25 @@ export function NavLinks({
                   {it.allLabel ?? it.label}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                {it.children.map((c) => (
-                  <DropdownMenuItem
-                    key={c.href}
-                    render={<Link href={c.href} />}
-                    className="flex-col items-start gap-0"
-                  >
-                    <span>{c.label}</span>
-                    {c.hint && (
-                      <span className="text-xs text-muted-foreground">
-                        {c.hint}
-                      </span>
-                    )}
-                  </DropdownMenuItem>
+                {it.children.map((c, i) => (
+                  <Fragment key={c.href}>
+                    {c.heading && i > 0 && <DropdownMenuSeparator />}
+                    <DropdownMenuItem
+                      render={<Link href={c.href} />}
+                      className={
+                        c.heading
+                          ? "text-xs font-bold tracking-wide text-rust uppercase"
+                          : "flex-col items-start gap-0"
+                      }
+                    >
+                      <span>{c.label}</span>
+                      {c.hint && (
+                        <span className="text-xs text-muted-foreground">
+                          {c.hint}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  </Fragment>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>

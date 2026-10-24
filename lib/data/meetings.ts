@@ -172,20 +172,54 @@ export async function listMeetings(user: CurrentUser, state: StateConfig) {
   const rows = await db.meeting.findMany({
     where: meetingScope(user, state),
     include: {
-      _count: { select: { items: true } },
+      items: { include: ITEM_INCLUDE, orderBy: { position: "asc" } },
       createdBy: { select: { name: true } },
     },
     orderBy: { meetingAt: "asc" },
   });
-  const list = rows.map((m) => ({
-    ...m,
-    status: m.status as MeetingStatus,
-    itemCount: m._count.items,
-  }));
+  const list = await Promise.all(
+    rows.map(async (m) => ({
+      ...m,
+      status: m.status as MeetingStatus,
+      itemCount: m.items.length,
+      items: await toItemViews(user, state, m.items),
+    })),
+  );
   return {
     upcoming: list.filter((m) => m.meetingAt >= today),
     past: list.filter((m) => m.meetingAt < today).reverse(),
   };
+}
+
+/** For the menu: all upcoming meetings and the latest past ones (title and date only). */
+export async function getNavMeetings(
+  user: CurrentUser,
+  state: StateConfig,
+  pastLimit = 4,
+) {
+  const today = parseDateInput(todayIST())!;
+  const select = {
+    id: true,
+    title: true,
+    meetingAt: true,
+    status: true,
+  } as const;
+  const [upcoming, past] = await Promise.all([
+    db.meeting.findMany({
+      where: {
+        AND: [meetingScope(user, state), { meetingAt: { gte: today } }],
+      },
+      select,
+      orderBy: { meetingAt: "asc" },
+    }),
+    db.meeting.findMany({
+      where: { AND: [meetingScope(user, state), { meetingAt: { lt: today } }] },
+      select,
+      orderBy: { meetingAt: "desc" },
+      take: pastLimit,
+    }),
+  ]);
+  return { upcoming, past };
 }
 
 export async function getMeeting(
