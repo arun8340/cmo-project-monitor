@@ -18,7 +18,7 @@ export default function PortalsPage() {
       <div className="w-full max-w-md">
         <div className="mb-6 flex items-center gap-2 text-sm font-medium text-muted-foreground">
           <LandmarkIcon className="size-4" />
-          CMO Project Monitor · development
+          CMO Project Monitoring & Review · development
         </div>
         <h1 className="text-[28px] leading-tight font-bold tracking-tight text-navy">Choose a portal</h1>
         <p className="mt-1 text-sm text-muted-foreground">
