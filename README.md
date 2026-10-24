@@ -1,4 +1,4 @@
-# CMO Infrastructure Project Monitor (POC)
+# CMO Project Monitoring & Review — based on On-Demand Instant Satellite Imagery (POC)
 
 Verification layer for government infrastructure projects in **Rajasthan** and **Maharashtra**:
 every project has a site, dated satellite / drone / field imagery, progress history, issues and directives.
@@ -83,8 +83,10 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
   holds 65 projects; set `ONLY_IMAGED_PROJECTS = false` in `prisma/seed.ts` to seed them all.
 - Each project has monthly progress updates and issues (open ones tagged to the last review meeting). CMO
   directives exist per state, some overdue.
-- **Meetings (per state):** the two past monthly reviews (agendas of the issues tagged to them), next week's
-  review with a published agenda, and a draft quarterly review.
+- **Meetings (per state):** CMO review meetings are held on the **15th and 30th of every month** (the last day
+  in February), 11:00 am. The demo has the two most recent (with the issues tagged to them), the next one with a
+  published agenda, and a draft for the one after. In demo mode these move with the calendar, so the next meeting
+  is always the coming 15th or 30th. New meetings default to the next free 15th / 30th.
 - **Imagery:** each seeded project has real before/after satellite imagery (see [Imagery](#2-imagery)).
 - Seed data lives in `prisma/seed-data/` — edit those files to change names, budgets or statuses.
 
@@ -114,7 +116,8 @@ attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 
 ## Issues, directives and review meetings
 
-The header of every state page links to **Overview**, **Projects**, **Districts**, **Live Imagery**, **Issues** (with
+**Projects**, **Districts** and **Departments** in the menu open a list of every project, district or department
+in your view (hover or click). The header of every state page links to **Overview**, **Projects**, **Districts**, **Live Imagery**, **Issues** (with
 the open count), **Directives** (with the overdue count in red), **Meetings**, **Activity log** (CMO) and
 **Departments**. Districts and Departments show a card for each, with its latest satellite image and project counts.
 

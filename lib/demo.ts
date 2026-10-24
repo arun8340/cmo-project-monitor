@@ -18,6 +18,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import Database from "better-sqlite3";
+import { slotDate, slotOf, slotOnOrAfter } from "@/lib/meeting-slots";
 
 export const DEMO_MODE = process.env.DEMO_MODE === "true";
 
@@ -66,7 +67,37 @@ function readSnapshotDate(source: string): Date | null {
   }
 }
 
-/** Moves every DATETIME column forward by the snapshot's age in whole days. */
+/** Meeting-day columns: kept on the 15th / 30th (lib/meeting-slots.ts) rather than moved by days. */
+const MEETING_DAY_COLUMNS: [table: string, column: string][] = [
+  ["Meeting", "meetingAt"],
+  ["Issue", "meetingDate"],
+  ["Issue", "resolvedAt"],
+];
+
+/**
+ * New values for meeting-day columns: a date on meeting slot k (counting from
+ * the first meeting on or after the snapshot day) moves to slot k counting
+ * from today, so "next meeting" stays the next 15th / 30th.
+ */
+function meetingDayUpdates(db: Database.Database, snapshot: Date) {
+  const from = slotOnOrAfter(snapshot);
+  const to = slotOnOrAfter(new Date());
+  const updates: { table: string; column: string; rowid: number; value: string }[] = [];
+  for (const [table, column] of MEETING_DAY_COLUMNS) {
+    const rows = db.prepare(`SELECT rowid, "${column}" AS v FROM "${table}" WHERE "${column}" IS NOT NULL`).all() as { rowid: number; v: string }[];
+    for (const r of rows) {
+      const slot = slotOf(new Date(r.v));
+      if (slot == null) continue;
+      updates.push({ table, column, rowid: r.rowid, value: slotDate(to + slot - from).toISOString().replace("Z", "+00:00") });
+    }
+  }
+  return updates;
+}
+
+/**
+ * Moves every DATETIME column forward by the snapshot's age in whole days;
+ * meeting days move to the matching 15th / 30th.
+ */
 function shiftDates(file: string, snapshot: Date | null) {
   if (!snapshot) return;
   const days = Math.floor((Date.now() - snapshot.getTime()) / DAY);
@@ -76,6 +107,7 @@ function shiftDates(file: string, snapshot: Date | null) {
     const tables = db
       .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE '_prisma%'")
       .all() as { name: string }[];
+    const meetingDays = meetingDayUpdates(db, snapshot);
     const shift = db.transaction(() => {
       for (const { name } of tables) {
         const columns = db.prepare(`PRAGMA table_info("${name}")`).all() as { name: string; type: string }[];
@@ -86,6 +118,9 @@ function shiftDates(file: string, snapshot: Date | null) {
             `UPDATE "${name}" SET "${col.name}" = strftime('%Y-%m-%dT%H:%M:%f+00:00', "${col.name}", ?) WHERE "${col.name}" IS NOT NULL${keep ? ` AND NOT (${keep})` : ""}`,
           ).run(`+${days} days`);
         }
+      }
+      for (const u of meetingDays) {
+        db.prepare(`UPDATE "${u.table}" SET "${u.column}" = ? WHERE rowid = ?`).run(u.value, u.rowid);
       }
     });
     shift();

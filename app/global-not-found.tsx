@@ -5,7 +5,7 @@ import "./globals.css";
 
 const publicSans = Public_Sans({ variable: "--font-public-sans", subsets: ["latin"] });
 
-export const metadata: Metadata = { title: "Page not found · CMO Project Monitor" };
+export const metadata: Metadata = { title: "Page not found · CMO Project Monitoring & Review" };
 
 /** Addresses that match no route at all (pages that call notFound() use app/[locale]/not-found.tsx). */
 export default function GlobalNotFound() {
