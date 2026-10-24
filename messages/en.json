@@ -47,7 +47,7 @@
     "imagery": "Live Imagery",
     "issues": "Issues",
     "directives": "Directives",
-    "meetings": "Meetings",
+    "meetings": "CMO Meetings",
     "activity": "Activity log",
     "departments": "Departments",
     "openCount": "{count} open",
@@ -56,7 +56,11 @@
     "allDistricts": "All districts",
     "allDepartments": "All departments",
     "noImagery": "no imagery yet",
-    "projectCount": "{count, plural, one {# project} other {# projects}}"
+    "projectCount": "{count, plural, one {# project} other {# projects}}",
+    "allMeetings": "All CMO meetings",
+    "upcomingMeetings": "Upcoming meetings",
+    "pastMeetings": "Past meetings",
+    "draft": "draft"
   },
   "notFound": {
     "title": "Page not found",
@@ -848,7 +852,7 @@
     "none": "None yet"
   },
   "meetings": {
-    "title": "Review meetings",
+    "title": "CMO meetings",
     "intro": "CMO review meetings, held on the 15th and 30th of every month, and their published agenda.",
     "new": "Schedule a meeting",
     "newIntro": "Set the date and add agenda points. Save as a draft, or publish it for everyone in the state to see.",
@@ -857,7 +861,7 @@
     "agendaHint": "Numbered points in order. Link a point to a project, issue or directive to show its latest status on the agenda.",
     "agendaCount": "{count, plural, one {Agenda · # point} other {Agenda · # points}}",
     "itemCount": "{count, plural, one {# agenda point} other {# agenda points}}",
-    "upcoming": "Upcoming",
+    "upcoming": "Upcoming meetings",
     "past": "Past meetings",
     "noUpcoming": "No meetings scheduled.",
     "noPast": "No past meetings.",
@@ -915,7 +919,8 @@
     "schedule": "Schedule",
     "viewFullAgenda": "View full agenda",
     "viewFullAgendaMore": "View full agenda (+{count} more)",
-    "pointsDiscussed": "{count, plural, one {# point discussed} other {# points discussed}}"
+    "pointsDiscussed": "{count, plural, one {# point discussed} other {# points discussed}}",
+    "openAgenda": "Open full agenda"
   },
   "browse": {
     "districtsTitle": "Districts",

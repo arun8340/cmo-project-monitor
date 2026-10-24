@@ -47,7 +47,7 @@
     "imagery": "लाइव्ह प्रतिमा",
     "issues": "समस्या",
     "directives": "निर्देश",
-    "meetings": "बैठका",
+    "meetings": "मुख्यमंत्री कार्यालय बैठका",
     "activity": "क्रियाकलाप नोंद",
     "departments": "विभाग",
     "openCount": "{count} खुल्या",
@@ -56,7 +56,11 @@
     "allDistricts": "सर्व जिल्हे",
     "allDepartments": "सर्व विभाग",
     "noImagery": "अद्याप प्रतिमा नाही",
-    "projectCount": "{count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}}"
+    "projectCount": "{count, plural, one {{count} प्रकल्प} other {{count} प्रकल्प}}",
+    "allMeetings": "सर्व बैठका",
+    "upcomingMeetings": "आगामी बैठका",
+    "pastMeetings": "मागील बैठका",
+    "draft": "मसुदा"
   },
   "notFound": {
     "title": "पृष्ठ सापडले नाही",
@@ -848,7 +852,7 @@
     "none": "अद्याप नाही"
   },
   "meetings": {
-    "title": "आढावा बैठका",
+    "title": "मुख्यमंत्री कार्यालय बैठका",
     "intro": "मुख्यमंत्री कार्यालयाच्या आढावा बैठका — दर महिन्याच्या 15 आणि 30 तारखेला — आणि त्यांची प्रकाशित विषयसूची.",
     "new": "बैठक ठरवा",
     "newIntro": "दिनांक ठरवा आणि विषयसूचीचे मुद्दे जोडा. मसुदा म्हणून जतन करा, किंवा राज्यातील सर्वांना दिसण्यासाठी प्रकाशित करा.",
@@ -857,7 +861,7 @@
     "agendaHint": "क्रमाने क्रमांकित मुद्दे. मुद्दा प्रकल्प, समस्या किंवा निर्देशाशी जोडा म्हणजे विषयसूचीवर त्याची नवीनतम स्थिती दिसेल.",
     "agendaCount": "{count, plural, one {विषयसूची · {count} मुद्दा} other {विषयसूची · {count} मुद्दे}}",
     "itemCount": "{count, plural, one {{count} मुद्दा} other {{count} मुद्दे}}",
-    "upcoming": "आगामी",
+    "upcoming": "आगामी बैठका",
     "past": "मागील बैठका",
     "noUpcoming": "कोणतीही बैठक ठरलेली नाही.",
     "noPast": "मागील बैठका नाहीत.",
@@ -915,7 +919,8 @@
     "schedule": "ठरवा",
     "viewFullAgenda": "संपूर्ण विषयसूची पाहा",
     "viewFullAgendaMore": "संपूर्ण विषयसूची पाहा (+{count} आणखी)",
-    "pointsDiscussed": "{count, plural, one {{count} मुद्द्यावर चर्चा} other {{count} मुद्द्यांवर चर्चा}}"
+    "pointsDiscussed": "{count, plural, one {{count} मुद्द्यावर चर्चा} other {{count} मुद्द्यांवर चर्चा}}",
+    "openAgenda": "संपूर्ण विषयसूची उघडा"
   },
   "browse": {
     "districtsTitle": "जिल्हे",

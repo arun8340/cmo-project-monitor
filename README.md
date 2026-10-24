@@ -117,9 +117,9 @@ attempts on the wrong portal) and sign-outs are recorded in `AuditLog`.
 ## Issues, directives and review meetings
 
 **Projects**, **Districts** and **Departments** in the menu open a list of every project, district or department
-in your view (hover or click). The header of every state page links to **Overview**, **Projects**, **Districts**, **Live Imagery**, **Issues** (with
-the open count), **Directives** (with the overdue count in red), **Meetings**, **Activity log** (CMO) and
-**Departments**. Districts and Departments show a card for each, with its latest satellite image and project counts.
+in your view (hover or click). The header of every state page links to **Overview**, **CMO Meetings**, **Live Imagery**, **Projects**,
+**Districts**, **Issues** (with the open count), **Directives** (with the overdue count in red), **Activity log**
+(CMO) and **Departments**. Districts and Departments show a card for each, with its latest satellite image and project counts.
 
 - **Issues** are raised from a project's page (*Raise issue*) by Collectors, Department Heads, Field Officers (on
   their assigned projects) and Admin, with a priority and an optional review-meeting date. The Issues page filters by
@@ -130,7 +130,8 @@ the open count), **Directives** (with the overdue count in red), **Meetings**, *
   Collector / Department Head in scope) marks it *In progress* or *Complied* (compliance note required); the CMO then
   *accepts and closes* it or *reopens* it. Open directives past their due date show as **Overdue**.
 - Every status change is kept in a **history timeline** on the issue / directive page, and in the audit log.
-- **Review meetings** (*Meetings*): the CMO / Chief Secretary and Admin schedule a meeting (date, time, venue,
+- **CMO meetings** (*CMO Meetings*, right after Overview in the menu; its dropdown lists upcoming and recent past
+  meetings, and the page has *Upcoming* / *Past* tabs with each meeting's agenda): the CMO / Chief Secretary and Admin schedule a meeting (date, time, venue,
   chair, notes) and build a numbered **agenda**. Each point can be linked to a project, issue or directive, and
   then shows that item's current status. Delayed/stalled projects, high-priority issues and overdue directives are
   suggested as one-click points. A meeting is saved as a **draft** (seen only by those who manage meetings) and

@@ -47,7 +47,7 @@
     "imagery": "लाइव चित्र",
     "issues": "समस्याएँ",
     "directives": "निर्देश",
-    "meetings": "बैठकें",
+    "meetings": "मुख्यमंत्री कार्यालय बैठकें",
     "activity": "गतिविधि लॉग",
     "departments": "विभाग",
     "openCount": "{count} खुली",
@@ -56,7 +56,11 @@
     "allDistricts": "सभी जिले",
     "allDepartments": "सभी विभाग",
     "noImagery": "अभी चित्र नहीं",
-    "projectCount": "{count, plural, one {# परियोजना} other {# परियोजनाएँ}}"
+    "projectCount": "{count, plural, one {# परियोजना} other {# परियोजनाएँ}}",
+    "allMeetings": "सभी बैठकें",
+    "upcomingMeetings": "आगामी बैठकें",
+    "pastMeetings": "पिछली बैठकें",
+    "draft": "ड्राफ़्ट"
   },
   "notFound": {
     "title": "पृष्ठ नहीं मिला",
@@ -848,7 +852,7 @@
     "none": "अभी नहीं"
   },
   "meetings": {
-    "title": "समीक्षा बैठकें",
+    "title": "मुख्यमंत्री कार्यालय बैठकें",
     "intro": "मुख्यमंत्री कार्यालय की समीक्षा बैठकें — हर माह 15 और 30 तारीख़ को — और उनका प्रकाशित एजेंडा।",
     "new": "बैठक निर्धारित करें",
     "newIntro": "तारीख़ तय करें और एजेंडा बिंदु जोड़ें। ड्राफ़्ट के रूप में सहेजें, या राज्य में सभी के देखने के लिए प्रकाशित करें।",
@@ -857,7 +861,7 @@
     "agendaHint": "क्रम से क्रमांकित बिंदु। किसी बिंदु को परियोजना, समस्या या निर्देश से जोड़ें ताकि एजेंडा पर उसकी नवीनतम स्थिति दिखे।",
     "agendaCount": "{count, plural, one {एजेंडा · # बिंदु} other {एजेंडा · # बिंदु}}",
     "itemCount": "{count, plural, one {# एजेंडा बिंदु} other {# एजेंडा बिंदु}}",
-    "upcoming": "आगामी",
+    "upcoming": "आगामी बैठकें",
     "past": "पिछली बैठकें",
     "noUpcoming": "कोई बैठक निर्धारित नहीं है।",
     "noPast": "कोई पिछली बैठक नहीं।",
@@ -915,7 +919,8 @@
     "schedule": "निर्धारित करें",
     "viewFullAgenda": "पूरा एजेंडा देखें",
     "viewFullAgendaMore": "पूरा एजेंडा देखें (+{count} और)",
-    "pointsDiscussed": "{count, plural, one {# बिंदु पर चर्चा} other {# बिंदुओं पर चर्चा}}"
+    "pointsDiscussed": "{count, plural, one {# बिंदु पर चर्चा} other {# बिंदुओं पर चर्चा}}",
+    "openAgenda": "पूरा एजेंडा खोलें"
   },
   "browse": {
     "districtsTitle": "जिले",

@@ -10,6 +10,8 @@ import {
   type NavSubItem,
 } from "@/components/app-shell/state-nav";
 import { getNavMenus } from "@/lib/data/projects";
+import { getNavMeetings } from "@/lib/data/meetings";
+import { formatMeetingTime } from "@/components/meetings/meeting-bits";
 import { localName } from "@/lib/i18n/names";
 import { getStateConfig, STATE_CODES, type StateConfig } from "@/config/states";
 import { getCurrentUser } from "@/lib/auth/dal";
@@ -72,6 +74,7 @@ async function StateHeader({
     departments: t("departments"),
     allProjects: t("allProjects"),
     allDistricts: t("allDistricts"),
+    allMeetings: t("allMeetings"),
     allDepartments: t("allDepartments"),
   };
   return (
@@ -99,10 +102,12 @@ type NavLabels = Record<
   | "departments"
   | "allProjects"
   | "allDistricts"
-  | "allDepartments",
+  | "allDepartments"
+  | "allMeetings",
   string
 >;
 type NavMenus = {
+  meetings: NavSubItem[];
   projects: NavSubItem[];
   districts: NavSubItem[];
   departments: NavSubItem[];
@@ -117,6 +122,14 @@ function navItems(
 ): NavItem[] {
   return [
     { key: "overview", href: base || "/", label: l.overview, fallback: true },
+    {
+      key: "meetings",
+      href: `${base}/meetings`,
+      label: l.meetings,
+      children: menus?.meetings,
+      allLabel: l.allMeetings,
+    },
+    { key: "imagery", href: `${base}/imagery`, label: l.imagery },
     {
       key: "projects",
       href: `${base}/projects`,
@@ -133,7 +146,6 @@ function navItems(
       children: menus?.districts,
       allLabel: l.allDistricts,
     },
-    { key: "imagery", href: `${base}/imagery`, label: l.imagery },
     {
       key: "issues",
       href: `${base}/issues`,
@@ -147,7 +159,6 @@ function navItems(
       count: counts?.overdueDirectives,
       danger: true,
     },
-    { key: "meetings", href: `${base}/meetings`, label: l.meetings },
     ...(showActivity
       ? [{ key: "activity", href: `${base}/activity`, label: l.activity }]
       : []),
@@ -174,15 +185,40 @@ async function NavWithCounts({
   const user = await getCurrentUser();
   if (!user || !canAccessState(user, state.code))
     return <StateNav items={navItems(base, labels)} />;
-  const [counts, menus, locale, tn] = await Promise.all([
+  const [counts, menus, meetings, locale, tn] = await Promise.all([
     getNavCounts(user, state),
     getNavMenus(user, state),
+    getNavMeetings(user, state),
     getLocale(),
     getTranslations("nav"),
   ]);
   const ln = (n: { name: string; nameLocal: string | null }) =>
     localName(locale, n.name, n.nameLocal);
+  const meeting = (m: {
+    id: string;
+    title: string;
+    meetingAt: Date;
+    status: string;
+  }) => ({
+    href: `${base}/meetings/${m.id}`,
+    label: formatMeetingTime(m.meetingAt, locale),
+    hint: m.status === "DRAFT" ? `${m.title} · ${tn("draft")}` : m.title,
+  });
   const sub: NavMenus = {
+    meetings: [
+      {
+        href: `${base}/meetings?tab=upcoming`,
+        label: tn("upcomingMeetings"),
+        heading: true,
+      },
+      ...meetings.upcoming.map(meeting),
+      {
+        href: `${base}/meetings?tab=past`,
+        label: tn("pastMeetings"),
+        heading: true,
+      },
+      ...meetings.past.map(meeting),
+    ],
     projects: menus.projects.map((p) => ({
       href: `${base}/project/${p.id}`,
       label: ln(p),
