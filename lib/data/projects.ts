@@ -330,3 +330,56 @@ const COUNT_KEY: Record<ProjectStatus, keyof Omit<StatusCounts, "total">> = {
   DELAYED: "delayed",
   STALLED: "stalled",
 };
+
+/** Submenu entries for the state menu: projects, districts with projects, and departments in the user's scope. */
+export async function getNavMenus(user: CurrentUser, state: StateConfig) {
+  const [projects, departments] = await Promise.all([
+    db.project.findMany({
+      where: projectScope(user, state.code),
+      select: {
+        id: true,
+        name: true,
+        nameLocal: true,
+        district: { select: { geoCode: true, name: true, nameLocal: true } },
+        _count: { select: { imagery: true } },
+      },
+      orderBy: [{ district: { name: "asc" } }, { name: "asc" }],
+    }),
+    db.department.findMany({
+      where: departmentScope(user, state.code),
+      select: { code: true, name: true, nameLocal: true },
+    }),
+  ]);
+  departments.sort(
+    (a, b) => DEPT_ORDER.indexOf(a.code) - DEPT_ORDER.indexOf(b.code),
+  );
+  const districts = new Map<
+    string,
+    { slug: string; name: string; nameLocal: string | null; projects: number }
+  >();
+  for (const p of projects) {
+    const d = districts.get(p.district.geoCode) ?? {
+      slug: districtSlug(p.district.geoCode),
+      name: p.district.name,
+      nameLocal: p.district.nameLocal,
+      projects: 0,
+    };
+    d.projects += 1;
+    districts.set(p.district.geoCode, d);
+  }
+  return {
+    projects: projects.map((p) => ({
+      id: p.id,
+      name: p.name,
+      nameLocal: p.nameLocal,
+      district: p.district,
+      imagery: p._count.imagery,
+    })),
+    districts: [...districts.values()],
+    departments: departments.map((d) => ({
+      slug: d.code.toLowerCase(),
+      name: d.name,
+      nameLocal: d.nameLocal,
+    })),
+  };
+}

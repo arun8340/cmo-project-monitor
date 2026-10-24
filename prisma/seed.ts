@@ -15,6 +15,7 @@ import { DISTRICTS } from "./seed-data/districts";
 import { departmentsFor } from "./seed-data/departments";
 import { PROJECTS, type ProjectSeed } from "./seed-data/projects";
 import { storeSiteImage } from "./site-imagery";
+import { slotDate, slotOnOrAfter } from "../lib/meeting-slots";
 
 const db = new PrismaClient({
   adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? "file:./dev.db" }),
@@ -60,11 +61,14 @@ const DAY = 86_400_000;
 const MONTH = 30.4 * DAY;
 const addMonths = (d: Date, m: number) => new Date(d.getTime() + m * MONTH);
 const addDays = (d: Date, n: number) => new Date(d.getTime() + n * DAY);
-const ymdIST = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 
 /** Review meetings used to tag issues ("pending/resolved issues of last meeting"). */
-const LAST_MEETING = addDays(NOW, -12);
-const PREVIOUS_MEETING = addDays(NOW, -42);
+// Review meetings are on the 15th and 30th of each month (lib/meeting-slots.ts).
+const NEXT_SLOT = slotOnOrAfter(NOW);
+const NEXT_MEETING = slotDate(NEXT_SLOT);
+const LAST_MEETING = slotDate(NEXT_SLOT - 1);
+const PREVIOUS_MEETING = slotDate(NEXT_SLOT - 2);
+const MEETING_AFTER_NEXT = slotDate(NEXT_SLOT + 1);
 
 const STATUS_FROM_CODE: Record<ProjectSeed["s"], ProjectStatus> = {
   N: "NOT_STARTED",
@@ -494,7 +498,6 @@ async function main() {
       RJ: "Conference Hall, Chief Minister's Office, Jaipur",
       MH: "Conference Room, Mantralaya, Mumbai",
     };
-    const at11 = (d: Date) => new Date(`${ymdIST(d)}T11:00:00+05:30`);
     const stateIssues = await db.issue.findMany({
       where: { project: { district: { stateId: state.id } } },
       include: { project: { select: { name: true } } },
@@ -507,8 +510,8 @@ async function main() {
     for (const date of [PREVIOUS_MEETING, LAST_MEETING]) {
       const tagged = stateIssues.filter((i) => i.meetingDate?.getTime() === date.getTime()).slice(0, 6);
       meetings.push({
-        title: "Monthly infrastructure review meeting",
-        at: at11(date),
+        title: "Fortnightly infrastructure review meeting",
+        at: date,
         status: "PUBLISHED",
         items: [
           { title: "Action taken on decisions of the previous meeting" },
@@ -527,8 +530,8 @@ async function main() {
       take: 2,
     });
     meetings.push({
-      title: "Monthly infrastructure review meeting",
-      at: at11(addDays(NOW, 6)),
+      title: "Fortnightly infrastructure review meeting",
+      at: NEXT_MEETING,
       status: "PUBLISHED",
       items: [
         { title: "Action taken on decisions of the last meeting" },
@@ -544,8 +547,8 @@ async function main() {
       ],
     });
     meetings.push({
-      title: "Quarterly review of flagship projects",
-      at: at11(addDays(NOW, 34)),
+      title: "Fortnightly infrastructure review meeting",
+      at: MEETING_AFTER_NEXT,
       status: "DRAFT",
       items: [
         { title: "Flagship projects above ₹100 crore: physical and financial progress" },
@@ -563,9 +566,10 @@ async function main() {
           chairedBy: "Hon'ble Chief Minister",
           notes: m.status === "PUBLISHED" && m.at > NOW ? "Department heads and District Collectors to attend with updated status reports." : null,
           status: m.status,
-          publishedAt: m.status === "PUBLISHED" ? addDays(m.at, -7) : null,
+          // Agendas go out a week ahead (or yesterday, if the meeting is sooner).
+          publishedAt: m.status === "PUBLISHED" ? new Date(Math.min(addDays(m.at, -7).getTime(), addDays(NOW, -1).getTime())) : null,
           createdById: cmo.id,
-          createdAt: addDays(m.at, -10),
+          createdAt: new Date(Math.min(addDays(m.at, -10).getTime(), addDays(NOW, -2).getTime())),
           items: { create: m.items.map((it, n) => ({ position: n + 1, ...it })) },
         },
       });

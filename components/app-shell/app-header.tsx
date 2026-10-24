@@ -10,7 +10,7 @@ import { localNames } from "@/lib/i18n/names";
 import { getLabels } from "@/lib/i18n/server";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { UserMenu } from "./user-menu";
-import { APP_NAMES, BrandMark } from "./brand";
+import { BrandMark } from "./brand";
 import { DEMO_MODE } from "@/lib/demo";
 
 /**
@@ -22,7 +22,6 @@ import { DEMO_MODE } from "@/lib/demo";
 export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig; homeHref?: string; nav?: ReactNode }) {
   const t = useTranslations("app");
   const locale = useLocale();
-  const subtitle = locale === "en" ? APP_NAMES[state?.locale ?? "hi"] : APP_NAMES.en;
   const government = state ? localNames(locale, state.government.name, state.government.nameLocal) : null;
   return (
     <header className="sticky top-0 z-40 shadow-sm">
@@ -35,7 +34,7 @@ export function AppHeader({ state, homeHref = "/", nav }: { state?: StateConfig;
             <BrandMark className="size-9 shrink-0" />
             <span className="grid min-w-0 leading-tight">
               <span className="truncate text-[15px] font-bold sm:text-base">{t("name")}</span>
-              <span className="hidden truncate text-[11px] text-white/70 sm:block">{subtitle}</span>
+              <span className="hidden truncate text-[11px] font-semibold text-amber sm:block">{t("tagline")}</span>
             </span>
           </Link>
           {DEMO_MODE && <DemoBadge />}

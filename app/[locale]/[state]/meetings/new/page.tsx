@@ -6,7 +6,7 @@ import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { MeetingForm } from "@/components/meetings/meeting-form";
 import { requireStateAccess } from "@/lib/auth/dal";
 import { canManageMeetings } from "@/lib/auth/project-permissions";
-import { getAgendaOptions } from "@/lib/data/meetings";
+import { getAgendaOptions, nextFreeMeetingDay } from "@/lib/data/meetings";
 import { todayIST } from "@/lib/dates";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localName } from "@/lib/i18n/names";
@@ -31,10 +31,11 @@ async function NewMeeting({ params }: { params: Params["params"] }) {
   const { state: stateParam } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
   if (!canManageMeetings(user)) notFound();
-  const [options, t, locale] = await Promise.all([
+  const [options, t, locale, defaultDay] = await Promise.all([
     getAgendaOptions(user, state),
     getTranslations("meetings"),
     getLocale(),
+    nextFreeMeetingDay(state),
   ]);
 
   return (
@@ -61,7 +62,7 @@ async function NewMeeting({ params }: { params: Params["params"] }) {
           options={options}
           initial={{
             title: t("defaultTitle"),
-            date: "",
+            date: defaultDay,
             time: "11:00",
             venue: "",
             chairedBy: t("defaultChair"),

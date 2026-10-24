@@ -12,7 +12,8 @@ import type {
   MeetingStatus,
   ProjectStatus,
 } from "@/lib/constants";
-import { todayIST, parseDateInput } from "@/lib/dates";
+import { todayIST, parseDateInput, toDateInput } from "@/lib/dates";
+import { slotDate, slotOnOrAfter } from "@/lib/meeting-slots";
 
 const OPEN_ISSUE = { in: ["PENDING", "IN_PROGRESS"] };
 const OPEN_DIRECTIVE = { in: ["OPEN", "IN_PROGRESS"] };
@@ -323,3 +324,20 @@ export async function getAgendaOptions(user: CurrentUser, state: StateConfig) {
   };
 }
 export type AgendaOptions = Awaited<ReturnType<typeof getAgendaOptions>>;
+
+/** The first 15th / 30th from today without a (non-cancelled) meeting in this state, as "YYYY-MM-DD". */
+export async function nextFreeMeetingDay(state: StateConfig) {
+  const now = new Date();
+  const taken = await db.meeting.findMany({
+    where: {
+      state: { code: state.code },
+      status: { not: "CANCELLED" },
+      meetingAt: { gte: parseDateInput(todayIST())! },
+    },
+    select: { meetingAt: true },
+  });
+  const takenDays = new Set(taken.map((m) => toDateInput(m.meetingAt)));
+  let slot = slotOnOrAfter(now);
+  while (takenDays.has(toDateInput(slotDate(slot)))) slot += 1;
+  return toDateInput(slotDate(slot));
+}

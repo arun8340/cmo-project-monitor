@@ -1,6 +1,7 @@
 {
   "app": {
-    "name": "CMO Project Monitor",
+    "name": "CMO Project Monitoring & Review",
+    "tagline": "Based on On-Demand Instant Satellite Imagery",
     "description": "Project monitoring and review by the Chief Minister's Office (CMO) using satellite imagery"
   },
   "common": {
@@ -50,7 +51,12 @@
     "activity": "Activity log",
     "departments": "Departments",
     "openCount": "{count} open",
-    "overdueCount": "{count} overdue"
+    "overdueCount": "{count} overdue",
+    "allProjects": "All projects",
+    "allDistricts": "All districts",
+    "allDepartments": "All departments",
+    "noImagery": "no imagery yet",
+    "projectCount": "{count, plural, one {# project} other {# projects}}"
   },
   "notFound": {
     "title": "Page not found",
@@ -116,8 +122,8 @@
     "featureMap": "State and district view of every reported project",
     "featureImagery": "Dated satellite, drone and field imagery for each site",
     "featureTracking": "Progress, issues and directives in one place",
-    "brandState": "CMO Project Monitor · {state}",
-    "brandAdmin": "CMO Project Monitor · Administration",
+    "brandState": "CMO Project Monitoring & Review · {state}",
+    "brandAdmin": "CMO Project Monitoring & Review · Administration",
     "signIn": "Sign in",
     "signingIn": "Signing in…",
     "adminSignIn": "Administrator sign in",
@@ -843,7 +849,7 @@
   },
   "meetings": {
     "title": "Review meetings",
-    "intro": "CMO review meetings and their published agenda.",
+    "intro": "CMO review meetings, held on the 15th and 30th of every month, and their published agenda.",
     "new": "Schedule a meeting",
     "newIntro": "Set the date and add agenda points. Save as a draft, or publish it for everyone in the state to see.",
     "edit": "Edit meeting",
@@ -866,7 +872,7 @@
     "fChairedByPlaceholder": "e.g. Hon'ble Chief Minister",
     "fNotes": "Notes for participants",
     "fNotesPlaceholder": "Optional: documents to bring, who should attend…",
-    "defaultTitle": "Monthly infrastructure review meeting",
+    "defaultTitle": "Fortnightly infrastructure review meeting",
     "defaultChair": "Hon'ble Chief Minister",
     "suggestions": "Suggested points (delayed or stalled projects, high-priority issues, overdue directives) — click to add",
     "kind": {
