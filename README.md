@@ -149,6 +149,10 @@ in your view (hover or click). The header of every state page links to **Overvie
   tracking, on "awaiting imagery" project cards, or *Imagery Requests → Request imagery*. They choose the type
   (Satellite / Drone / Field photo), say what it is for, and when it is needed (defaults to the next CMO meeting
   at least 3 days away). **CMO requests are always Critical.**
+- **DoIT's home page is its imagery desk dashboard:** figures (to review, approved and waiting to be ordered, on order,
+  overdue, delivered this month, average turnaround), the requests that need attention (overdue first, then by
+  priority), requests by department, orders by supplier (average delivery time, on time), and recent deliveries.
+  Each figure opens the matching tab of the queue.
 - **DoIT** works from *Imagery Requests* (its queue: New, Under review, Open, Approved, Closed): start review,
   **approve**, or **reject** (reason required), and add notes. The requester can cancel until it is ordered.
   Requests past their needed-by date are flagged **Overdue**. The menu badge shows DoIT how many are waiting,

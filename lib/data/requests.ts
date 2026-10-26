@@ -258,3 +258,84 @@ export async function listVendors(state: StateConfig) {
   });
   return rows.map((v) => ({ ...v, type: v.type as ImagerySource, orders: v._count.requests }));
 }
+
+const DAY_MS = 86_400_000;
+
+/** DoIT dashboard: queue figures, what needs attention, and breakdowns by department and supplier. */
+export async function getDoitDashboard(user: CurrentUser, state: StateConfig) {
+  const scope = imageryRequestScope(user, state.code);
+  const [rows, deliveries] = await Promise.all([
+    db.imageryRequest.findMany({ where: scope, select: ROW_SELECT }),
+    db.imageryCapture.findMany({
+      where: { request: scope },
+      select: {
+        id: true,
+        captureDate: true,
+        request: { select: { id: true, deliveredAt: true, vendor: { select: { name: true } } } },
+        project: { select: { id: true, name: true, nameLocal: true } },
+      },
+      orderBy: { request: { deliveredAt: "desc" } },
+      take: 4,
+    }),
+  ]);
+  const list = rows.map(toRow);
+  const today = parseDateInput(todayIST())!;
+  const monthStart = parseDateInput(`${todayIST().slice(0, 7)}-01`)!;
+  const count = (statuses: RequestStatus[]) => list.filter((r) => statuses.includes(r.status)).length;
+
+  const done = list.filter((r) => r.deliveredAt);
+  const avgTurnaround = done.length
+    ? Math.round((done.reduce((n, r) => n + (r.deliveredAt!.getTime() - r.createdAt.getTime()), 0) / done.length / DAY_MS) * 10) / 10
+    : null;
+
+  // Open requests needing attention: overdue first, then by priority and needed-by date.
+  const attention = list
+    .filter((r) => (OPEN_REQUEST_STATUSES as string[]).includes(r.status))
+    .sort(
+      (a, b) =>
+        Number(b.overdue) - Number(a.overdue) ||
+        (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9) ||
+        a.neededBy.getTime() - b.neededBy.getTime(),
+    )
+    .slice(0, 6);
+
+  const byDept = new Map<string, { name: string; nameLocal: string | null; open: number; total: number }>();
+  for (const r of list) {
+    const d = byDept.get(r.project.department.code) ?? { name: r.project.department.name, nameLocal: r.project.department.nameLocal, open: 0, total: 0 };
+    d.total += 1;
+    if ((OPEN_REQUEST_STATUSES as string[]).includes(r.status)) d.open += 1;
+    byDept.set(r.project.department.code, d);
+  }
+
+  const bySupplier = new Map<string, { name: string; orders: number; onOrder: number; delivered: number; onTime: number; days: number[] }>();
+  for (const r of list) {
+    if (!r.vendor) continue;
+    const s = bySupplier.get(r.vendor.id) ?? { name: r.vendor.name, orders: 0, onOrder: 0, delivered: 0, onTime: 0, days: [] };
+    s.orders += 1;
+    if (r.status === "ORDERED") s.onOrder += 1;
+    if (r.deliveredAt && r.orderedAt) {
+      s.delivered += 1;
+      s.days.push((r.deliveredAt.getTime() - r.orderedAt.getTime()) / DAY_MS);
+      if (r.expectedBy && r.deliveredAt.getTime() <= r.expectedBy.getTime() + DAY_MS) s.onTime += 1;
+    }
+    bySupplier.set(r.vendor.id, s);
+  }
+
+  return {
+    figures: {
+      toReview: count(["SUBMITTED", "UNDER_REVIEW"]),
+      toOrder: count(["APPROVED"]),
+      onOrder: count(["ORDERED"]),
+      overdue: list.filter((r) => r.overdue).length,
+      deliveredThisMonth: list.filter((r) => r.deliveredAt && r.deliveredAt >= monthStart && r.deliveredAt <= new Date(today.getTime() + DAY_MS)).length,
+      avgTurnaround,
+    },
+    attention,
+    byDepartment: [...byDept.values()].sort((a, b) => b.total - a.total),
+    bySupplier: [...bySupplier.values()]
+      .map((s) => ({ ...s, avgDays: s.days.length ? Math.round((s.days.reduce((a, b) => a + b, 0) / s.days.length) * 10) / 10 : null }))
+      .sort((a, b) => b.orders - a.orders),
+    deliveries: deliveries.filter((d) => d.request?.deliveredAt),
+  };
+}
+export type DoitDashboard = Awaited<ReturnType<typeof getDoitDashboard>>;
