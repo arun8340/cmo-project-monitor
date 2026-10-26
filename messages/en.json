@@ -941,5 +941,16 @@
     "awaiting": "Awaiting satellite imagery",
     "awaitingHint": "Imagery will appear here once uploaded",
     "addImages": "Add images"
+  },
+  "viewer": {
+    "title": "Image viewer",
+    "open": "Full screen",
+    "close": "Close",
+    "previous": "Previous image",
+    "next": "Next image",
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "position": "{n} of {total}",
+    "hint": "Pinch or scroll to zoom · drag to move · double-tap to zoom · swipe for other dates"
   }
 }
