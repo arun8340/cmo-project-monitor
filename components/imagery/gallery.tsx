@@ -2,14 +2,28 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { ChevronLeftIcon, ChevronRightIcon, ColumnsIcon, ExternalLinkIcon, MapPinIcon, TriangleAlertIcon } from "lucide-react";
+import {
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  ColumnsIcon,
+  ExternalLinkIcon,
+  MapPinIcon,
+  MaximizeIcon,
+  TriangleAlertIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { imageryUrl } from "@/lib/imagery/url";
 import { formatBytes } from "@/lib/format";
 import { FAR_FROM_SITE_KM, formatDistance } from "@/lib/geo";
 import type { ImagerySource } from "@/lib/constants";
 import { SOURCE_META } from "./source-meta";
+import { ImageViewer } from "./image-viewer";
 import { useTranslations } from "next-intl";
 import { useLabels } from "@/lib/i18n/client";
 
@@ -31,12 +45,30 @@ export type GalleryItem = {
 };
 
 /** Thumbnails grouped by capture year, newest first, with the date on each tile and a large view (arrow keys to step through). */
-export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]; compareHref: string | null; latestId: string | null }) {
+export function Gallery({
+  items,
+  compareHref,
+  latestId,
+}: {
+  items: GalleryItem[];
+  compareHref: string | null;
+  latestId: string | null;
+}) {
   const [index, setIndex] = useState<number | null>(null);
   const open = index != null;
-  const step = useCallback((d: number) => setIndex((i) => (i == null ? i : (i + d + items.length) % items.length)), [items.length]);
+  // Full-screen viewer, opened from the dialog (which closes, so the two don't overlap).
+  const [viewer, setViewer] = useState<number | null>(null);
+  const step = useCallback(
+    (d: number) =>
+      setIndex((i) => (i == null ? i : (i + d + items.length) % items.length)),
+    [items.length],
+  );
 
-  const groups: { key: string; label: string; items: { item: GalleryItem; i: number }[] }[] = [];
+  const groups: {
+    key: string;
+    label: string;
+    items: { item: GalleryItem; i: number }[];
+  }[] = [];
   items.forEach((item, i) => {
     const key = item.day.slice(0, 4);
     const last = groups.at(-1);
@@ -54,12 +86,16 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
         {groups.map((g) => (
           <section key={g.key} aria-labelledby={`year-${g.key}`}>
             <h3 id={`year-${g.key}`} className="mb-2 text-sm font-medium">
-              {g.label} <span className="font-normal text-muted-foreground">· {t("images", { count: g.items.length })}</span>
+              {g.label}{" "}
+              <span className="font-normal text-muted-foreground">
+                · {t("images", { count: g.items.length })}
+              </span>
             </h3>
             <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {g.items.map(({ item, i }) => {
                 const meta = SOURCE_META[item.source];
-                const far = item.distanceKm != null && item.distanceKm > FAR_FROM_SITE_KM;
+                const far =
+                  item.distanceKm != null && item.distanceKm > FAR_FROM_SITE_KM;
                 return (
                   <li key={item.id}>
                     <button
@@ -69,17 +105,33 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
                     >
                       {/* Access-checked API image; the browser sends the session cookie. */}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={imageryUrl(item.id, "thumb")} alt={t("imageAlt", { source: labels.source[item.source], date: item.dayLabel })} loading="lazy" className="aspect-4/3 w-full bg-muted object-cover" />
+                      <img
+                        src={imageryUrl(item.id, "thumb")}
+                        alt={t("imageAlt", {
+                          source: labels.source[item.source],
+                          date: item.dayLabel,
+                        })}
+                        loading="lazy"
+                        className="aspect-4/3 w-full bg-muted object-cover"
+                      />
                       <div className="flex items-center justify-between gap-2 px-2.5 py-2 text-xs">
                         <span className="min-w-0">
-                          <span className="block font-bold text-navy">{item.dayLabel}</span>
+                          <span className="block font-bold text-navy">
+                            {item.dayLabel}
+                          </span>
                           <span className="flex items-center gap-1.5 text-muted-foreground">
-                            <meta.icon className="size-3.5" style={{ color: meta.color }} />
+                            <meta.icon
+                              className="size-3.5"
+                              style={{ color: meta.color }}
+                            />
                             {labels.source[item.source]}
                           </span>
                         </span>
                         {far && (
-                          <span className="flex items-center gap-1 font-medium text-amber-700" title={t("farTitle")}>
+                          <span
+                            className="flex items-center gap-1 font-medium text-amber-700"
+                            title={t("farTitle")}
+                          >
                             <TriangleAlertIcon className="size-3" />
                             {formatDistance(item.distanceKm!)}
                           </span>
@@ -109,13 +161,30 @@ export function Gallery({ items, compareHref, latestId }: { items: GalleryItem[]
               position={t("position", { n: index! + 1, total: items.length })}
               onPrev={() => step(-1)}
               onNext={() => step(1)}
+              onFullscreen={() => {
+                setViewer(index);
+                setIndex(null);
+              }}
               compareHref={
-                compareHref && latestId && latestId !== current.id ? `${compareHref}?images=${current.id},${latestId}` : compareHref
+                compareHref && latestId && latestId !== current.id
+                  ? `${compareHref}?images=${current.id},${latestId}`
+                  : compareHref
               }
             />
           )}
         </DialogContent>
       </Dialog>
+      {viewer !== null && (
+        <ImageViewer
+          images={items.map((i) => ({
+            id: i.id,
+            caption: `${labels.source[i.source]} · ${i.dayLabel}`,
+          }))}
+          index={viewer}
+          onIndex={setViewer}
+          onClose={() => setViewer(null)}
+        />
+      )}
     </>
   );
 }
@@ -125,27 +194,56 @@ function LargeView({
   position,
   onPrev,
   onNext,
+  onFullscreen,
   compareHref,
 }: {
   item: GalleryItem;
   position: string;
   onPrev: () => void;
   onNext: () => void;
+  onFullscreen: () => void;
   compareHref: string | null;
 }) {
   const meta = SOURCE_META[item.source];
   const far = item.distanceKm != null && item.distanceKm > FAR_FROM_SITE_KM;
   const t = useTranslations("gallery");
   const source = useLabels().source[item.source];
+  const tv = useTranslations("viewer");
   return (
     <div className="grid lg:grid-cols-[minmax(0,1fr)_280px]">
       <div className="relative flex items-center justify-center bg-slate-950">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img key={item.id} src={imageryUrl(item.id, "display")} alt={t("imageAlt", { source, date: item.dayLabel })} className="max-h-[70svh] w-full object-contain" />
-        <Button variant="secondary" size="icon" className="absolute top-1/2 left-2 -translate-y-1/2 opacity-90" onClick={onPrev} aria-label={t("previous")}>
+        <img
+          key={item.id}
+          src={imageryUrl(item.id, "display")}
+          alt={t("imageAlt", { source, date: item.dayLabel })}
+          onClick={onFullscreen}
+          className="max-h-[70svh] w-full cursor-zoom-in object-contain"
+        />
+        <button
+          type="button"
+          onClick={onFullscreen}
+          className="absolute right-2 bottom-2 z-10 inline-flex items-center gap-1.5 rounded-md bg-black/65 px-2.5 py-1.5 text-sm font-semibold text-white hover:bg-black/80"
+        >
+          <MaximizeIcon className="size-4" />
+          {tv("open")}
+        </button>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-1/2 left-2 -translate-y-1/2 opacity-90"
+          onClick={onPrev}
+          aria-label={t("previous")}
+        >
           <ChevronLeftIcon />
         </Button>
-        <Button variant="secondary" size="icon" className="absolute top-1/2 right-2 -translate-y-1/2 opacity-90" onClick={onNext} aria-label={t("next")}>
+        <Button
+          variant="secondary"
+          size="icon"
+          className="absolute top-1/2 right-2 -translate-y-1/2 opacity-90"
+          onClick={onNext}
+          aria-label={t("next")}
+        >
           <ChevronRightIcon />
         </Button>
       </div>
@@ -159,17 +257,48 @@ function LargeView({
         </div>
         {item.notes && <p>{item.notes}</p>}
         <dl className="grid gap-2">
-          <Row label={t("uploaded")} value={item.uploader ? t("uploadedBy", { date: item.uploadedOn, name: item.uploader }) : item.uploadedOn} />
-          {item.width && item.height && <Row label={t("size")} value={`${item.width} × ${item.height}${item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ""}`} />}
+          <Row
+            label={t("uploaded")}
+            value={
+              item.uploader
+                ? t("uploadedBy", {
+                    date: item.uploadedOn,
+                    name: item.uploader,
+                  })
+                : item.uploadedOn
+            }
+          />
+          {item.width && item.height && (
+            <Row
+              label={t("size")}
+              value={`${item.width} × ${item.height}${item.sizeBytes ? ` · ${formatBytes(item.sizeBytes)}` : ""}`}
+            />
+          )}
           {item.takenAt && <Row label={t("photoTaken")} value={item.takenAt} />}
           {item.gps ? (
             <div>
-              <dt className="text-xs text-muted-foreground">{t("photoLocation")}</dt>
-              <dd className="font-mono text-xs">{item.gps[0].toFixed(5)}, {item.gps[1].toFixed(5)}</dd>
+              <dt className="text-xs text-muted-foreground">
+                {t("photoLocation")}
+              </dt>
+              <dd className="font-mono text-xs">
+                {item.gps[0].toFixed(5)}, {item.gps[1].toFixed(5)}
+              </dd>
               {item.distanceKm != null && (
-                <dd className={`mt-0.5 flex items-center gap-1 text-xs ${far ? "font-medium text-amber-700" : "text-muted-foreground"}`}>
-                  {far ? <TriangleAlertIcon className="size-3" /> : <MapPinIcon className="size-3" />}
-                  {far ? t("fromSiteCheck", { distance: formatDistance(item.distanceKm) }) : t("fromSite", { distance: formatDistance(item.distanceKm) })}
+                <dd
+                  className={`mt-0.5 flex items-center gap-1 text-xs ${far ? "font-medium text-amber-700" : "text-muted-foreground"}`}
+                >
+                  {far ? (
+                    <TriangleAlertIcon className="size-3" />
+                  ) : (
+                    <MapPinIcon className="size-3" />
+                  )}
+                  {far
+                    ? t("fromSiteCheck", {
+                        distance: formatDistance(item.distanceKm),
+                      })
+                    : t("fromSite", {
+                        distance: formatDistance(item.distanceKm),
+                      })}
                 </dd>
               )}
             </div>
@@ -178,7 +307,10 @@ function LargeView({
           )}
         </dl>
         {compareHref && (
-          <Link href={compareHref} className="flex w-fit items-center gap-1.5 text-sm font-medium hover:underline">
+          <Link
+            href={compareHref}
+            className="flex w-fit items-center gap-1.5 text-sm font-medium hover:underline"
+          >
             <ColumnsIcon className="size-3.5" />
             {t("compareLatest")}
           </Link>
