@@ -61,7 +61,10 @@ export const OPEN_DIRECTIVE_STATUSES: DirectiveStatus[] = ["OPEN", "IN_PROGRESS"
  * - DoIT (imagery.process): start review, approve, or reject (reason required).
  * - The requester: cancel until it is ordered (note optional).
  * - Either may add a note at any time (to = current status, note required).
- * Ordering and delivery come with the vendor stage.
+ * Placing an order (APPROVED → ORDERED) and delivering it (→ DELIVERED, by
+ * uploading the imagery) have their own forms; DoIT may withdraw an order
+ * (back to APPROVED, reason required). Once delivered, the requester or DoIT
+ * confirms and closes it.
  */
 export function requestTransitions(user: CurrentUser, from: RequestStatus, requestedById: string): Transition<RequestStatus>[] {
   const doit = has(user, "imagery.process");
@@ -74,7 +77,9 @@ export function requestTransitions(user: CurrentUser, from: RequestStatus, reque
       out.push({ to: "REJECTED", label: "reject", noteRequired: true });
     }
     if (from === "REJECTED") out.push({ to: "UNDER_REVIEW", label: "reconsider", noteRequired: true });
+    if (from === "ORDERED") out.push({ to: "APPROVED", label: "withdrawOrder", noteRequired: true });
   }
+  if ((doit || requester) && from === "DELIVERED") out.push({ to: "CLOSED", label: "confirmClose", noteRequired: false });
   if (requester && (from === "SUBMITTED" || from === "UNDER_REVIEW" || from === "APPROVED")) {
     out.push({ to: "CANCELLED", label: "cancelRequest", noteRequired: false });
   }

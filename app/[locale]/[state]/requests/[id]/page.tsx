@@ -4,8 +4,12 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import {
   CalendarClockIcon,
+  HashIcon,
   MapPinIcon,
+  PackageCheckIcon,
   RadioIcon,
+  TruckIcon,
+  UploadIcon,
   UserRoundIcon,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,7 +25,11 @@ import {
   RequestType,
 } from "@/components/requests/request-bits";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { getRequest } from "@/lib/data/requests";
+import { getRequest, getVendorsForOrder } from "@/lib/data/requests";
+import { canProcessRequests } from "@/lib/auth/project-permissions";
+import { Button } from "@/components/ui/button";
+import { OrderForm } from "@/components/requests/order-form";
+import { todayIST } from "@/lib/dates";
 import { requestTransitions } from "@/lib/workflow";
 import { formatDate } from "@/lib/format";
 import { imageryUrl } from "@/lib/imagery/url";
@@ -69,10 +77,15 @@ async function Request({
   const projectName = localName(locale, r.project.name, r.project.nameLocal);
   const latest = r.project.imagery[0];
   const transitions = requestTransitions(user, r.status, r.requestedById);
+  const doit = canProcessRequests(user);
+  const vendors = doit && r.status === "APPROVED" ? await getVendorsForOrder(state) : [];
 
   return (
     <div className="grid gap-5">
       {sp.created === "1" && <OnceToast message={t("created")} />}
+      {typeof sp.delivered === "string" && (
+        <OnceToast message={t("deliveredToast", { count: Number(sp.delivered) || 0 })} />
+      )}
       <Breadcrumbs
         items={[
           {
@@ -117,6 +130,51 @@ async function Request({
             value={`${localName(locale, r.project.district.name, r.project.district.nameLocal)} · ${r.project.latitude.toFixed(4)}, ${r.project.longitude.toFixed(4)}`}
           />
         </dl>
+        {r.vendor && (
+          <dl className="mt-4 grid gap-3 rounded-lg bg-muted/50 p-3 text-sm sm:grid-cols-4">
+            <Fact icon={TruckIcon} label={t("fVendor")} value={r.vendor.name} />
+            <Fact icon={HashIcon} label={t("fOrderRef")} value={r.orderRef ?? "—"} />
+            <Fact icon={CalendarClockIcon} label={t("orderedOn")} value={r.orderedAt ? formatDate(r.orderedAt, locale) : "—"} />
+            <Fact
+              icon={PackageCheckIcon}
+              label={r.deliveredAt ? t("deliveredOn") : t("fExpectedBy")}
+              value={formatDate(r.deliveredAt ?? r.expectedBy, locale)}
+            />
+          </dl>
+        )}
+        {doit && r.status === "APPROVED" && (
+          <div className="mt-4">
+            <OrderForm id={r.id} stateSlug={state.code.toLowerCase()} type={r.type} vendors={vendors} today={todayIST()} />
+          </div>
+        )}
+        {doit && r.status === "ORDERED" && (
+          <div className="mt-4">
+            <Button nativeButton={false} render={<Link href={`${projectPath}/imagery/upload?request=${r.id}`} />}>
+              <UploadIcon />
+              {t("uploadDelivery")}
+            </Button>
+            <p className="mt-1 text-xs text-muted-foreground">{t("uploadDeliveryHint")}</p>
+          </div>
+        )}
+        {r.delivered.length > 0 && (
+          <div className="mt-4 border-t pt-4">
+            <h2 className="mb-2 text-sm font-bold text-navy">{t("deliveredImagery", { count: r.delivered.length })}</h2>
+            <ul className="flex flex-wrap gap-2">
+              {r.delivered.map((img) => (
+                <li key={img.id}>
+                  <Link href={`${projectPath}/live?image=${img.id}`} className="group relative block overflow-hidden rounded-lg">
+                    {/* Access-checked API image (see app/api/imagery). */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={imageryUrl(img.id, "thumb")} alt="" className="h-24 w-36 object-cover transition group-hover:scale-105" />
+                    <span className="absolute bottom-1 left-1 rounded bg-navy/85 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                      {formatDate(img.captureDate, locale)}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {transitions.length > 0 && (
           <div className="mt-4 border-t pt-4">
             <StatusChange

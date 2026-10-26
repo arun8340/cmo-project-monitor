@@ -350,7 +350,12 @@
       "meeting_restore": "रद्द बैठक मसुदा म्हणून पुनर्स्थापित केली",
       "request_create": "{type} प्रतिमेची विनंती केली",
       "request_status": "प्रतिमा विनंती: {from} → {to}",
-      "request_note": "प्रतिमा विनंतीवर टीप जोडली"
+      "request_note": "प्रतिमा विनंतीवर टीप जोडली",
+      "request_order": "{vendor} कडून प्रतिमा ऑर्डर केल्या",
+      "vendor_create": "पुरवठादार {name} जोडला",
+      "vendor_update": "पुरवठादार {name} संपादित केला",
+      "vendor_activate": "{name} कडून ऑर्डर पुन्हा सुरू केल्या",
+      "vendor_deactivate": "{name} कडून ऑर्डर बंद केल्या"
     },
     "failedReason": {
       "unknown_user": "अज्ञात ईमेल",
@@ -511,7 +516,10 @@
       "agendaItemTitle": "प्रत्येक मुद्द्याला शीर्षक हवे (3–300 अक्षरे); टीप 1000 पर्यंत.",
       "agendaTooMany": "जास्तीत जास्त {max} मुद्दे.",
       "agendaRef": "एक मुद्दा अशा प्रकल्प, समस्या किंवा निर्देशाशी जोडलेला आहे ज्यापर्यंत तुमचा प्रवेश नाही.",
-      "requestPurpose": "प्रतिमा कशासाठी हवी ते लिहा (किमान 10 अक्षरे)."
+      "requestPurpose": "प्रतिमा कशासाठी हवी ते लिहा (किमान 10 अक्षरे).",
+      "chooseVendor": "पुरवठादार निवडा.",
+      "vendorName": "पुरवठादाराचे नाव टाका (2–120 अक्षरे).",
+      "turnaround": "1–90 दिवसांचा कालावधी टाका."
     },
     "filesRejected": "काही फाइल्स स्वीकारता आल्या नाहीत. काहीही अपलोड झाले नाही.",
     "uploadFailed": "अपलोड अयशस्वी झाले. कृपया पुन्हा प्रयत्न करा.",
@@ -534,7 +542,9 @@
     "meetingRestored": "बैठक मसुदा म्हणून पुनर्स्थापित झाली.",
     "meetingTransitionNotAllowed": "या बैठकीसाठी हा बदल अनुमत नाही.",
     "requestNoteAdded": "टीप जोडली.",
-    "requestMarked": "विनंती {status} केली."
+    "requestMarked": "विनंती {status} केली.",
+    "orderPlaced": "{vendor} कडे ऑर्डर दिली.",
+    "vendorSaved": "{name} जतन केले."
   },
   "projectForm": {
     "project": "प्रकल्प",
@@ -622,7 +632,9 @@
     "notesPlaceholder": "उदा. उत्तरेकडील संरक्षक भिंत, मुख्य रस्त्यावरून दृश्य",
     "uploading": "{count, plural, one {{count} प्रतिमा अपलोड होत आहे…} other {{count} प्रतिमा अपलोड होत आहेत…}}",
     "uploadCount": "{count, plural, one {{count} प्रतिमा अपलोड करा} other {{count} प्रतिमा अपलोड करा}}",
-    "uploadNone": "प्रतिमा अपलोड करा"
+    "uploadNone": "प्रतिमा अपलोड करा",
+    "deliveringOrder": "{vendor} कडील माहिती तंत्रज्ञान विभागाच्या ऑर्डरची पूर्तता (संदर्भ {ref}). अपलोड केल्यावर विनंती मिळाली म्हणून नोंदवली जाईल.",
+    "deliveredNote": "{vendor} कडून मिळाले (ऑर्डर {ref})."
   },
   "verify": {
     "title": "पडताळणी नोंदवा",
@@ -697,7 +709,9 @@
       "reject": "नाकारा",
       "reconsider": "पुनर्विचार करा",
       "cancelRequest": "विनंती रद्द करा",
-      "addNote": "टीप जोडा"
+      "addNote": "टीप जोडा",
+      "withdrawOrder": "ऑर्डर मागे घ्या",
+      "confirmClose": "मिळाल्याची खात्री करून बंद करा"
     },
     "noteAdded": "टीप",
     "liveTracking": "लाइव्ह ट्रॅकिंग"
@@ -1000,7 +1014,9 @@
       "open": "खुल्या",
       "approved": "मंजूर",
       "closed": "बंद",
-      "all": "सर्व"
+      "all": "सर्व",
+      "ordered": "ऑर्डर दिलेल्या",
+      "delivered": "मिळालेल्या"
     },
     "overdue": "मुदत संपली",
     "neededBy": "{date} पर्यंत हवी",
@@ -1029,6 +1045,39 @@
     "history": "इतिहास",
     "raised": "विनंती केली",
     "project": "प्रकल्प",
-    "currentLatest": "नवीनतम प्रतिमा {date}"
+    "currentLatest": "नवीनतम प्रतिमा {date}",
+    "suppliers": "पुरवठादार",
+    "placeOrder": "प्रतिमा ऑर्डर करा",
+    "placeOrderHint": "पुरवठादार निवडा, त्यांचा ऑर्डर संदर्भ आणि प्रतिमा कधी अपेक्षित आहे ते नोंदवा.",
+    "fVendor": "पुरवठादार",
+    "turnaround": "साधारण {days, plural, one {{days} दिवस} other {{days} दिवस}}",
+    "fExpectedBy": "अपेक्षित दिनांक",
+    "fOrderRef": "ऑर्डर संदर्भ",
+    "fOrderRefPlaceholder": "पुरवठादाराचा ऑर्डर / टास्किंग क्रमांक (ऐच्छिक)",
+    "fOrderNote": "टीप (ऐच्छिक)",
+    "confirmOrder": "ऑर्डर द्या",
+    "orderedOn": "ऑर्डर दिनांक",
+    "deliveredOn": "मिळाल्याचा दिनांक",
+    "uploadDelivery": "मिळालेल्या प्रतिमा अपलोड करा",
+    "uploadDeliveryHint": "पुरवठादाराकडून प्रतिमा आल्यावर येथे अपलोड करा; त्या प्रकल्पात जोडल्या जातील आणि विनंती मिळाली म्हणून नोंदवली जाईल.",
+    "deliveredImagery": "{count, plural, one {मिळालेली प्रतिमा} other {मिळालेल्या प्रतिमा ({count})}}",
+    "deliveredToast": "{count, plural, one {प्रतिमा मिळाली आणि प्रकल्पात जोडली.} other {{count} प्रतिमा मिळाल्या आणि प्रकल्पात जोडल्या.}}",
+    "orderedFrom": "{vendor} कडे ऑर्डर · अपेक्षित {date}",
+    "deliveredBy": "{vendor} कडून मिळाले · {date}"
+  },
+  "suppliers": {
+    "title": "पुरवठादार",
+    "intro": "माहिती तंत्रज्ञान विभाग कोणाकडून प्रतिमा मागवतो: उपग्रह टास्किंग, ड्रोन ऑपरेटर आणि स्थळ सर्वेक्षण पथके.",
+    "add": "पुरवठादार जोडा",
+    "edit": "संपादित करा",
+    "fName": "नाव",
+    "fType": "काय पुरवतो",
+    "fTurnaround": "साधारण कालावधी (दिवस)",
+    "fContact": "संपर्क",
+    "fContactPlaceholder": "कक्ष / फोन (ऐच्छिक)",
+    "inactive": "वापरात नाही",
+    "orders": "{count, plural, =0 {अद्याप ऑर्डर नाही} one {{count} ऑर्डर} other {{count} ऑर्डर}}",
+    "deactivate": "वापर बंद करा",
+    "activate": "पुन्हा वापरा"
   }
 }

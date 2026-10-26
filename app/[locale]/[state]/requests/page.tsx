@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { InboxIcon, SatelliteDishIcon } from "lucide-react";
+import { InboxIcon, SatelliteDishIcon, TruckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
@@ -68,8 +68,8 @@ async function Requests({
     });
   };
   const TABS: RequestTab[] = doit
-    ? ["new", "review", "open", "approved", "closed", "all"]
-    : ["open", "approved", "closed", "all"];
+    ? ["new", "review", "approved", "ordered", "delivered", "open", "closed", "all"]
+    : ["open", "delivered", "closed", "all"];
 
   return (
     <div className="grid gap-5">
@@ -86,12 +86,20 @@ async function Requests({
         title={doit ? t("titleDoit") : t("title")}
         subtitle={doit ? t("introDoit") : t("intro")}
         actions={
-          canRequestImagery(user) && (
-            <Button nativeButton={false} render={<Link href={`${path}/new`} />}>
-              <SatelliteDishIcon />
-              {t("new")}
-            </Button>
-          )
+          <>
+            {doit && (
+              <Button variant="outline" nativeButton={false} render={<Link href={`${path}/suppliers`} />}>
+                <TruckIcon />
+                {t("suppliers")}
+              </Button>
+            )}
+            {canRequestImagery(user) && (
+              <Button nativeButton={false} render={<Link href={`${path}/new`} />}>
+                <SatelliteDishIcon />
+                {t("new")}
+              </Button>
+            )}
+          </>
         }
       />
       <div className="grid gap-2">

@@ -20,6 +20,7 @@ model State {
   departments Department[]
   users       User[]
   meetings    Meeting[]
+  vendors     Vendor[]
 }
 
 model District {
@@ -107,6 +108,9 @@ model ImageryCapture {
   exifTakenAt   DateTime?
   uploadedById  String?
   uploadedBy    User?     @relation(fields: [uploadedById], references: [id])
+  // Set when DoIT uploads imagery delivered for a request
+  requestId     String?
+  request       ImageryRequest? @relation(fields: [requestId], references: [id], onDelete: SetNull)
   createdAt     DateTime  @default(now())
 
   @@index([projectId, captureDate])
@@ -337,9 +341,17 @@ model ImageryRequest {
   status        String                 @default("SUBMITTED") // RequestStatus
   requestedById String
   requestedBy   User                   @relation("RequestedBy", fields: [requestedById], references: [id])
+  // Order placed by DoIT (status ORDERED onwards)
+  vendorId      String?
+  vendor        Vendor?                @relation(fields: [vendorId], references: [id])
+  orderRef      String?
+  orderedAt     DateTime?
+  expectedBy    DateTime?
+  deliveredAt   DateTime?
   createdAt     DateTime               @default(now())
   updatedAt     DateTime               @updatedAt
   updates       ImageryRequestUpdate[]
+  imagery       ImageryCapture[]
 
   @@index([projectId])
   @@index([status])
@@ -358,4 +370,21 @@ model ImageryRequestUpdate {
   createdAt  DateTime       @default(now())
 
   @@index([requestId])
+}
+
+// Imagery supplier DoIT orders from: BlackSky / Maxar (satellite), an
+// empanelled drone operator, the field survey team.
+model Vendor {
+  id             String           @id @default(cuid())
+  stateId        String
+  state          State            @relation(fields: [stateId], references: [id])
+  name           String
+  type           String // ImagerySource it supplies
+  turnaroundDays Int              @default(3)
+  contact        String?
+  active         Boolean          @default(true)
+  createdAt      DateTime         @default(now())
+  requests       ImageryRequest[]
+
+  @@index([stateId, type])
 }
