@@ -16,7 +16,11 @@ export function Timeline({ entries, labels, createdVerb }: { entries: Entry[]; l
           <span className="absolute top-1.5 -left-6.25 size-2.5 rounded-full border-2 border-card bg-slate-500" />
           <div className="text-sm">
             <span className="font-medium">
-              {e.fromStatus == null ? createdVerb : `${labels[e.fromStatus] ?? e.fromStatus} → ${labels[e.toStatus] ?? e.toStatus}`}
+              {e.fromStatus == null
+                ? createdVerb
+                : e.fromStatus === e.toStatus
+                  ? t("noteAdded")
+                  : `${labels[e.fromStatus] ?? e.fromStatus} → ${labels[e.toStatus] ?? e.toStatus}`}
             </span>
             <span className="text-muted-foreground">
               {" "}

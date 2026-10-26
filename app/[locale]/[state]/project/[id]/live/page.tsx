@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { LoaderCircleIcon } from "lucide-react";
 import { LiveView } from "@/components/imagery/live-view";
 import { assertCanAccessProject, requireStateAccess } from "@/lib/auth/dal";
-import { canUploadImagery } from "@/lib/auth/project-permissions";
+import { canRequestImagery, canUploadImagery } from "@/lib/auth/project-permissions";
 import { getCompareData } from "@/lib/data/compare";
 import { relativeDays } from "@/lib/format";
 import type { Locale } from "@/lib/i18n/config";
@@ -79,6 +79,7 @@ async function Live({ params, searchParams }: { params: Params["params"]; search
       closeHref={projectPath}
       compareHref={`${projectPath}/compare?from=project`}
       uploadHref={uploadHref}
+      requestHref={canRequestImagery(user) ? `${basePath}/requests/new?project=${id}` : null}
     />
   );
 }

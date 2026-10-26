@@ -8,6 +8,7 @@ import {
   IMAGERY_SOURCES,
   ISSUE_PRIORITIES,
   MEETING_STATUSES,
+  REQUEST_STATUSES,
   ISSUE_STATUSES,
   PROJECT_STATUSES,
   ROLE_KEYS,
@@ -17,6 +18,7 @@ import {
   type IssuePriority,
   type IssueStatus,
   type MeetingStatus,
+  type RequestStatus,
   type ProjectStatus,
   type RoleKey,
   type VerificationOutcome,
@@ -31,6 +33,7 @@ export type Labels = {
   outcome: Record<VerificationOutcome, string>;
   role: Record<RoleKey, string>;
   meetingStatus: Record<MeetingStatus, string>;
+  requestStatus: Record<RequestStatus, string>;
 };
 
 /** `t` is a translator for the "enums" namespace. */
@@ -45,5 +48,6 @@ export function buildLabels(t: (key: string) => string): Labels {
     outcome: map("outcome", VERIFICATION_OUTCOMES),
     role: map("role", ROLE_KEYS),
     meetingStatus: map("meetingStatus", MEETING_STATUSES),
+    requestStatus: map("requestStatus", REQUEST_STATUSES),
   };
 }

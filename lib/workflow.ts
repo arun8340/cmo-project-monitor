@@ -4,7 +4,7 @@
  * (which changes to accept).
  */
 import type { CurrentUser } from "@/lib/auth/dal";
-import type { DirectiveStatus, IssueStatus } from "@/lib/constants";
+import type { DirectiveStatus, IssueStatus, RequestStatus } from "@/lib/constants";
 
 /** `label` is a key in the "workflow" messages. */
 type Transition<S> = { to: S; label: string; noteRequired: boolean };
@@ -55,3 +55,34 @@ export function directiveTransitions(user: CurrentUser, from: DirectiveStatus, o
 
 export const OPEN_ISSUE_STATUSES: IssueStatus[] = ["PENDING", "IN_PROGRESS"];
 export const OPEN_DIRECTIVE_STATUSES: DirectiveStatus[] = ["OPEN", "IN_PROGRESS"];
+
+// ---- Imagery requests (DoIT)
+/**
+ * - DoIT (imagery.process): start review, approve, or reject (reason required).
+ * - The requester: cancel until it is ordered (note optional).
+ * - Either may add a note at any time (to = current status, note required).
+ * Placing an order (APPROVED → ORDERED) and delivering it (→ DELIVERED, by
+ * uploading the imagery) have their own forms; DoIT may withdraw an order
+ * (back to APPROVED, reason required). Once delivered, the requester or DoIT
+ * confirms and closes it.
+ */
+export function requestTransitions(user: CurrentUser, from: RequestStatus, requestedById: string): Transition<RequestStatus>[] {
+  const doit = has(user, "imagery.process");
+  const requester = requestedById === user.id;
+  const out: Transition<RequestStatus>[] = [];
+  if (doit) {
+    if (from === "SUBMITTED") out.push({ to: "UNDER_REVIEW", label: "startReview", noteRequired: false });
+    if (from === "SUBMITTED" || from === "UNDER_REVIEW") {
+      out.push({ to: "APPROVED", label: "approve", noteRequired: false });
+      out.push({ to: "REJECTED", label: "reject", noteRequired: true });
+    }
+    if (from === "REJECTED") out.push({ to: "UNDER_REVIEW", label: "reconsider", noteRequired: true });
+    if (from === "ORDERED") out.push({ to: "APPROVED", label: "withdrawOrder", noteRequired: true });
+  }
+  if ((doit || requester) && from === "DELIVERED") out.push({ to: "CLOSED", label: "confirmClose", noteRequired: false });
+  if (requester && (from === "SUBMITTED" || from === "UNDER_REVIEW" || from === "APPROVED")) {
+    out.push({ to: "CANCELLED", label: "cancelRequest", noteRequired: false });
+  }
+  if (doit || requester) out.push({ to: from, label: "addNote", noteRequired: true });
+  return out;
+}

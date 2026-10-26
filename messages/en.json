@@ -45,6 +45,7 @@
     "projects": "Projects",
     "districts": "Districts",
     "imagery": "Live Imagery",
+    "requests": "Imagery Requests",
     "issues": "Issues",
     "directives": "Directives",
     "meetings": "CMO Meetings",
@@ -108,11 +109,22 @@
       "CMO": "CM / CMO / Chief Secretary",
       "DEPARTMENT_HEAD": "Department Head",
       "DISTRICT_COLLECTOR": "District Collector",
-      "FIELD_OFFICER": "Field Officer"
+      "FIELD_OFFICER": "Field Officer",
+      "DOIT": "DoIT – Imagery desk"
     },
     "meetingStatus": {
       "DRAFT": "Draft",
       "PUBLISHED": "Published",
+      "CANCELLED": "Cancelled"
+    },
+    "requestStatus": {
+      "SUBMITTED": "Submitted",
+      "UNDER_REVIEW": "Under review",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "ORDERED": "Ordered",
+      "DELIVERED": "Delivered",
+      "CLOSED": "Closed",
       "CANCELLED": "Cancelled"
     }
   },
@@ -335,7 +347,15 @@
       "meeting_update": "Edited a review meeting",
       "meeting_publish": "Published a meeting agenda",
       "meeting_cancel": "Cancelled a review meeting",
-      "meeting_restore": "Restored a cancelled meeting as draft"
+      "meeting_restore": "Restored a cancelled meeting as draft",
+      "request_create": "Requested {type} imagery",
+      "request_status": "Imagery request: {from} → {to}",
+      "request_note": "Added a note to an imagery request",
+      "request_order": "Ordered imagery from {vendor}",
+      "vendor_create": "Added supplier {name}",
+      "vendor_update": "Edited supplier {name}",
+      "vendor_activate": "Resumed ordering from {name}",
+      "vendor_deactivate": "Stopped ordering from {name}"
     },
     "failedReason": {
       "unknown_user": "unknown email",
@@ -495,7 +515,11 @@
       "agendaEmpty": "Add at least one agenda point before publishing.",
       "agendaItemTitle": "Each agenda point needs a title (3–300 characters); notes up to 1000.",
       "agendaTooMany": "At most {max} agenda points.",
-      "agendaRef": "An agenda point links to a project, issue or directive you can’t access."
+      "agendaRef": "An agenda point links to a project, issue or directive you can’t access.",
+      "requestPurpose": "Say what the imagery is needed for (at least 10 characters).",
+      "chooseVendor": "Choose a supplier.",
+      "vendorName": "Enter the supplier name (2–120 characters).",
+      "turnaround": "Enter a turnaround of 1–90 days."
     },
     "filesRejected": "Some files couldn't be accepted. Nothing was uploaded.",
     "uploadFailed": "The upload failed. Please try again.",
@@ -516,7 +540,11 @@
     "meetingPublished": "Agenda published.",
     "meetingCancelled": "Meeting cancelled.",
     "meetingRestored": "Meeting restored as a draft.",
-    "meetingTransitionNotAllowed": "That change is not allowed for this meeting."
+    "meetingTransitionNotAllowed": "That change is not allowed for this meeting.",
+    "requestNoteAdded": "Note added.",
+    "requestMarked": "Request marked {status}.",
+    "orderPlaced": "Order placed with {vendor}.",
+    "vendorSaved": "Saved {name}."
   },
   "projectForm": {
     "project": "Project",
@@ -604,7 +632,9 @@
     "notesPlaceholder": "e.g. North boundary wall, view from main road",
     "uploading": "{count, plural, one {Uploading # image…} other {Uploading # images…}}",
     "uploadCount": "{count, plural, one {Upload # image} other {Upload # images}}",
-    "uploadNone": "Upload images"
+    "uploadNone": "Upload images",
+    "deliveringOrder": "Delivering the DoIT order from {vendor} (ref. {ref}). Uploading marks the request as delivered.",
+    "deliveredNote": "Delivered by {vendor} (order {ref})."
   },
   "verify": {
     "title": "Record verification",
@@ -673,8 +703,18 @@
       "acceptClose": "Accept and close",
       "reopenUnsatisfactory": "Reopen — not satisfactory",
       "reopen": "Reopen",
-      "withdraw": "Withdraw / close"
-    }
+      "withdraw": "Withdraw / close",
+      "startReview": "Start review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "reconsider": "Reconsider",
+      "cancelRequest": "Cancel request",
+      "addNote": "Add note",
+      "withdrawOrder": "Withdraw order",
+      "confirmClose": "Confirm received & close"
+    },
+    "noteAdded": "Note",
+    "liveTracking": "Live tracking"
   },
   "issues": {
     "title": "Issues",
@@ -777,7 +817,8 @@
       "issues": "Issues",
       "directives": "Directives",
       "admin": "User admin",
-      "meetings": "Meetings"
+      "meetings": "Meetings",
+      "requests": "Imagery requests"
     },
     "from": "From",
     "to": "To",
@@ -849,7 +890,8 @@
     "latestImage": "Latest satellite image",
     "viewAll": "View all images",
     "openLive": "Open live tracking",
-    "none": "None yet"
+    "none": "None yet",
+    "requestImagery": "Request imagery"
   },
   "meetings": {
     "title": "CMO meetings",
@@ -940,7 +982,8 @@
     "live": "Live",
     "awaiting": "Awaiting satellite imagery",
     "awaitingHint": "Imagery will appear here once uploaded",
-    "addImages": "Add images"
+    "addImages": "Add images",
+    "requestImagery": "Request imagery"
   },
   "viewer": {
     "title": "Image viewer",
@@ -952,5 +995,119 @@
     "zoomOut": "Zoom out",
     "position": "{n} of {total}",
     "hint": "Pinch or scroll to zoom · drag to move · double-tap to zoom · swipe for other dates"
+  },
+  "requests": {
+    "title": "Imagery requests",
+    "titleDoit": "Imagery requests — DoIT desk",
+    "intro": "Ask DoIT for satellite, drone or field imagery of a project, and follow each request.",
+    "introDoit": "Requests from all departments. Review them, approve or reject, then order the imagery.",
+    "new": "Request imagery",
+    "newIntro": "DoIT reviews every request and orders the imagery from BlackSky, a drone operator or the field team. You will see each step here.",
+    "filterByStatus": "Filter by status",
+    "filterByType": "Filter by type",
+    "anyType": "Any type",
+    "onlyMine": "Only my requests",
+    "none": "No imagery requests here.",
+    "tab": {
+      "new": "New",
+      "review": "Under review",
+      "open": "Open",
+      "approved": "Approved",
+      "closed": "Closed",
+      "all": "All",
+      "ordered": "Ordered",
+      "delivered": "Delivered"
+    },
+    "overdue": "Overdue",
+    "neededBy": "Needed by {date}",
+    "requestedBy": "Requested by {name} · {date}",
+    "fProject": "Project",
+    "chooseProject": "Choose a project…",
+    "fType": "What kind of imagery?",
+    "typeHint": {
+      "SATELLITE": "High-resolution satellite image of the site (BlackSky / Maxar). Usually 1–3 days.",
+      "DRONE": "Drone survey of the site by an empanelled operator. Usually 3–7 days.",
+      "FIELD_PHOTO": "Geotagged photos taken on site by the field team."
+    },
+    "fPurpose": "What is it needed for?",
+    "fPurposePlaceholder": "e.g. Verify slab casting reported by the contractor before the next CMO meeting",
+    "fNeededBy": "Needed by",
+    "fPriority": "Priority",
+    "cmoPriority": "Critical — CMO requests get top priority",
+    "send": "Send to DoIT",
+    "noImageryYet": "no imagery yet",
+    "detailTitle": "Imagery request",
+    "created": "Request sent to DoIT.",
+    "cmoRequest": "CMO request — top priority",
+    "heading": "{type} imagery for {project}",
+    "raisedBy": "Requested by",
+    "site": "Site",
+    "history": "History",
+    "raised": "Requested",
+    "project": "Project",
+    "currentLatest": "Latest image {date}",
+    "suppliers": "Suppliers",
+    "placeOrder": "Order the imagery",
+    "placeOrderHint": "Choose the supplier, note their order reference and when the imagery is expected.",
+    "fVendor": "Supplier",
+    "turnaround": "Usually {days, plural, one {# day} other {# days}}",
+    "fExpectedBy": "Expected by",
+    "fOrderRef": "Order reference",
+    "fOrderRefPlaceholder": "Supplier's order / tasking number (optional)",
+    "fOrderNote": "Note (optional)",
+    "confirmOrder": "Place order",
+    "orderedOn": "Ordered on",
+    "deliveredOn": "Delivered on",
+    "uploadDelivery": "Upload delivered imagery",
+    "uploadDeliveryHint": "When the supplier's imagery arrives, upload it here; it is added to the project and the request is marked delivered.",
+    "deliveredImagery": "{count, plural, one {Delivered image} other {Delivered images (#)}}",
+    "deliveredToast": "{count, plural, one {Image delivered and added to the project.} other {# images delivered and added to the project.}}",
+    "orderedFrom": "Ordered from {vendor} · expected {date}",
+    "deliveredBy": "Delivered by {vendor} · {date}"
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "intro": "Who DoIT orders imagery from: satellite tasking, drone operators and field survey teams.",
+    "add": "Add supplier",
+    "edit": "Edit",
+    "fName": "Name",
+    "fType": "Supplies",
+    "fTurnaround": "Usual turnaround (days)",
+    "fContact": "Contact",
+    "fContactPlaceholder": "Desk / phone (optional)",
+    "inactive": "Not in use",
+    "orders": "{count, plural, =0 {no orders yet} one {# order} other {# orders}}",
+    "deactivate": "Stop using",
+    "activate": "Use again"
+  },
+  "doitHome": {
+    "title": "DoIT imagery desk",
+    "subtitle": "Imagery requests from all departments in {state}, and orders with suppliers.",
+    "suppliers": "Suppliers",
+    "openQueue": "Open the queue",
+    "toReview": "To review",
+    "toOrder": "Approved, to order",
+    "onOrder": "On order",
+    "overdue": "Overdue",
+    "deliveredMonth": "Delivered this month",
+    "avgTurnaround": "Average turnaround",
+    "days": "{days} days",
+    "attention": "Needs attention",
+    "attentionHint": "Overdue first, then by priority and needed-by date.",
+    "viewAll": "View all requests",
+    "allClear": "Nothing waiting — all requests are handled.",
+    "byDepartment": "Requests by department",
+    "openCount": "{count} open",
+    "none": "No requests yet.",
+    "bySupplier": "Orders by supplier",
+    "supplier": "Supplier",
+    "orders": "Orders",
+    "onOrderCol": "On order",
+    "avgDelivery": "Avg. delivery",
+    "onTime": "{onTime} of {delivered} on time",
+    "noOrders": "No orders yet.",
+    "recentDeliveries": "Recently delivered",
+    "noDeliveries": "Nothing delivered yet.",
+    "deliveredOn": "Delivered {date}"
   }
 }

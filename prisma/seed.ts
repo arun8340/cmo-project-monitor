@@ -152,6 +152,9 @@ const ISSUE_TEMPLATES: { title: string; priority: IssuePriority }[] = [
 
 async function wipe() {
   await db.auditLog.deleteMany();
+  await db.imageryRequestUpdate.deleteMany();
+  await db.imageryRequest.deleteMany();
+  await db.vendor.deleteMany();
   await db.meetingAgendaItem.deleteMany();
   await db.meeting.deleteMany();
   await db.verification.deleteMany();
@@ -214,8 +217,8 @@ async function main() {
       collectorDistrict: "MH-MUMBAI-SUBURBAN",
       collectorName: "Collector, Mumbai Suburban",
       cmoName: "CMO Maharashtra",
-      dept: "PWD",
-      deptHeadName: "Secretary, PWD Maharashtra",
+      dept: "RNB",
+      deptHeadName: "Secretary, Roads & Buildings Maharashtra",
       fieldName: "Field Officer, Mumbai Suburban",
     },
   };
@@ -265,6 +268,21 @@ async function main() {
     const fieldOfficer = await db.user.create({
       data: { name: plan.fieldName, email: `field.${slug}@demo.gov.in`, passwordHash, designation: "Assistant Engineer", roleId: roles.FIELD_OFFICER.id, stateId: state.id, districtId: districts.get(plan.collectorDistrict)!.id },
     });
+    const doit = await db.user.create({
+      data: { name: `DoIT Imagery Desk, ${cfg.name}`, email: `doit.${s}@demo.gov.in`, passwordHash, designation: "Department of IT – Imagery desk", roleId: roles.DOIT.id, stateId: state.id },
+    });
+    // Suppliers DoIT orders from (contacts are placeholders).
+    const VENDORS = [
+      { key: "blacksky", name: "BlackSky (satellite tasking)", type: "SATELLITE", turnaroundDays: 2, contact: "Tasking desk · via DoIT account manager" },
+      { key: "maxar", name: "Maxar via Globe Imagery", type: "SATELLITE", turnaroundDays: 5, contact: "Archive & tasking · Globe Imagery" },
+      { key: "drone", name: code === "RJ" ? "SkyEye Drone Services, Jaipur" : "AeroMap Drones, Pune", type: "DRONE", turnaroundDays: 5, contact: "Empanelled drone operator" },
+      { key: "field", name: `DoIT Field Survey Team, ${cfg.name}`, type: "FIELD_PHOTO", turnaroundDays: 3, contact: "Internal team" },
+    ];
+    const vendor: Record<string, string> = {};
+    for (const v of VENDORS) {
+      const row = await db.vendor.create({ data: { stateId: state.id, name: v.name, type: v.type, turnaroundDays: v.turnaroundDays, contact: v.contact, createdAt: addDays(NOW, -90) } });
+      vendor[v.key] = row.id;
+    }
 
     const createdProjects: { id: string; seed: ProjectSeed; status: ProjectStatus; districtId: string; departmentId: string }[] = [];
 
@@ -490,6 +508,174 @@ async function main() {
           createdAt: addDays(NOW, -Math.round(between(2, 10))),
         },
       });
+    }
+
+    // Imagery requests to DoIT, one at each stage: a CMO request (always top
+    // priority), one under review, one approved, one rejected, and an overdue one.
+    {
+      const collectorDistrict = districts.get(plan.collectorDistrict)!.id;
+      // Projects the collector or department head can see, with that requester.
+      const pool = createdProjects
+        .map((p) => ({ p, by: p.districtId === collectorDistrict ? collector : p.departmentId === departments.get(plan.dept) ? deptHead : null }))
+        .filter((x): x is { p: (typeof createdProjects)[number]; by: typeof collector } => !!x.by);
+      const used = new Set<string>();
+      const take = (pref: (p: (typeof createdProjects)[number]) => boolean) => {
+        const pick = pool.find((x) => !used.has(x.p.id) && pref(x.p)) ?? pool.find((x) => !used.has(x.p.id));
+        if (pick) used.add(pick.p.id);
+        return pick;
+      };
+      const awaiting = createdProjects.filter((p) => !p.seed.site);
+      const cmoProject = awaiting[0] ?? createdProjects[0];
+      used.add(cmoProject.id);
+
+      type Step = { to: string; note?: string; daysAgo?: number; at?: Date };
+      type Order = { vendor: string; ref: string; orderedAt: Date; expectedBy: Date; deliveredAt?: Date };
+      type Seeded = {
+        project: { id: string };
+        by: { id: string };
+        type: string;
+        priority: string;
+        purpose: string;
+        neededBy: Date;
+        daysAgo?: number;
+        createdAt?: Date;
+        steps: Step[];
+        order?: Order;
+        /** Link the project's latest image as the delivery. */
+        deliveredImage?: string;
+      };
+      const REQUESTS: Seeded[] = [
+        {
+          project: cmoProject,
+          by: cmo,
+          type: "SATELLITE",
+          priority: "CRITICAL",
+          purpose: "Need a current satellite image of this site to verify the reported progress at the next CMO review.",
+          neededBy: NEXT_MEETING,
+          daysAgo: 1,
+          steps: [],
+        },
+      ];
+      // Nobody else can see a suitable project: the CMO raises it (and it is Critical).
+      const add = (pick: ReturnType<typeof take>, r: Omit<Seeded, "project" | "by">) => {
+        const fallback = createdProjects.find((p) => !used.has(p.id));
+        if (!pick && fallback) used.add(fallback.id);
+        const chosen = pick ?? (fallback ? { p: fallback, by: cmo } : null);
+        if (chosen) REQUESTS.push({ ...r, project: chosen.p, by: chosen.by });
+      };
+      add(take((p) => p.status === "DELAYED" && !!p.seed.site), {
+        type: "DRONE",
+        priority: "HIGH",
+        purpose: "Contractor reports the main structure is complete on the delayed stretch. Drone survey needed to confirm before the recovery plan is accepted.",
+        neededBy: MEETING_AFTER_NEXT,
+        daysAgo: 4,
+        steps: [{ to: "UNDER_REVIEW", note: "Checking availability of the empanelled drone operator for this site.", daysAgo: 3 }],
+      });
+      add(take((p) => !p.seed.site), {
+        type: "SATELLITE",
+        priority: "MEDIUM",
+        purpose: "Baseline satellite image of the site for monitoring; work is under way but nothing has been captured yet.",
+        neededBy: MEETING_AFTER_NEXT,
+        daysAgo: 6,
+        steps: [
+          { to: "UNDER_REVIEW", daysAgo: 5 },
+          { to: "APPROVED", note: "Approved. Will be tasked on BlackSky this week.", daysAgo: 4 },
+        ],
+      });
+      add(take((p) => !!p.seed.site), {
+        type: "FIELD_PHOTO",
+        priority: "HIGH",
+        purpose: "Geotagged photos of the boundary wall and approach road, which are not clearly visible in the satellite image.",
+        neededBy: addDays(NOW, -3),
+        daysAgo: 12,
+        steps: [],
+      });
+      add(take((p) => !!p.seed.site), {
+        type: "SATELLITE",
+        priority: "LOW",
+        purpose: "Latest satellite view of the site for the department's monthly report.",
+        neededBy: addDays(NOW, 20),
+        daysAgo: 9,
+        steps: [{ to: "REJECTED", note: "A recent satellite image of this site is already available in Live tracking; please use that for the report.", daysAgo: 8 }],
+      });
+      // One on order with BlackSky, due shortly.
+      add(take((p) => !!p.seed.site), {
+        type: "SATELLITE",
+        priority: "HIGH",
+        purpose: "Fresh satellite image to check progress on site before the next CMO review.",
+        neededBy: NEXT_MEETING,
+        daysAgo: 5,
+        steps: [
+          { to: "UNDER_REVIEW", daysAgo: 4 },
+          { to: "APPROVED", daysAgo: 4 },
+          { to: "ORDERED", note: "Tasked on BlackSky; first clear pass expected within two days.", daysAgo: 2 },
+        ],
+        order: { vendor: "blacksky", ref: `BSK-${code}-2026-1043`, orderedAt: addDays(NOW, -2), expectedBy: addDays(NOW, 1) },
+      });
+      // One delivered: the project's latest real image came in through DoIT (awaiting the requester's confirmation).
+      const deliveredProject = createdProjects.find((p) => !!p.seed.site && !used.has(p.id));
+      if (deliveredProject) used.add(deliveredProject.id);
+      const delivered = deliveredProject
+        ? { p: deliveredProject, by: pool.find((x) => x.p.id === deliveredProject.id)?.by ?? cmo }
+        : null;
+      const deliveredImage = delivered
+        ? await db.imageryCapture.findFirst({ where: { projectId: delivered.p.id }, orderBy: { captureDate: "desc" } })
+        : null;
+      if (delivered && deliveredImage) {
+        const shot = deliveredImage.captureDate;
+        REQUESTS.push({
+          project: delivered.p,
+          by: delivered.by,
+          type: "SATELLITE",
+          priority: "MEDIUM",
+          purpose: "Current satellite image of the site to compare with the baseline before releasing the next running bill.",
+          neededBy: addDays(shot, 7),
+          createdAt: addDays(shot, -6),
+          steps: [
+            { to: "UNDER_REVIEW", at: addDays(shot, -5) },
+            { to: "APPROVED", at: addDays(shot, -5) },
+            { to: "ORDERED", note: "Ordered from Maxar via Globe Imagery (tasking).", at: addDays(shot, -4) },
+            { to: "DELIVERED", note: "Image received from the supplier and added to the project.", at: addDays(shot, 1) },
+          ],
+          order: { vendor: "maxar", ref: `GI-${code}-${shot.getUTCFullYear()}-0587`, orderedAt: addDays(shot, -4), expectedBy: addDays(shot, 1), deliveredAt: addDays(shot, 1) },
+          deliveredImage: deliveredImage.id,
+        });
+      }
+      for (const r of REQUESTS) {
+        const createdAt = r.createdAt ?? addDays(NOW, -(r.daysAgo ?? 0));
+        let status = "SUBMITTED";
+        const history = [{ fromStatus: null as string | null, toStatus: "SUBMITTED", note: null as string | null, userId: r.by.id, createdAt }];
+        for (const st of r.steps) {
+          history.push({ fromStatus: status, toStatus: st.to, note: st.note ?? null, userId: doit.id, createdAt: st.at ?? addDays(NOW, -(st.daysAgo ?? 0)) });
+          status = st.to;
+        }
+        const created = await db.imageryRequest.create({
+          data: {
+            projectId: r.project.id,
+            type: r.type,
+            purpose: r.purpose,
+            neededBy: r.neededBy,
+            priority: r.by.id === cmo.id ? "CRITICAL" : r.priority,
+            status,
+            requestedById: r.by.id,
+            createdAt,
+            ...(r.order && {
+              vendorId: vendor[r.order.vendor],
+              orderRef: r.order.ref,
+              orderedAt: r.order.orderedAt,
+              expectedBy: r.order.expectedBy,
+              deliveredAt: r.order.deliveredAt ?? null,
+            }),
+            updates: { create: history },
+          },
+        });
+        if (r.deliveredImage) {
+          await db.imageryCapture.update({
+            where: { id: r.deliveredImage },
+            data: { requestId: created.id, notes: "Delivered by Maxar via Globe Imagery for an imagery request." },
+          });
+        }
+      }
     }
 
     // CMO review meetings: the two past meetings the issues are tagged with,

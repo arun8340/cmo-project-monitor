@@ -8,6 +8,7 @@ import {
   ChevronRightIcon,
   MaximizeIcon,
   RadioIcon,
+  SatelliteDishIcon,
   UploadIcon,
   XIcon,
 } from "lucide-react";
@@ -32,6 +33,7 @@ type Props = {
   closeHref: string;
   compareHref: string;
   uploadHref: string | null;
+  requestHref: string | null;
 };
 
 /**
@@ -45,6 +47,7 @@ export function LiveView({
   closeHref,
   compareHref,
   uploadHref,
+  requestHref,
 }: Props) {
   const t = useTranslations("tracking");
   const [viewer, setViewer] = useState<number | null>(null);
@@ -81,6 +84,16 @@ export function LiveView({
           <p className="text-xs text-white/60">{project.districtName}</p>
         </div>
         <div className="flex items-center gap-2">
+          {requestHref && (
+            <Button
+              variant="secondary"
+              nativeButton={false}
+              render={<Link href={requestHref} />}
+            >
+              <SatelliteDishIcon />
+              <span className="hidden sm:inline">{t("requestImagery")}</span>
+            </Button>
+          )}
           {uploadHref && (
             <Button
               variant="secondary"

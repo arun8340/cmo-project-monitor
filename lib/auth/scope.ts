@@ -39,6 +39,7 @@ export function projectScope(user: ScopeUser, stateCode: StateCode): Prisma.Proj
   switch (user.roleKey) {
     case "ADMIN":
     case "CMO":
+    case "DOIT":
       return inState;
     case "DEPARTMENT_HEAD":
       return user.departmentId ? { AND: [inState, { departmentId: user.departmentId }] } : NONE;
@@ -75,6 +76,7 @@ export function directiveScope(user: ScopeUser, stateCode: StateCode): Prisma.Di
   switch (user.roleKey) {
     case "ADMIN":
     case "CMO":
+    case "DOIT":
       return inState;
     case "DEPARTMENT_HEAD":
       return {
@@ -117,4 +119,9 @@ export function departmentScope(user: ScopeUser, stateCode: StateCode): Prisma.D
   const inState: Prisma.DepartmentWhereInput = { state: { code: stateCode } };
   if (user.roleKey === "DEPARTMENT_HEAD") return { AND: [inState, { id: user.departmentId ?? NONE.id }] };
   return inState;
+}
+
+/** Imagery requests are visible when their project is (DoIT sees the whole state). */
+export function imageryRequestScope(user: ScopeUser, stateCode: StateCode): Prisma.ImageryRequestWhereInput {
+  return { project: projectScope(user, stateCode) };
 }

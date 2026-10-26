@@ -68,7 +68,8 @@ Admin: `admin@demo.gov.in` on the **admin portal**.
 | Role | Rajasthan portal | Maharashtra portal |
 |---|---|---|
 | CM / CMO / Chief Secretary | `cmo.rj@demo.gov.in` | `cmo.mh@demo.gov.in` |
-| Department Head | `rnb.rj@demo.gov.in` (Roads & Buildings) | `pwd.mh@demo.gov.in` (PWD) |
+| Department Head | `rnb.rj@demo.gov.in` (Roads & Buildings) | `rnb.mh@demo.gov.in` (Roads & Buildings) |
+| DoIT – Imagery desk | `doit.rj@demo.gov.in` | `doit.mh@demo.gov.in` |
 | District Collector | `collector.jaipur@demo.gov.in` | `collector.mumbai-suburban@demo.gov.in` |
 | Field Officer | `field.jaipur@demo.gov.in` | `field.mumbai-suburban@demo.gov.in` |
 
@@ -138,6 +139,34 @@ in your view (hover or click). The header of every state page links to **Overvie
   **published** for everyone in the state; it can be cancelled or printed (*Print agenda*). The home page shows
   the **next CMO review meeting** with the start of its agenda. Issues keep their own optional review-meeting date,
   which the "pending/resolved at last meeting" counts use.
+
+## Imagery requests (DoIT)
+
+**DoIT (Department of IT)** is each state's imagery desk (role *DoIT – Imagery desk*, whole-state view;
+`doit.rj@demo.gov.in`, `doit.mh@demo.gov.in`).
+
+- **Anyone** can ask for imagery of a project they can see: *Request imagery* on the project page, in Live
+  tracking, on "awaiting imagery" project cards, or *Imagery Requests → Request imagery*. They choose the type
+  (Satellite / Drone / Field photo), say what it is for, and when it is needed (defaults to the next CMO meeting
+  at least 3 days away). **CMO requests are always Critical.**
+- **DoIT's home page is its imagery desk dashboard:** figures (to review, approved and waiting to be ordered, on order,
+  overdue, delivered this month, average turnaround), the requests that need attention (overdue first, then by
+  priority), requests by department, orders by supplier (average delivery time, on time), and recent deliveries.
+  Each figure opens the matching tab of the queue.
+- **DoIT** works from *Imagery Requests* (its queue: New, Under review, Open, Approved, Closed): start review,
+  **approve**, or **reject** (reason required), and add notes. The requester can cancel until it is ordered.
+  Requests past their needed-by date are flagged **Overdue**. The menu badge shows DoIT how many are waiting,
+  and everyone else how many of their own requests are still open.
+- Every step is kept in the request's history and the activity log. Departments can still upload their own
+  field photos directly.
+- **Ordering:** on an approved request DoIT chooses a **supplier** (BlackSky, Maxar via Globe Imagery, the state's
+  drone operator or the field survey team — managed under *Imagery Requests → Suppliers*), notes the order
+  reference and expected date (from the supplier's usual turnaround). Orders are recorded in the app only; there is
+  no live connection to BlackSky in the POC. An order past its expected date is flagged Overdue; DoIT can withdraw
+  it (reason required).
+- **Delivery:** *Upload delivered imagery* on the request opens the normal upload page; the images are added to
+  the project (so they appear in Live tracking and Compare), linked to the request, and the request becomes
+  **Delivered**. The requester (or DoIT) then confirms and closes it.
 
 ## Users, roles and the audit log
 

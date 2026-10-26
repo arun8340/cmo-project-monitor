@@ -10,6 +10,7 @@ import {
   ScrollTextIcon,
   PlusIcon,
   RadioIcon,
+  SatelliteDishIcon,
   SatelliteIcon,
   UploadIcon,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import { RaiseIssueDialog } from "@/components/issues/raise-issue-dialog";
 import {
   canIssueDirective,
   canRaiseIssue,
+  canRequestImagery,
 } from "@/lib/auth/project-permissions";
 import { db } from "@/lib/db";
 import { getVerifications } from "@/lib/data/compare";
@@ -197,6 +199,20 @@ async function Project({ params }: { params: Params["params"] }) {
               >
                 <UploadIcon />
                 {tt("addImages")}
+              </Button>
+            )}
+            {canRequestImagery(user) && (
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={
+                  <Link
+                    href={`${basePath}/requests/new?project=${project.id}`}
+                  />
+                }
+              >
+                <SatelliteDishIcon />
+                {tt("requestImagery")}
               </Button>
             )}
             {can.edit && (

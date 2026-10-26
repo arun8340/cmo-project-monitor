@@ -57,6 +57,9 @@ type Props = {
   today: string;
   defaultSource: ImagerySource;
   cancelHref: string;
+  /** Delivering imagery for this DoIT request (marks it delivered). */
+  requestId?: string;
+  defaultNotes?: string;
 };
 
 /** Raw GPS tags must be picked too: exifr computes `latitude`/`longitude` from them. */
@@ -114,6 +117,8 @@ export function UploadForm({
   today,
   defaultSource,
   cancelHref,
+  requestId,
+  defaultNotes,
 }: Props) {
   const [state, formAction, pending] = useActionState<UploadState, FormData>(
     uploadImagery,
@@ -182,6 +187,7 @@ export function UploadForm({
     fd.set("state", stateSlug);
     fd.set("source", source);
     fd.set("captureDate", captureDate);
+    if (requestId) fd.set("request", requestId);
     if (useExifDate) fd.set("useExifDate", "on");
     fd.set(
       "notes",
@@ -391,6 +397,7 @@ export function UploadForm({
           <Textarea
             id="notes"
             name="notes"
+            defaultValue={defaultNotes}
             maxLength={1000}
             placeholder={t("notesPlaceholder")}
           />
