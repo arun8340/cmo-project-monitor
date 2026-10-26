@@ -33,3 +33,9 @@ export const canManageMeetings = (user: CurrentUser) => has(user, "meetings.mana
 
 /** CMO / Chief Secretary and Admin issue, close and reopen directives. */
 export const canIssueDirective = (user: CurrentUser) => has(user, "directives.issue");
+
+/** Everyone in a state portal may ask DoIT for imagery. */
+export const canRequestImagery = (user: CurrentUser) => has(user, "imagery.request");
+
+/** DoIT and Admin review imagery requests and order imagery. */
+export const canProcessRequests = (user: CurrentUser) => has(user, "imagery.process");

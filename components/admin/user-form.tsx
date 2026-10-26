@@ -23,6 +23,7 @@ const selectClass =
 const NEEDS = {
   ADMIN: { state: false, district: false, department: false },
   CMO: { state: true, district: false, department: false },
+  DOIT: { state: true, district: false, department: false },
   DEPARTMENT_HEAD: { state: true, district: false, department: true },
   DISTRICT_COLLECTOR: { state: true, district: true, department: false },
   FIELD_OFFICER: { state: true, district: true, department: false },

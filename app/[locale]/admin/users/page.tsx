@@ -46,6 +46,7 @@ function scopeLabel(u: { roleKey: string; district: string | null; department: s
     case "ADMIN":
       return "All states";
     case "CMO":
+    case "DOIT":
       return "Whole state";
     case "DEPARTMENT_HEAD":
       return u.department ?? "No department set";

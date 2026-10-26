@@ -49,3 +49,9 @@ export function slotOf(d: Date) {
   if (day === secondDay(y, m)) return (y * 12 + m) * 2 + 1;
   return null;
 }
+
+/** "YYYY-MM-DD" (IST) of the first meeting at least `minDays` days from now. */
+export function meetingDayAtLeast(minDays: number, now = new Date()) {
+  const d = slotDate(slotOnOrAfter(new Date(now.getTime() + minDays * 86_400_000)));
+  return new Date(d.getTime() + IST_OFFSET).toISOString().slice(0, 10);
+}

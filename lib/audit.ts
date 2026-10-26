@@ -20,6 +20,7 @@ export const AUDIT_CATEGORIES = {
   verifications: { actions: ["verification.record"] },
   issues: { actions: ["issue.create", "issue.status"] },
   directives: { actions: ["directive.issue", "directive.status"] },
+  requests: { actions: ["request.create", "request.status", "request.note"] },
   meetings: { actions: ["meeting.create", "meeting.update", "meeting.publish", "meeting.cancel", "meeting.restore"] },
   admin: { actions: ["user.create", "user.update", "user.activate", "user.deactivate", "user.password_reset", "user.projects", "role.update"] },
 } as const;
@@ -104,6 +105,12 @@ export async function getSummarizer(): Promise<Summarize> {
       case "meeting.cancel":
       case "meeting.restore":
         return t(`action.${action.replace(".", "_")}`);
+      case "request.create":
+        return t("action.request_create", { type: label(labels.source, d.type) });
+      case "request.status":
+        return t("action.request_status", { from: label(labels.requestStatus, d.from), to: label(labels.requestStatus, d.to) });
+      case "request.note":
+        return t("action.request_note");
       case "directive.status":
         return t("action.directive_status", { from: label(labels.directiveStatus, d.from), to: label(labels.directiveStatus, d.to) });
       case "user.create":
@@ -292,7 +299,10 @@ export async function queryAudit(f: AuditFilters, scopeState: StateCode | null, 
     const target = e.entityId ? targets.get(`${e.entityType}:${e.entityId}`) : undefined;
     // Issue entries are recorded against the project; link to the issue itself.
     const issueId = typeof details.issueId === "string" ? details.issueId : null;
-    const href = issueId && target?.stateCode ? `${stateBasePath(portal, target.stateCode)}/issues/${issueId}` : (target?.href ?? null);
+    const requestId = typeof details.requestId === "string" ? details.requestId : null;
+    const base = target?.stateCode ? stateBasePath(portal, target.stateCode) : null;
+    const href =
+      base && issueId ? `${base}/issues/${issueId}` : base && requestId ? `${base}/requests/${requestId}` : (target?.href ?? null);
     const portalCode = typeof details.portal === "string" && details.portal !== "ADMIN" ? (details.portal as StateCode) : null;
     return {
       id: e.id,

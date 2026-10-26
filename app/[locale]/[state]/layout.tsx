@@ -11,6 +11,7 @@ import {
 } from "@/components/app-shell/state-nav";
 import { getNavMenus } from "@/lib/data/projects";
 import { getNavMeetings } from "@/lib/data/meetings";
+import { getRequestBadge } from "@/lib/data/requests";
 import { formatMeetingTime } from "@/components/meetings/meeting-bits";
 import { localName } from "@/lib/i18n/names";
 import { getStateConfig, STATE_CODES, type StateConfig } from "@/config/states";
@@ -75,6 +76,7 @@ async function StateHeader({
     allProjects: t("allProjects"),
     allDistricts: t("allDistricts"),
     allMeetings: t("allMeetings"),
+    requests: t("requests"),
     allDepartments: t("allDepartments"),
   };
   return (
@@ -103,7 +105,8 @@ type NavLabels = Record<
   | "allProjects"
   | "allDistricts"
   | "allDepartments"
-  | "allMeetings",
+  | "allMeetings"
+  | "requests",
   string
 >;
 type NavMenus = {
@@ -116,7 +119,7 @@ type NavMenus = {
 function navItems(
   base: string,
   l: NavLabels,
-  counts?: { openIssues: number; overdueDirectives: number },
+  counts?: { openIssues: number; overdueDirectives: number; requests?: number },
   showActivity = false,
   menus?: NavMenus,
 ): NavItem[] {
@@ -130,6 +133,12 @@ function navItems(
       allLabel: l.allMeetings,
     },
     { key: "imagery", href: `${base}/imagery`, label: l.imagery },
+    {
+      key: "requests",
+      href: `${base}/requests`,
+      label: l.requests,
+      count: counts?.requests,
+    },
     {
       key: "projects",
       href: `${base}/projects`,
@@ -185,13 +194,16 @@ async function NavWithCounts({
   const user = await getCurrentUser();
   if (!user || !canAccessState(user, state.code))
     return <StateNav items={navItems(base, labels)} />;
-  const [counts, menus, meetings, locale, tn] = await Promise.all([
-    getNavCounts(user, state),
-    getNavMenus(user, state),
-    getNavMeetings(user, state),
-    getLocale(),
-    getTranslations("nav"),
-  ]);
+  const [navCounts, requestBadge, menus, meetings, locale, tn] =
+    await Promise.all([
+      getNavCounts(user, state),
+      getRequestBadge(user, state),
+      getNavMenus(user, state),
+      getNavMeetings(user, state),
+      getLocale(),
+      getTranslations("nav"),
+    ]);
+  const counts = { ...navCounts, requests: requestBadge };
   const ln = (n: { name: string; nameLocal: string | null }) =>
     localName(locale, n.name, n.nameLocal);
   const meeting = (m: {
