@@ -9,6 +9,8 @@ import {
 import { requireStateAccess, type CurrentUser } from "@/lib/auth/dal";
 import { getStateOverview } from "@/lib/data/state-overview";
 import { getNextMeeting, getPreviousMeeting } from "@/lib/data/meetings";
+import { getDoitDashboard } from "@/lib/data/requests";
+import { DoitDashboardView } from "@/components/requests/doit-dashboard";
 import { getImageryProjects, parseProjectFilters } from "@/lib/data/projects";
 import { LiveImageryStrip } from "@/components/state-home/live-imagery-strip";
 import { canManageMeetings } from "@/lib/auth/project-permissions";
@@ -56,6 +58,11 @@ async function StateHome({
 }) {
   const { state: stateParam } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  // DoIT's home is its imagery desk.
+  if (user.roleKey === "DOIT") {
+    const [data, locale] = await Promise.all([getDoitDashboard(user, state), getLocale()]);
+    return <DoitDashboardView data={data} basePath={basePath} stateName={localNames(locale, state.name, state.nameLocal).primary} />;
+  }
   const [overview, nextMeeting, previousMeeting, imagery] = await Promise.all([
     getStateOverview(user, state),
     getNextMeeting(user, state),
