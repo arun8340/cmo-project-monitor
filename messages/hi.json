@@ -350,7 +350,12 @@
       "meeting_restore": "रद्द बैठक को ड्राफ़्ट के रूप में बहाल किया",
       "request_create": "{type} चित्र का अनुरोध किया",
       "request_status": "चित्र अनुरोध: {from} → {to}",
-      "request_note": "चित्र अनुरोध पर टिप्पणी जोड़ी"
+      "request_note": "चित्र अनुरोध पर टिप्पणी जोड़ी",
+      "request_order": "{vendor} से चित्र ऑर्डर किए",
+      "vendor_create": "आपूर्तिकर्ता {name} जोड़ा",
+      "vendor_update": "आपूर्तिकर्ता {name} संपादित किया",
+      "vendor_activate": "{name} से ऑर्डर फिर शुरू किया",
+      "vendor_deactivate": "{name} से ऑर्डर बंद किया"
     },
     "failedReason": {
       "unknown_user": "अज्ञात ईमेल",
@@ -511,7 +516,10 @@
       "agendaItemTitle": "हर एजेंडा बिंदु का शीर्षक चाहिए (3–300 अक्षर); टिप्पणी 1000 तक।",
       "agendaTooMany": "अधिकतम {max} एजेंडा बिंदु।",
       "agendaRef": "एक एजेंडा बिंदु ऐसी परियोजना, समस्या या निर्देश से जुड़ा है जिस तक आपकी पहुँच नहीं है।",
-      "requestPurpose": "बताएँ कि चित्र किसलिए चाहिए (कम से कम 10 अक्षर)।"
+      "requestPurpose": "बताएँ कि चित्र किसलिए चाहिए (कम से कम 10 अक्षर)।",
+      "chooseVendor": "आपूर्तिकर्ता चुनें।",
+      "vendorName": "आपूर्तिकर्ता का नाम दर्ज करें (2–120 अक्षर)।",
+      "turnaround": "1–90 दिन की अवधि दर्ज करें।"
     },
     "filesRejected": "कुछ फ़ाइलें स्वीकार नहीं की जा सकीं। कुछ भी अपलोड नहीं हुआ।",
     "uploadFailed": "अपलोड विफल रहा। कृपया फिर से प्रयास करें।",
@@ -534,7 +542,9 @@
     "meetingRestored": "बैठक ड्राफ़्ट के रूप में बहाल हुई।",
     "meetingTransitionNotAllowed": "इस बैठक के लिए यह बदलाव अनुमत नहीं है।",
     "requestNoteAdded": "टिप्पणी जोड़ी गई।",
-    "requestMarked": "अनुरोध {status} किया गया।"
+    "requestMarked": "अनुरोध {status} किया गया।",
+    "orderPlaced": "{vendor} को ऑर्डर दिया गया।",
+    "vendorSaved": "{name} सहेजा गया।"
   },
   "projectForm": {
     "project": "परियोजना",
@@ -622,7 +632,9 @@
     "notesPlaceholder": "जैसे उत्तरी चारदीवारी, मुख्य सड़क से दृश्य",
     "uploading": "{count, plural, one {# चित्र अपलोड हो रहा है…} other {# चित्र अपलोड हो रहे हैं…}}",
     "uploadCount": "{count, plural, one {# चित्र अपलोड करें} other {# चित्र अपलोड करें}}",
-    "uploadNone": "चित्र अपलोड करें"
+    "uploadNone": "चित्र अपलोड करें",
+    "deliveringOrder": "{vendor} से डीओआईटी ऑर्डर की प्राप्ति (संदर्भ {ref})। अपलोड करने पर अनुरोध प्राप्त के रूप में दर्ज होगा।",
+    "deliveredNote": "{vendor} द्वारा प्रदत्त (ऑर्डर {ref})।"
   },
   "verify": {
     "title": "सत्यापन दर्ज करें",
@@ -697,7 +709,9 @@
       "reject": "अस्वीकार करें",
       "reconsider": "पुनर्विचार करें",
       "cancelRequest": "अनुरोध रद्द करें",
-      "addNote": "टिप्पणी जोड़ें"
+      "addNote": "टिप्पणी जोड़ें",
+      "withdrawOrder": "ऑर्डर वापस लें",
+      "confirmClose": "प्राप्ति की पुष्टि कर बंद करें"
     },
     "noteAdded": "टिप्पणी",
     "liveTracking": "लाइव ट्रैकिंग"
@@ -1000,7 +1014,9 @@
       "open": "खुले",
       "approved": "स्वीकृत",
       "closed": "बंद",
-      "all": "सभी"
+      "all": "सभी",
+      "ordered": "ऑर्डर किए",
+      "delivered": "प्राप्त"
     },
     "overdue": "समय-सीमा पार",
     "neededBy": "{date} तक चाहिए",
@@ -1029,6 +1045,39 @@
     "history": "इतिहास",
     "raised": "अनुरोध किया",
     "project": "परियोजना",
-    "currentLatest": "नवीनतम चित्र {date}"
+    "currentLatest": "नवीनतम चित्र {date}",
+    "suppliers": "आपूर्तिकर्ता",
+    "placeOrder": "चित्र ऑर्डर करें",
+    "placeOrderHint": "आपूर्तिकर्ता चुनें, उनका ऑर्डर संदर्भ और चित्र मिलने की अपेक्षित तारीख़ दर्ज करें।",
+    "fVendor": "आपूर्तिकर्ता",
+    "turnaround": "आमतौर पर {days, plural, one {# दिन} other {# दिन}}",
+    "fExpectedBy": "अपेक्षित तारीख़",
+    "fOrderRef": "ऑर्डर संदर्भ",
+    "fOrderRefPlaceholder": "आपूर्तिकर्ता का ऑर्डर / टास्किंग नंबर (वैकल्पिक)",
+    "fOrderNote": "टिप्पणी (वैकल्पिक)",
+    "confirmOrder": "ऑर्डर दें",
+    "orderedOn": "ऑर्डर की तारीख़",
+    "deliveredOn": "प्राप्ति की तारीख़",
+    "uploadDelivery": "प्राप्त चित्र अपलोड करें",
+    "uploadDeliveryHint": "आपूर्तिकर्ता से चित्र मिलने पर यहाँ अपलोड करें; वे परियोजना में जुड़ जाएँगे और अनुरोध प्राप्त के रूप में दर्ज होगा।",
+    "deliveredImagery": "{count, plural, one {प्राप्त चित्र} other {प्राप्त चित्र (#)}}",
+    "deliveredToast": "{count, plural, one {चित्र प्राप्त हुआ और परियोजना में जोड़ा गया।} other {# चित्र प्राप्त हुए और परियोजना में जोड़े गए।}}",
+    "orderedFrom": "{vendor} से ऑर्डर · अपेक्षित {date}",
+    "deliveredBy": "{vendor} द्वारा प्रदत्त · {date}"
+  },
+  "suppliers": {
+    "title": "आपूर्तिकर्ता",
+    "intro": "डीओआईटी किनसे चित्र मँगवाता है: उपग्रह टास्किंग, ड्रोन ऑपरेटर और स्थल सर्वेक्षण टीमें।",
+    "add": "आपूर्तिकर्ता जोड़ें",
+    "edit": "संपादित करें",
+    "fName": "नाम",
+    "fType": "क्या आपूर्ति करता है",
+    "fTurnaround": "सामान्य अवधि (दिन)",
+    "fContact": "संपर्क",
+    "fContactPlaceholder": "डेस्क / फ़ोन (वैकल्पिक)",
+    "inactive": "उपयोग में नहीं",
+    "orders": "{count, plural, =0 {अभी कोई ऑर्डर नहीं} one {# ऑर्डर} other {# ऑर्डर}}",
+    "deactivate": "उपयोग बंद करें",
+    "activate": "फिर उपयोग करें"
   }
 }

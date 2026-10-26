@@ -17,6 +17,8 @@ export const REQUEST_TABS = [
   "new",
   "review",
   "approved",
+  "ordered",
+  "delivered",
   "closed",
   "all",
 ] as const;
@@ -26,7 +28,9 @@ const TAB_STATUSES: Record<RequestTab, RequestStatus[] | null> = {
   open: OPEN_REQUEST_STATUSES,
   new: ["SUBMITTED"],
   review: ["UNDER_REVIEW"],
-  approved: ["APPROVED", "ORDERED", "DELIVERED"],
+  approved: ["APPROVED"],
+  ordered: ["ORDERED"],
+  delivered: ["DELIVERED"],
   closed: ["REJECTED", "CANCELLED", "CLOSED"],
   all: null,
 };
@@ -56,12 +60,13 @@ const PRIORITY_RANK: Record<string, number> = {
   LOW: 3,
 };
 
-/** Overdue: still waiting and past the needed-by date. */
+/** Overdue: still waiting and past the needed-by date, or ordered and past the expected delivery. */
 export const isOverdue = (
-  r: { status: string; neededBy: Date },
+  r: { status: string; neededBy: Date; expectedBy?: Date | null },
   today = parseDateInput(todayIST())!,
 ) =>
-  (OPEN_REQUEST_STATUSES as string[]).includes(r.status) && r.neededBy < today;
+  (OPEN_REQUEST_STATUSES as string[]).includes(r.status) &&
+  (r.neededBy < today || (r.status === "ORDERED" && !!r.expectedBy && r.expectedBy < today));
 
 const ROW_SELECT = {
   id: true,
@@ -72,6 +77,11 @@ const ROW_SELECT = {
   status: true,
   createdAt: true,
   requestedById: true,
+  orderRef: true,
+  orderedAt: true,
+  expectedBy: true,
+  deliveredAt: true,
+  vendor: { select: { id: true, name: true } },
   requestedBy: { select: { name: true, role: { select: { key: true } } } },
   project: {
     select: {
@@ -165,9 +175,15 @@ export async function getRequest(
         include: { user: { select: { name: true } } },
         orderBy: { createdAt: "asc" },
       },
+      imagery: {
+        select: { id: true, captureDate: true, source: true },
+        orderBy: { captureDate: "desc" },
+      },
     },
   });
-  return r ? { ...toRow(r), project: r.project, updates: r.updates } : null;
+  return r
+    ? { ...toRow(r), project: r.project, updates: r.updates, delivered: r.imagery }
+    : null;
 }
 
 /** Projects the user may request imagery for (with whether they already have imagery). */
@@ -196,7 +212,7 @@ export async function getRequestableProjects(
 }
 
 /**
- * Menu badge: for DoIT, requests waiting on them (submitted or under review);
+ * Menu badge: for DoIT, requests waiting on them (to review or to order);
  * for everyone else, their own requests still open.
  */
 export async function getRequestBadge(user: CurrentUser, state: StateConfig) {
@@ -206,7 +222,7 @@ export async function getRequestBadge(user: CurrentUser, state: StateConfig) {
       AND: [
         imageryRequestScope(user, state.code),
         doit
-          ? { status: { in: ["SUBMITTED", "UNDER_REVIEW"] } }
+          ? { status: { in: ["SUBMITTED", "UNDER_REVIEW", "APPROVED"] } }
           : { requestedById: user.id, status: { in: OPEN_REQUEST_STATUSES } },
       ],
     },
@@ -221,4 +237,24 @@ export async function getProjectRequests(projectId: string) {
     orderBy: { createdAt: "desc" },
   });
   return rows.map(toRow);
+}
+
+/** Active suppliers for this state, by type (for the order form). */
+export async function getVendorsForOrder(state: StateConfig) {
+  const rows = await db.vendor.findMany({
+    where: { state: { code: state.code }, active: true },
+    select: { id: true, name: true, type: true, turnaroundDays: true },
+    orderBy: [{ type: "asc" }, { name: "asc" }],
+  });
+  return rows.map((v) => ({ ...v, type: v.type as ImagerySource }));
+}
+
+/** All suppliers for this state (the Suppliers page), with how many orders each has. */
+export async function listVendors(state: StateConfig) {
+  const rows = await db.vendor.findMany({
+    where: { state: { code: state.code } },
+    include: { _count: { select: { requests: true } } },
+    orderBy: [{ active: "desc" }, { type: "asc" }, { name: "asc" }],
+  });
+  return rows.map((v) => ({ ...v, type: v.type as ImagerySource, orders: v._count.requests }));
 }

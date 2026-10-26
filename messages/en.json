@@ -350,7 +350,12 @@
       "meeting_restore": "Restored a cancelled meeting as draft",
       "request_create": "Requested {type} imagery",
       "request_status": "Imagery request: {from} → {to}",
-      "request_note": "Added a note to an imagery request"
+      "request_note": "Added a note to an imagery request",
+      "request_order": "Ordered imagery from {vendor}",
+      "vendor_create": "Added supplier {name}",
+      "vendor_update": "Edited supplier {name}",
+      "vendor_activate": "Resumed ordering from {name}",
+      "vendor_deactivate": "Stopped ordering from {name}"
     },
     "failedReason": {
       "unknown_user": "unknown email",
@@ -511,7 +516,10 @@
       "agendaItemTitle": "Each agenda point needs a title (3–300 characters); notes up to 1000.",
       "agendaTooMany": "At most {max} agenda points.",
       "agendaRef": "An agenda point links to a project, issue or directive you can’t access.",
-      "requestPurpose": "Say what the imagery is needed for (at least 10 characters)."
+      "requestPurpose": "Say what the imagery is needed for (at least 10 characters).",
+      "chooseVendor": "Choose a supplier.",
+      "vendorName": "Enter the supplier name (2–120 characters).",
+      "turnaround": "Enter a turnaround of 1–90 days."
     },
     "filesRejected": "Some files couldn't be accepted. Nothing was uploaded.",
     "uploadFailed": "The upload failed. Please try again.",
@@ -534,7 +542,9 @@
     "meetingRestored": "Meeting restored as a draft.",
     "meetingTransitionNotAllowed": "That change is not allowed for this meeting.",
     "requestNoteAdded": "Note added.",
-    "requestMarked": "Request marked {status}."
+    "requestMarked": "Request marked {status}.",
+    "orderPlaced": "Order placed with {vendor}.",
+    "vendorSaved": "Saved {name}."
   },
   "projectForm": {
     "project": "Project",
@@ -622,7 +632,9 @@
     "notesPlaceholder": "e.g. North boundary wall, view from main road",
     "uploading": "{count, plural, one {Uploading # image…} other {Uploading # images…}}",
     "uploadCount": "{count, plural, one {Upload # image} other {Upload # images}}",
-    "uploadNone": "Upload images"
+    "uploadNone": "Upload images",
+    "deliveringOrder": "Delivering the DoIT order from {vendor} (ref. {ref}). Uploading marks the request as delivered.",
+    "deliveredNote": "Delivered by {vendor} (order {ref})."
   },
   "verify": {
     "title": "Record verification",
@@ -697,7 +709,9 @@
       "reject": "Reject",
       "reconsider": "Reconsider",
       "cancelRequest": "Cancel request",
-      "addNote": "Add note"
+      "addNote": "Add note",
+      "withdrawOrder": "Withdraw order",
+      "confirmClose": "Confirm received & close"
     },
     "noteAdded": "Note",
     "liveTracking": "Live tracking"
@@ -1000,7 +1014,9 @@
       "open": "Open",
       "approved": "Approved",
       "closed": "Closed",
-      "all": "All"
+      "all": "All",
+      "ordered": "Ordered",
+      "delivered": "Delivered"
     },
     "overdue": "Overdue",
     "neededBy": "Needed by {date}",
@@ -1029,6 +1045,39 @@
     "history": "History",
     "raised": "Requested",
     "project": "Project",
-    "currentLatest": "Latest image {date}"
+    "currentLatest": "Latest image {date}",
+    "suppliers": "Suppliers",
+    "placeOrder": "Order the imagery",
+    "placeOrderHint": "Choose the supplier, note their order reference and when the imagery is expected.",
+    "fVendor": "Supplier",
+    "turnaround": "Usually {days, plural, one {# day} other {# days}}",
+    "fExpectedBy": "Expected by",
+    "fOrderRef": "Order reference",
+    "fOrderRefPlaceholder": "Supplier's order / tasking number (optional)",
+    "fOrderNote": "Note (optional)",
+    "confirmOrder": "Place order",
+    "orderedOn": "Ordered on",
+    "deliveredOn": "Delivered on",
+    "uploadDelivery": "Upload delivered imagery",
+    "uploadDeliveryHint": "When the supplier's imagery arrives, upload it here; it is added to the project and the request is marked delivered.",
+    "deliveredImagery": "{count, plural, one {Delivered image} other {Delivered images (#)}}",
+    "deliveredToast": "{count, plural, one {Image delivered and added to the project.} other {# images delivered and added to the project.}}",
+    "orderedFrom": "Ordered from {vendor} · expected {date}",
+    "deliveredBy": "Delivered by {vendor} · {date}"
+  },
+  "suppliers": {
+    "title": "Suppliers",
+    "intro": "Who DoIT orders imagery from: satellite tasking, drone operators and field survey teams.",
+    "add": "Add supplier",
+    "edit": "Edit",
+    "fName": "Name",
+    "fType": "Supplies",
+    "fTurnaround": "Usual turnaround (days)",
+    "fContact": "Contact",
+    "fContactPlaceholder": "Desk / phone (optional)",
+    "inactive": "Not in use",
+    "orders": "{count, plural, =0 {no orders yet} one {# order} other {# orders}}",
+    "deactivate": "Stop using",
+    "activate": "Use again"
   }
 }

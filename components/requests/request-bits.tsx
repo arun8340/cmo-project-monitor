@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
-import { CalendarClockIcon, ClockAlertIcon } from "lucide-react";
+import { CalendarClockIcon, ClockAlertIcon, TruckIcon } from "lucide-react";
 import { pill, PriorityBadge, TONE_PILL } from "@/components/workflow/badges";
 import { SOURCE_META } from "@/components/imagery/source-meta";
 import type { RequestStatus } from "@/lib/constants";
@@ -90,6 +90,14 @@ export function RequestCard({
         )}
       </p>
       <p className="mt-2 line-clamp-2 text-sm">{r.purpose}</p>
+      {r.vendor && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-info">
+          <TruckIcon className="size-3.5" />
+          {r.deliveredAt
+            ? t("deliveredBy", { vendor: r.vendor.name, date: formatDate(r.deliveredAt, locale) })
+            : t("orderedFrom", { vendor: r.vendor.name, date: formatDate(r.expectedBy, locale) })}
+        </p>
+      )}
       <p className="mt-2 text-xs text-muted-foreground">
         {t("requestedBy", {
           name: r.requestedBy.name,

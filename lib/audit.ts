@@ -20,7 +20,9 @@ export const AUDIT_CATEGORIES = {
   verifications: { actions: ["verification.record"] },
   issues: { actions: ["issue.create", "issue.status"] },
   directives: { actions: ["directive.issue", "directive.status"] },
-  requests: { actions: ["request.create", "request.status", "request.note"] },
+  requests: {
+    actions: ["request.create", "request.status", "request.note", "request.order", "vendor.create", "vendor.update", "vendor.activate", "vendor.deactivate"],
+  },
   meetings: { actions: ["meeting.create", "meeting.update", "meeting.publish", "meeting.cancel", "meeting.restore"] },
   admin: { actions: ["user.create", "user.update", "user.activate", "user.deactivate", "user.password_reset", "user.projects", "role.update"] },
 } as const;
@@ -111,6 +113,13 @@ export async function getSummarizer(): Promise<Summarize> {
         return t("action.request_status", { from: label(labels.requestStatus, d.from), to: label(labels.requestStatus, d.to) });
       case "request.note":
         return t("action.request_note");
+      case "request.order":
+        return t("action.request_order", { vendor: String(d.vendor ?? "") });
+      case "vendor.create":
+      case "vendor.update":
+      case "vendor.activate":
+      case "vendor.deactivate":
+        return t(`action.${action.replace(".", "_")}`, { name: String(d.name ?? "") });
       case "directive.status":
         return t("action.directive_status", { from: label(labels.directiveStatus, d.from), to: label(labels.directiveStatus, d.to) });
       case "user.create":
@@ -175,7 +184,7 @@ export function parseAuditFilters(sp: Record<string, string | string[] | undefin
  * only in the admin's unscoped view.
  */
 async function stateWhere(stateCode: StateCode): Promise<Prisma.AuditLogWhereInput> {
-  const [projects, directives, users, meetings] = await Promise.all([
+  const [projects, directives, users, meetings, vendors] = await Promise.all([
     db.project.findMany({ where: { district: { state: { code: stateCode } } }, select: { id: true } }),
     db.directive.findMany({
       where: {
@@ -189,10 +198,12 @@ async function stateWhere(stateCode: StateCode): Promise<Prisma.AuditLogWhereInp
     }),
     db.user.findMany({ where: { state: { code: stateCode } }, select: { id: true } }),
     db.meeting.findMany({ where: { state: { code: stateCode } }, select: { id: true } }),
+    db.vendor.findMany({ where: { state: { code: stateCode } }, select: { id: true } }),
   ]);
   return {
     OR: [
       { entityType: "Meeting", entityId: { in: meetings.map((m) => m.id) } },
+      { entityType: "Vendor", entityId: { in: vendors.map((v) => v.id) } },
       { entityType: "Project", entityId: { in: projects.map((p) => p.id) } },
       { entityType: "Directive", entityId: { in: directives.map((d) => d.id) } },
       { entityType: "User", entityId: { in: users.map((u) => u.id) } },
@@ -234,7 +245,7 @@ export type AuditRow = {
  */
 async function resolveTargets(rows: { entityType: string; entityId: string | null; details: string | null }[], portal: Portal) {
   const ids = (type: string) => [...new Set(rows.filter((r) => r.entityType === type && r.entityId).map((r) => r.entityId!))];
-  const [projects, directives, users, meetings, labels, locale] = await Promise.all([
+  const [projects, directives, users, meetings, vendors, labels, locale] = await Promise.all([
     db.project.findMany({
       where: { id: { in: ids("Project") } },
       select: { id: true, name: true, nameLocal: true, district: { select: { state: { select: { code: true } } } } },
@@ -251,6 +262,7 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
     }),
     db.user.findMany({ where: { id: { in: ids("User") } }, select: { id: true, name: true, email: true, state: { select: { code: true } } } }),
     db.meeting.findMany({ where: { id: { in: ids("Meeting") } }, select: { id: true, title: true, state: { select: { code: true } } } }),
+    db.vendor.findMany({ where: { id: { in: ids("Vendor") } }, select: { id: true, name: true, state: { select: { code: true } } } }),
     getLabels(),
     getLocale(),
   ]);
@@ -275,6 +287,10 @@ async function resolveTargets(rows: { entityType: string; entityId: string | nul
   for (const m of meetings) {
     const code = m.state.code as StateCode;
     map.set(`Meeting:${m.id}`, { label: m.title, href: `${stateBasePath(portal, code)}/meetings/${m.id}`, stateCode: code });
+  }
+  for (const v of vendors) {
+    const code = v.state.code as StateCode;
+    map.set(`Vendor:${v.id}`, { label: v.name, href: `${stateBasePath(portal, code)}/requests/suppliers`, stateCode: code });
   }
   for (const r of roles) map.set(`Role:${r.id}`, { label: labels.role[r.key as RoleKey] ?? r.key, href: portal.kind === "admin" ? "/admin/roles" : null, stateCode: null });
   return map;

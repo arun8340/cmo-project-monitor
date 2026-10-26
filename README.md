@@ -155,8 +155,14 @@ in your view (hover or click). The header of every state page links to **Overvie
   and everyone else how many of their own requests are still open.
 - Every step is kept in the request's history and the activity log. Departments can still upload their own
   field photos directly.
-- *Coming next:* ordering from BlackSky / drone operators / field teams (recorded in the app; no live BlackSky
-  connection in the POC) and attaching the delivered imagery to the project.
+- **Ordering:** on an approved request DoIT chooses a **supplier** (BlackSky, Maxar via Globe Imagery, the state's
+  drone operator or the field survey team — managed under *Imagery Requests → Suppliers*), notes the order
+  reference and expected date (from the supplier's usual turnaround). Orders are recorded in the app only; there is
+  no live connection to BlackSky in the POC. An order past its expected date is flagged Overdue; DoIT can withdraw
+  it (reason required).
+- **Delivery:** *Upload delivered imagery* on the request opens the normal upload page; the images are added to
+  the project (so they appear in Live tracking and Compare), linked to the request, and the request becomes
+  **Delivered**. The requester (or DoIT) then confirms and closes it.
 
 ## Users, roles and the audit log
 

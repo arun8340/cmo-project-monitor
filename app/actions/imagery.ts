@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { findAccessibleProject, getCurrentUser } from "@/lib/auth/dal";
-import { canUploadImagery } from "@/lib/auth/project-permissions";
+import { canProcessRequests, canUploadImagery } from "@/lib/auth/project-permissions";
 import { getStateConfig } from "@/config/states";
 import { stateBasePath } from "@/config/portals";
 import { IMAGERY_SOURCES, type ImagerySource } from "@/lib/constants";
@@ -40,6 +40,12 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
   else if (dateStr > todayIST()) errors.captureDate = t("v.captureFuture");
 
   const useExifDate = formData.get("useExifDate") === "on";
+  // Delivering a DoIT order: only DoIT, only an ordered request for this project.
+  const requestId = String(formData.get("request") ?? "") || null;
+  const request = requestId
+    ? await db.imageryRequest.findFirst({ where: { id: requestId, projectId, status: "ORDERED" } })
+    : null;
+  if (requestId && (!request || !canProcessRequests(user))) return { message: NO_ACCESS };
   const notes = String(formData.get("notes") ?? "").trim().slice(0, 1000) || null;
 
   const files = formData.getAll("files").filter((f): f is File => f instanceof File && f.size > 0);
@@ -87,6 +93,7 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
         exifLongitude: img.exif.longitude,
         exifTakenAt: img.exif.takenAt,
         uploadedById: user.id,
+        requestId: request?.id ?? null,
       });
     }
 
@@ -102,6 +109,21 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
           details: JSON.stringify({ count: created.length, source, ids: created.map((c) => c.id) }),
         },
       });
+      if (request) {
+        await tx.imageryRequest.update({ where: { id: request.id }, data: { status: "DELIVERED", deliveredAt: new Date() } });
+        await tx.imageryRequestUpdate.create({
+          data: { requestId: request.id, fromStatus: "ORDERED", toStatus: "DELIVERED", note: notes, userId: user.id },
+        });
+        await tx.auditLog.create({
+          data: {
+            userId: user.id,
+            action: "request.status",
+            entityType: "Project",
+            entityId: projectId,
+            details: JSON.stringify({ requestId: request.id, from: "ORDERED", to: "DELIVERED" }),
+          },
+        });
+      }
     });
   } catch (e) {
     await Promise.all(written.map((dir) => storage.removePrefix(dir).catch(() => {})));
@@ -109,5 +131,6 @@ export async function uploadImagery(_prev: UploadState, formData: FormData): Pro
     return { message: t("uploadFailed") };
   }
 
-  redirect(`${stateBasePath(user.portal, state.code)}/project/${projectId}/imagery?uploaded=${processed.length}`);
+  const base = stateBasePath(user.portal, state.code);
+  redirect(request ? `${base}/requests/${request.id}?delivered=${processed.length}` : `${base}/project/${projectId}/imagery?uploaded=${processed.length}`);
 }
