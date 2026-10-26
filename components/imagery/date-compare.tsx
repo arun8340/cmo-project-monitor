@@ -12,7 +12,15 @@ export type DateOption = { id: string; label: string };
  * Pick two capture dates and open them in the comparison screen.
  * `options` oldest first; starts on the earliest vs the latest image.
  */
-export function DateCompare({ options, compareHref, tone = "light" }: { options: DateOption[]; compareHref: string; tone?: "light" | "dark" }) {
+export function DateCompare({
+  options,
+  compareHref,
+  tone = "light",
+}: {
+  options: DateOption[];
+  compareHref: string;
+  tone?: "light" | "dark";
+}) {
   const t = useTranslations("tracking");
   const [from, setFrom] = useState(options[0]?.id ?? "");
   const [to, setTo] = useState(options.at(-1)?.id ?? "");
@@ -29,7 +37,11 @@ export function DateCompare({ options, compareHref, tone = "light" }: { options:
     <div className="flex flex-wrap items-end gap-2">
       <label className={`grid gap-1 text-xs ${label}`}>
         {t("from")}
-        <select value={from} onChange={(e) => setFrom(e.target.value)} className={select}>
+        <select
+          value={from}
+          onChange={(e) => setFrom(e.target.value)}
+          className={select}
+        >
           {options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.label}
@@ -39,7 +51,11 @@ export function DateCompare({ options, compareHref, tone = "light" }: { options:
       </label>
       <label className={`grid gap-1 text-xs ${label}`}>
         {t("to")}
-        <select value={to} onChange={(e) => setTo(e.target.value)} className={select}>
+        <select
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          className={select}
+        >
           {options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.label}
@@ -53,7 +69,11 @@ export function DateCompare({ options, compareHref, tone = "light" }: { options:
           {t("compare")}
         </Button>
       ) : (
-        <Button variant={tone === "dark" ? "secondary" : "default"} nativeButton={false} render={<Link href={`${compareHref}&images=${from},${to}`} />}>
+        <Button
+          variant={tone === "dark" ? "secondary" : "default"}
+          nativeButton={false}
+          render={<Link href={`${compareHref}&images=${from},${to}`} />}
+        >
           <ColumnsIcon />
           {t("compare")}
         </Button>

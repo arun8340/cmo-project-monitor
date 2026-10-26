@@ -129,7 +129,7 @@ async function Imagery({ params, searchParams }: { params: Params["params"]; sea
         </div>
       </div>
 
-      <section className="rounded-xl border bg-card p-4" aria-labelledby="availability-heading">
+      <section className="min-w-0 rounded-xl border bg-card p-4" aria-labelledby="availability-heading">
         <h2 id="availability-heading" className="mb-1 text-lg font-bold text-navy">
           {t("availability")}
         </h2>
