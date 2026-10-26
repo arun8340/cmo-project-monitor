@@ -83,6 +83,7 @@ model Project {
   assignedOfficers User[]           @relation("FieldOfficerProjects")
   verifications    Verification[]
   agendaItems      MeetingAgendaItem[]
+  imageryRequests  ImageryRequest[]
 
   @@index([districtId, departmentId])
   @@index([status])
@@ -262,6 +263,8 @@ model User {
   verifications    Verification[]
   issueUpdates     IssueUpdate[]
   meetingsCreated  Meeting[]
+  imageryRequests  ImageryRequest[]       @relation("RequestedBy")
+  requestUpdates   ImageryRequestUpdate[]
   directiveUpdates DirectiveUpdate[]
 }
 
@@ -318,4 +321,41 @@ model MeetingAgendaItem {
   directive   Directive? @relation(fields: [directiveId], references: [id], onDelete: SetNull)
 
   @@index([meetingId, position])
+}
+
+// Request to DoIT for satellite / drone / field imagery of a project. DoIT
+// reviews it (approve / reject) and orders the imagery. CMO requests are
+// always top priority. Visible to everyone who can see the project.
+model ImageryRequest {
+  id            String                 @id @default(cuid())
+  projectId     String
+  project       Project                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type          String // ImagerySource: SATELLITE | DRONE | FIELD_PHOTO
+  purpose       String
+  neededBy      DateTime
+  priority      String                 @default("MEDIUM") // IssuePriority
+  status        String                 @default("SUBMITTED") // RequestStatus
+  requestedById String
+  requestedBy   User                   @relation("RequestedBy", fields: [requestedById], references: [id])
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  updates       ImageryRequestUpdate[]
+
+  @@index([projectId])
+  @@index([status])
+}
+
+// History of a request: raised, status changes and notes (fromStatus = toStatus for a note).
+model ImageryRequestUpdate {
+  id         String         @id @default(cuid())
+  requestId  String
+  request    ImageryRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  fromStatus String?
+  toStatus   String
+  note       String?
+  userId     String
+  user       User           @relation(fields: [userId], references: [id])
+  createdAt  DateTime       @default(now())
+
+  @@index([requestId])
 }

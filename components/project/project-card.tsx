@@ -3,6 +3,7 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   CircleAlertIcon,
   RadioIcon,
+  SatelliteDishIcon,
   SatelliteIcon,
   UploadIcon,
 } from "lucide-react";
@@ -110,17 +111,24 @@ export function ProjectCard({
               <SatelliteIcon className="size-5" />
             </span>
             <span className="text-sm font-semibold">{t("awaiting")}</span>
-            {canUpload ? (
+            <div className="flex flex-wrap justify-center gap-2">
               <Link
-                href={`${projectPath}/imagery/upload`}
+                href={`${basePath}/requests/new?project=${row.id}`}
                 className="inline-flex items-center gap-1.5 rounded-md bg-amber px-3 py-1.5 text-xs font-bold text-navy shadow hover:brightness-105"
               >
-                <UploadIcon className="size-3.5" />
-                {t("addImages")}
+                <SatelliteDishIcon className="size-3.5" />
+                {t("requestImagery")}
               </Link>
-            ) : (
-              <span className="text-xs text-white/75">{t("awaitingHint")}</span>
-            )}
+              {canUpload && (
+                <Link
+                  href={`${projectPath}/imagery/upload`}
+                  className="inline-flex items-center gap-1.5 rounded-md bg-white/15 px-3 py-1.5 text-xs font-bold text-white ring-1 ring-white/30 hover:bg-white/25"
+                >
+                  <UploadIcon className="size-3.5" />
+                  {t("addImages")}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       )}

@@ -19,8 +19,10 @@ export const DEMO_ACCOUNTS: DemoAccount[] = [
   { email: "rnb.rj@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "Roads & Buildings", portal: "RJ" },
   { email: "collector.jaipur@demo.gov.in", role: "DISTRICT_COLLECTOR", scope: "Jaipur", portal: "RJ" },
   { email: "field.jaipur@demo.gov.in", role: "FIELD_OFFICER", scope: "Jaipur", portal: "RJ" },
+  { email: "doit.rj@demo.gov.in", role: "DOIT", scope: "STATE", portal: "RJ" },
   { email: "cmo.mh@demo.gov.in", role: "CMO", scope: "STATE", portal: "MH" },
-  { email: "pwd.mh@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "PWD", portal: "MH" },
+  { email: "rnb.mh@demo.gov.in", role: "DEPARTMENT_HEAD", scope: "Roads & Buildings", portal: "MH" },
   { email: "collector.mumbai-suburban@demo.gov.in", role: "DISTRICT_COLLECTOR", scope: "Mumbai Suburban", portal: "MH" },
   { email: "field.mumbai-suburban@demo.gov.in", role: "FIELD_OFFICER", scope: "Mumbai Suburban", portal: "MH" },
+  { email: "doit.mh@demo.gov.in", role: "DOIT", scope: "STATE", portal: "MH" },
 ];

@@ -9,12 +9,13 @@ import { FieldError } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 import { changeIssueStatus, type IssueFormState } from "@/app/actions/issues";
 import { changeDirectiveStatus, type DirectiveFormState } from "@/app/actions/directives";
+import { changeRequestStatus, type RequestFormState } from "@/app/actions/requests";
 import { submitKeepingValues } from "@/lib/forms";
 
 type Transition = { to: string; label: string; noteRequired: boolean };
 
 type Props = {
-  kind: "issue" | "directive";
+  kind: "issue" | "directive" | "request";
   id: string;
   stateSlug: string;
   transitions: Transition[];
@@ -25,8 +26,8 @@ type Props = {
  * note (required where the workflow says so) before saving.
  */
 export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
-  const action = kind === "issue" ? changeIssueStatus : changeDirectiveStatus;
-  const [state, formAction, pending] = useActionState<IssueFormState | DirectiveFormState, FormData>(action, {});
+  const action = kind === "issue" ? changeIssueStatus : kind === "request" ? changeRequestStatus : changeDirectiveStatus;
+  const [state, formAction, pending] = useActionState<IssueFormState | DirectiveFormState | RequestFormState, FormData>(action, {});
   // The chosen change, and the action result that was current when it was chosen:
   // once a newer successful result arrives, the note box closes by itself.
   const [pick, setPick] = useState<{ t: Transition; base: typeof state } | null>(null);
@@ -45,7 +46,7 @@ export function StatusChange({ kind, id, stateSlug, transitions }: Props) {
     return (
       <div className="flex flex-wrap gap-2">
         {transitions.map((t) => (
-          <Button key={t.to} type="button" variant={t.to === "RESOLVED" || t.to === "COMPLIED" || t.to === "CLOSED" ? "default" : "outline"} size="sm" onClick={() => setPick({ t, base: state })}>
+          <Button key={t.to} type="button" variant={t.to === "RESOLVED" || t.to === "COMPLIED" || t.to === "CLOSED" || t.to === "APPROVED" ? "default" : "outline"} size="sm" onClick={() => setPick({ t, base: state })}>
             {label(t)}
           </Button>
         ))}

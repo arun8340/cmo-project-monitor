@@ -41,6 +41,7 @@ export const ROLE_KEYS = [
   "DEPARTMENT_HEAD",
   "DISTRICT_COLLECTOR",
   "FIELD_OFFICER",
+  "DOIT",
 ] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
@@ -60,6 +61,8 @@ export const PERMISSIONS = [
   "directives.issue",
   "directives.update",
   "meetings.manage",
+  "imagery.request",
+  "imagery.process",
   "audit.view",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -76,7 +79,17 @@ export const ROLE_DEFINITIONS: Record<
   CMO: {
     name: "CM / CMO / Chief Secretary",
     description: "Whole-state view; issues directives; can add imagery",
-    permissions: ["projects.view", "imagery.upload", "verification.record", "directives.issue", "directives.update", "issues.update", "meetings.manage", "audit.view"],
+    permissions: [
+      "projects.view",
+      "imagery.upload",
+      "imagery.request",
+      "verification.record",
+      "directives.issue",
+      "directives.update",
+      "issues.update",
+      "meetings.manage",
+      "audit.view",
+    ],
   },
   DEPARTMENT_HEAD: {
     name: "Department Head",
@@ -86,6 +99,7 @@ export const ROLE_DEFINITIONS: Record<
       "projects.edit",
       "progress.update",
       "imagery.upload",
+      "imagery.request",
       "verification.record",
       "issues.create",
       "issues.update",
@@ -101,6 +115,7 @@ export const ROLE_DEFINITIONS: Record<
       "projects.edit",
       "progress.update",
       "imagery.upload",
+      "imagery.request",
       "verification.record",
       "issues.create",
       "issues.update",
@@ -110,9 +125,24 @@ export const ROLE_DEFINITIONS: Record<
   FIELD_OFFICER: {
     name: "Field Officer",
     description: "Uploads field photos, progress and issues for assigned projects",
-    permissions: ["projects.view", "progress.update", "imagery.upload", "issues.create"],
+    permissions: ["projects.view", "progress.update", "imagery.upload", "imagery.request", "issues.create"],
+  },
+  DOIT: {
+    name: "DoIT – Imagery desk",
+    description: "Department of IT: reviews imagery requests from all departments and orders satellite / drone / field imagery",
+    permissions: ["projects.view", "imagery.upload", "imagery.request", "imagery.process"],
   },
 };
+
+/**
+ * Imagery request workflow (DoIT). Requested → DoIT reviews → approved or
+ * rejected; ordering and delivery follow (ORDERED / DELIVERED / CLOSED).
+ * The requester may cancel until it is ordered.
+ */
+export const REQUEST_STATUSES = ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "REJECTED", "ORDERED", "DELIVERED", "CLOSED", "CANCELLED"] as const;
+export type RequestStatus = (typeof REQUEST_STATUSES)[number];
+/** Statuses still waiting on DoIT (or a vendor). */
+export const OPEN_REQUEST_STATUSES: RequestStatus[] = ["SUBMITTED", "UNDER_REVIEW", "APPROVED", "ORDERED"];
 
 /** Outcome of comparing dated imagery against reported progress. */
 export const VERIFICATION_OUTCOMES = ["PROGRESS_VISIBLE", "NO_VISIBLE_CHANGE", "DISCREPANCY"] as const;
@@ -134,6 +164,8 @@ export const PERMISSION_GROUPS: { group: string; items: { key: Permission; label
     group: "Imagery",
     items: [
       { key: "imagery.upload", label: "Upload imagery", hint: "Upload satellite, drone and field photos" },
+      { key: "imagery.request", label: "Request imagery", hint: "Ask DoIT for satellite / drone / field imagery of a project" },
+      { key: "imagery.process", label: "Process imagery requests", hint: "DoIT: review, approve or reject requests and order imagery" },
       { key: "verification.record", label: "Record verifications", hint: "Record the outcome of comparing imagery" },
     ],
   },

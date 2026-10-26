@@ -72,6 +72,7 @@ const MEETING_DAY_COLUMNS: [table: string, column: string][] = [
   ["Meeting", "meetingAt"],
   ["Issue", "meetingDate"],
   ["Issue", "resolvedAt"],
+  ["ImageryRequest", "neededBy"],
 ];
 
 /**

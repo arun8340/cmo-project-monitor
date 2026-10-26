@@ -152,6 +152,8 @@ const ISSUE_TEMPLATES: { title: string; priority: IssuePriority }[] = [
 
 async function wipe() {
   await db.auditLog.deleteMany();
+  await db.imageryRequestUpdate.deleteMany();
+  await db.imageryRequest.deleteMany();
   await db.meetingAgendaItem.deleteMany();
   await db.meeting.deleteMany();
   await db.verification.deleteMany();
@@ -214,8 +216,8 @@ async function main() {
       collectorDistrict: "MH-MUMBAI-SUBURBAN",
       collectorName: "Collector, Mumbai Suburban",
       cmoName: "CMO Maharashtra",
-      dept: "PWD",
-      deptHeadName: "Secretary, PWD Maharashtra",
+      dept: "RNB",
+      deptHeadName: "Secretary, Roads & Buildings Maharashtra",
       fieldName: "Field Officer, Mumbai Suburban",
     },
   };
@@ -264,6 +266,9 @@ async function main() {
     });
     const fieldOfficer = await db.user.create({
       data: { name: plan.fieldName, email: `field.${slug}@demo.gov.in`, passwordHash, designation: "Assistant Engineer", roleId: roles.FIELD_OFFICER.id, stateId: state.id, districtId: districts.get(plan.collectorDistrict)!.id },
+    });
+    const doit = await db.user.create({
+      data: { name: `DoIT Imagery Desk, ${cfg.name}`, email: `doit.${s}@demo.gov.in`, passwordHash, designation: "Department of IT – Imagery desk", roleId: roles.DOIT.id, stateId: state.id },
     });
 
     const createdProjects: { id: string; seed: ProjectSeed; status: ProjectStatus; districtId: string; departmentId: string }[] = [];
@@ -490,6 +495,104 @@ async function main() {
           createdAt: addDays(NOW, -Math.round(between(2, 10))),
         },
       });
+    }
+
+    // Imagery requests to DoIT, one at each stage: a CMO request (always top
+    // priority), one under review, one approved, one rejected, and an overdue one.
+    {
+      const collectorDistrict = districts.get(plan.collectorDistrict)!.id;
+      // Projects the collector or department head can see, with that requester.
+      const pool = createdProjects
+        .map((p) => ({ p, by: p.districtId === collectorDistrict ? collector : p.departmentId === departments.get(plan.dept) ? deptHead : null }))
+        .filter((x): x is { p: (typeof createdProjects)[number]; by: typeof collector } => !!x.by);
+      const used = new Set<string>();
+      const take = (pref: (p: (typeof createdProjects)[number]) => boolean) => {
+        const pick = pool.find((x) => !used.has(x.p.id) && pref(x.p)) ?? pool.find((x) => !used.has(x.p.id));
+        if (pick) used.add(pick.p.id);
+        return pick;
+      };
+      const awaiting = createdProjects.filter((p) => !p.seed.site);
+      const cmoProject = awaiting[0] ?? createdProjects[0];
+      used.add(cmoProject.id);
+
+      type Step = { to: string; note?: string; daysAgo: number };
+      type Seeded = { project: { id: string }; by: { id: string }; type: string; priority: string; purpose: string; neededBy: Date; daysAgo: number; steps: Step[] };
+      const REQUESTS: Seeded[] = [
+        {
+          project: cmoProject,
+          by: cmo,
+          type: "SATELLITE",
+          priority: "CRITICAL",
+          purpose: "Need a current satellite image of this site to verify the reported progress at the next CMO review.",
+          neededBy: NEXT_MEETING,
+          daysAgo: 1,
+          steps: [],
+        },
+      ];
+      // Nobody else can see a suitable project: the CMO raises it (and it is Critical).
+      const add = (pick: ReturnType<typeof take>, r: Omit<Seeded, "project" | "by">) => {
+        const fallback = createdProjects.find((p) => !used.has(p.id));
+        if (!pick && fallback) used.add(fallback.id);
+        const chosen = pick ?? (fallback ? { p: fallback, by: cmo } : null);
+        if (chosen) REQUESTS.push({ ...r, project: chosen.p, by: chosen.by });
+      };
+      add(take((p) => p.status === "DELAYED" && !!p.seed.site), {
+        type: "DRONE",
+        priority: "HIGH",
+        purpose: "Contractor reports the main structure is complete on the delayed stretch. Drone survey needed to confirm before the recovery plan is accepted.",
+        neededBy: MEETING_AFTER_NEXT,
+        daysAgo: 4,
+        steps: [{ to: "UNDER_REVIEW", note: "Checking availability of the empanelled drone operator for this site.", daysAgo: 3 }],
+      });
+      add(take((p) => !p.seed.site), {
+        type: "SATELLITE",
+        priority: "MEDIUM",
+        purpose: "Baseline satellite image of the site for monitoring; work is under way but nothing has been captured yet.",
+        neededBy: MEETING_AFTER_NEXT,
+        daysAgo: 6,
+        steps: [
+          { to: "UNDER_REVIEW", daysAgo: 5 },
+          { to: "APPROVED", note: "Approved. Will be tasked on BlackSky this week.", daysAgo: 4 },
+        ],
+      });
+      add(take((p) => !!p.seed.site), {
+        type: "FIELD_PHOTO",
+        priority: "HIGH",
+        purpose: "Geotagged photos of the boundary wall and approach road, which are not clearly visible in the satellite image.",
+        neededBy: addDays(NOW, -3),
+        daysAgo: 12,
+        steps: [],
+      });
+      add(take((p) => !!p.seed.site), {
+        type: "SATELLITE",
+        priority: "LOW",
+        purpose: "Latest satellite view of the site for the department's monthly report.",
+        neededBy: addDays(NOW, 20),
+        daysAgo: 9,
+        steps: [{ to: "REJECTED", note: "A recent satellite image of this site is already available in Live tracking; please use that for the report.", daysAgo: 8 }],
+      });
+      for (const r of REQUESTS) {
+        const createdAt = addDays(NOW, -r.daysAgo);
+        let status = "SUBMITTED";
+        const history = [{ fromStatus: null as string | null, toStatus: "SUBMITTED", note: null as string | null, userId: r.by.id, createdAt }];
+        for (const st of r.steps) {
+          history.push({ fromStatus: status, toStatus: st.to, note: st.note ?? null, userId: doit.id, createdAt: addDays(NOW, -st.daysAgo) });
+          status = st.to;
+        }
+        await db.imageryRequest.create({
+          data: {
+            projectId: r.project.id,
+            type: r.type,
+            purpose: r.purpose,
+            neededBy: r.neededBy,
+            priority: r.by.id === cmo.id ? "CRITICAL" : r.priority,
+            status,
+            requestedById: r.by.id,
+            createdAt,
+            updates: { create: history },
+          },
+        });
+      }
     }
 
     // CMO review meetings: the two past meetings the issues are tagged with,
