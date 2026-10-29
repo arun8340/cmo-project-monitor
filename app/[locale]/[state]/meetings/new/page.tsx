@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { MeetingForm } from "@/components/meetings/meeting-form";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canManageMeetings } from "@/lib/auth/project-permissions";
+import { canManageMeetings, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getAgendaOptions, nextFreeMeetingDay } from "@/lib/data/meetings";
 import { todayIST } from "@/lib/dates";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -30,6 +30,7 @@ export default function NewMeetingPage({ params }: Params) {
 async function NewMeeting({ params }: { params: Params["params"] }) {
   const { state: stateParam } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   if (!canManageMeetings(user)) notFound();
   const [options, t, locale, defaultDay] = await Promise.all([
     getAgendaOptions(user, state),

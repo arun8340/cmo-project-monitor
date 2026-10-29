@@ -39,3 +39,6 @@ export const canRequestImagery = (user: CurrentUser) => has(user, "imagery.reque
 
 /** DoIT and Admin review imagery requests and order imagery. */
 export const canProcessRequests = (user: CurrentUser) => has(user, "imagery.process");
+
+/** DoIT only handles imagery: no CMO meetings, issues, directives or department views. */
+export const isImageryDeskOnly = (user: CurrentUser) => user.roleKey === "DOIT";

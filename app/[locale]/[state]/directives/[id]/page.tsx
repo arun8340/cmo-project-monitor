@@ -9,6 +9,7 @@ import { StatusChange } from "@/components/workflow/status-change";
 import { Timeline } from "@/components/workflow/timeline";
 import { OnceToast } from "@/components/workflow/once-toast";
 import { requireStateAccess } from "@/lib/auth/dal";
+import { isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getDirective } from "@/lib/data/directives";
 import type { DirectiveStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -36,6 +37,7 @@ export default function DirectivePage({ params, searchParams }: Params) {
 async function Directive({ params, searchParams }: { params: Params["params"]; searchParams: Params["searchParams"] }) {
   const [{ state: stateParam, id }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const d = await getDirective(user, state, id);
   if (!d) notFound();
 

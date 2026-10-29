@@ -37,6 +37,7 @@ import {
   canIssueDirective,
   canRaiseIssue,
   canRequestImagery,
+  isImageryDeskOnly,
 } from "@/lib/auth/project-permissions";
 import { db } from "@/lib/db";
 import { getVerifications } from "@/lib/data/compare";
@@ -103,6 +104,7 @@ async function Project({ params }: { params: Params["params"] }) {
     activity,
     can,
   } = detail;
+  const deskOnly = isImageryDeskOnly(user);
   const districtPath = `${basePath}/district/${districtSlug(project.district.geoCode)}`;
   const now = new Date();
   const timeElapsed = planned;
@@ -409,127 +411,134 @@ async function Project({ params }: { params: Params["params"] }) {
             )}
           </Panel>
 
-          <Panel
-            title={
-              <>
-                <CircleAlertIcon className="size-4 text-muted-foreground" />
-                {t("issues")}
-                <span className="font-normal text-muted-foreground">
-                  {project.issues.length}
-                </span>
-              </>
-            }
-            id="issues-heading"
-            action={
-              canRaiseIssue(user) && (
-                <RaiseIssueDialog
-                  projectId={project.id}
-                  projectName={name.primary}
-                  stateSlug={state.code.toLowerCase()}
-                  lastMeeting={lastMeeting ? fmt(lastMeeting) : null}
-                />
-              )
-            }
-          >
-            {project.issues.length === 0 ? (
-              <p className="text-sm text-muted-foreground">{t("noIssues")}</p>
-            ) : (
-              <ul className="divide-y border-t">
-                {project.issues.map((i) => (
-                  <li key={i.id} className="grid gap-1 py-2.5 text-sm">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link
-                        href={`${basePath}/issues/${i.id}`}
-                        className="font-semibold text-navy hover:underline"
-                      >
-                        {i.title}
-                      </Link>
-                      <PriorityBadge priority={i.priority as IssuePriority} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-                      <IssueStatusBadge status={i.status as IssueStatus} />
-                      {i.meetingDate && (
-                        <span>
-                          {t("reviewMeeting", { date: fmt(i.meetingDate) })}
-                        </span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Panel>
-
-          <Panel
-            title={
-              <>
-                <ScrollTextIcon className="size-4 text-muted-foreground" />
-                {t("directives")}
-                <span className="font-normal text-muted-foreground">
-                  {directives.length}
-                </span>
-              </>
-            }
-            id="directives-heading"
-            action={
-              canIssueDirective(user) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      href={`${basePath}/directives/new?project=${project.id}`}
-                    />
-                  }
-                >
-                  <PlusIcon />
-                  {t("newDirective")}
-                </Button>
-              )
-            }
-          >
-            {directives.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                {t("noDirectives")}
-              </p>
-            ) : (
-              <ul className="divide-y border-t">
-                {directives.map((d) => {
-                  const open =
-                    d.status === "OPEN" || d.status === "IN_PROGRESS";
-                  const overdue = open && d.dueDate != null && d.dueDate < now;
-                  return (
-                    <li key={d.id} className="grid gap-1 py-2.5 text-sm">
-                      <Link
-                        href={`${basePath}/directives/${d.id}`}
-                        className="font-semibold text-navy hover:underline"
-                      >
-                        {d.text}
-                      </Link>
-                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                        <DirectiveStatusBadge
-                          status={d.status as DirectiveStatus}
-                          overdue={overdue}
-                        />
-                        <span>{t("from", { name: d.fromUser.name })}</span>
-                        {d.owner && (
-                          <span>· {t("owner", { name: d.owner.name })}</span>
-                        )}
-                        {d.dueDate && (
-                          <span
-                            className={overdue ? "font-semibold text-bad" : ""}
-                          >
-                            · {t("due", { date: fmt(d.dueDate) })}
+          {!deskOnly && (
+            <Panel
+              title={
+                <>
+                  <CircleAlertIcon className="size-4 text-muted-foreground" />
+                  {t("issues")}
+                  <span className="font-normal text-muted-foreground">
+                    {project.issues.length}
+                  </span>
+                </>
+              }
+              id="issues-heading"
+              action={
+                canRaiseIssue(user) && (
+                  <RaiseIssueDialog
+                    projectId={project.id}
+                    projectName={name.primary}
+                    stateSlug={state.code.toLowerCase()}
+                    lastMeeting={lastMeeting ? fmt(lastMeeting) : null}
+                  />
+                )
+              }
+            >
+              {project.issues.length === 0 ? (
+                <p className="text-sm text-muted-foreground">{t("noIssues")}</p>
+              ) : (
+                <ul className="divide-y border-t">
+                  {project.issues.map((i) => (
+                    <li key={i.id} className="grid gap-1 py-2.5 text-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <Link
+                          href={`${basePath}/issues/${i.id}`}
+                          className="font-semibold text-navy hover:underline"
+                        >
+                          {i.title}
+                        </Link>
+                        <PriorityBadge priority={i.priority as IssuePriority} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
+                        <IssueStatusBadge status={i.status as IssueStatus} />
+                        {i.meetingDate && (
+                          <span>
+                            {t("reviewMeeting", { date: fmt(i.meetingDate) })}
                           </span>
                         )}
                       </div>
                     </li>
-                  );
-                })}
-              </ul>
-            )}
-          </Panel>
+                  ))}
+                </ul>
+              )}
+            </Panel>
+          )}
+
+          {!deskOnly && (
+            <Panel
+              title={
+                <>
+                  <ScrollTextIcon className="size-4 text-muted-foreground" />
+                  {t("directives")}
+                  <span className="font-normal text-muted-foreground">
+                    {directives.length}
+                  </span>
+                </>
+              }
+              id="directives-heading"
+              action={
+                canIssueDirective(user) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        href={`${basePath}/directives/new?project=${project.id}`}
+                      />
+                    }
+                  >
+                    <PlusIcon />
+                    {t("newDirective")}
+                  </Button>
+                )
+              }
+            >
+              {directives.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {t("noDirectives")}
+                </p>
+              ) : (
+                <ul className="divide-y border-t">
+                  {directives.map((d) => {
+                    const open =
+                      d.status === "OPEN" || d.status === "IN_PROGRESS";
+                    const overdue =
+                      open && d.dueDate != null && d.dueDate < now;
+                    return (
+                      <li key={d.id} className="grid gap-1 py-2.5 text-sm">
+                        <Link
+                          href={`${basePath}/directives/${d.id}`}
+                          className="font-semibold text-navy hover:underline"
+                        >
+                          {d.text}
+                        </Link>
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                          <DirectiveStatusBadge
+                            status={d.status as DirectiveStatus}
+                            overdue={overdue}
+                          />
+                          <span>{t("from", { name: d.fromUser.name })}</span>
+                          {d.owner && (
+                            <span>· {t("owner", { name: d.owner.name })}</span>
+                          )}
+                          {d.dueDate && (
+                            <span
+                              className={
+                                overdue ? "font-semibold text-bad" : ""
+                              }
+                            >
+                              · {t("due", { date: fmt(d.dueDate) })}
+                            </span>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Panel>
+          )}
 
           <Panel
             title={

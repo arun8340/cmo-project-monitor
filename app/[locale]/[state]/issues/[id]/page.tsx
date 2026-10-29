@@ -8,7 +8,7 @@ import { IssueStatusBadge, PriorityBadge } from "@/components/workflow/badges";
 import { StatusChange } from "@/components/workflow/status-change";
 import { Timeline } from "@/components/workflow/timeline";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canUpdateIssue } from "@/lib/auth/project-permissions";
+import { canUpdateIssue, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getIssue } from "@/lib/data/issues";
 import type { IssuePriority, IssueStatus } from "@/lib/constants";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -37,6 +37,7 @@ export default function IssuePage({ params }: Params) {
 async function Issue({ params }: { params: Params["params"] }) {
   const { state: stateParam, id } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const issue = await getIssue(user, state, id);
   if (!issue) notFound();
 

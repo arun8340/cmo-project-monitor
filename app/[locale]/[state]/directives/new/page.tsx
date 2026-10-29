@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { DirectiveForm } from "@/components/directives/directive-form";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canIssueDirective } from "@/lib/auth/project-permissions";
+import { canIssueDirective, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getDirectiveFormOptions } from "@/lib/data/directives";
 import { todayIST } from "@/lib/dates";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -30,6 +30,7 @@ export default function NewDirectivePage({ params, searchParams }: Params) {
 async function NewDirective({ params, searchParams }: { params: Params["params"]; searchParams: Params["searchParams"] }) {
   const [{ state: stateParam }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   if (!canIssueDirective(user)) notFound();
   const options = await getDirectiveFormOptions(user, state);
 

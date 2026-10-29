@@ -4,7 +4,7 @@ import type { StateConfig } from "@/config/states";
 import { db } from "@/lib/db";
 import type { CurrentUser } from "@/lib/auth/dal";
 import { directiveScope, issueScope, projectScope } from "@/lib/auth/scope";
-import { canManageMeetings } from "@/lib/auth/project-permissions";
+import { canManageMeetings, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import type {
   DirectiveStatus,
   IssuePriority,
@@ -26,6 +26,7 @@ export function meetingScope(
   user: CurrentUser,
   state: StateConfig,
 ): Prisma.MeetingWhereInput {
+  if (isImageryDeskOnly(user)) return { id: "__no_access__" }; // DoIT only handles imagery
   return {
     state: { code: state.code },
     ...(canManageMeetings(user) ? {} : { status: { not: "DRAFT" } }),
