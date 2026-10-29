@@ -12,6 +12,10 @@ import {
 import { getNavMenus } from "@/lib/data/projects";
 import { getNavMeetings } from "@/lib/data/meetings";
 import { getRequestBadge } from "@/lib/data/requests";
+import { isImageryDeskOnly } from "@/lib/auth/project-permissions";
+
+/** Sections DoIT (imagery only) does not see. */
+const DOIT_HIDDEN = new Set(["meetings", "issues", "directives", "departments"]);
 import { formatMeetingTime } from "@/components/meetings/meeting-bits";
 import { localName } from "@/lib/i18n/names";
 import { getStateConfig, STATE_CODES, type StateConfig } from "@/config/states";
@@ -254,7 +258,7 @@ async function NavWithCounts({
         counts,
         user.permissions.includes("audit.view"),
         sub,
-      )}
+      ).filter((it) => !(isImageryDeskOnly(user) && DOIT_HIDDEN.has(it.key)))}
     />
   );
 }

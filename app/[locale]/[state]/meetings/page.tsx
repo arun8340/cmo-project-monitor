@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { CalendarDaysIcon, MapPinIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +13,7 @@ import {
   MeetingStatusBadge,
 } from "@/components/meetings/meeting-bits";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canManageMeetings } from "@/lib/auth/project-permissions";
+import { canManageMeetings, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { listMeetings } from "@/lib/data/meetings";
 import { getLocale, getTranslations } from "next-intl/server";
 import { localName } from "@/lib/i18n/names";
@@ -43,6 +44,7 @@ async function Meetings({
 }) {
   const [{ state: stateParam }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const { upcoming, past } = await listMeetings(user, state);
   const [t, locale] = await Promise.all([
     getTranslations("meetings"),

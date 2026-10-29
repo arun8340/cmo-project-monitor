@@ -22,7 +22,7 @@ import {
   PrintButton,
 } from "@/components/meetings/meeting-actions";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canManageMeetings } from "@/lib/auth/project-permissions";
+import { canManageMeetings, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getMeeting } from "@/lib/data/meetings";
 import { formatDateTime } from "@/lib/format";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -57,6 +57,7 @@ async function Meeting({
     searchParams,
   ]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const meeting = await getMeeting(user, state, id);
   if (!meeting) notFound();
   const [t, locale] = await Promise.all([

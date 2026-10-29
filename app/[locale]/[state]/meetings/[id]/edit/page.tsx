@@ -5,7 +5,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { MeetingForm } from "@/components/meetings/meeting-form";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canManageMeetings } from "@/lib/auth/project-permissions";
+import { canManageMeetings, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getAgendaOptions, getMeeting } from "@/lib/data/meetings";
 import { toDateInput, todayIST } from "@/lib/dates";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -37,6 +37,7 @@ const IST_TIME = new Intl.DateTimeFormat("en-GB", {
 async function EditMeeting({ params }: { params: Params["params"] }) {
   const { state: stateParam, id } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   if (!canManageMeetings(user)) notFound();
   const [meeting, options, t, locale] = await Promise.all([
     getMeeting(user, state, id),
