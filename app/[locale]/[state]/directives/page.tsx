@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Form from "next/form";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { PlusIcon, ScrollTextIcon, SearchXIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -10,7 +11,7 @@ import { FilterChips, withParams } from "@/components/workflow/filter-chips";
 import { DirectiveStatusBadge } from "@/components/workflow/badges";
 import { AutoSubmitSelect } from "@/components/workflow/auto-submit-select";
 import { requireStateAccess } from "@/lib/auth/dal";
-import { canIssueDirective } from "@/lib/auth/project-permissions";
+import { canIssueDirective, isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { listDirectives, parseDirectiveFilters, type DirectiveFilters, type DirectiveTab } from "@/lib/data/directives";
 import { daysBetween, formatDate } from "@/lib/format";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -49,6 +50,7 @@ function dueText(due: Date | null, overdue: boolean, now: Date, t: DT, locale: L
 async function Directives({ params, searchParams }: { params: Params["params"]; searchParams: Params["searchParams"] }) {
   const [{ state: stateParam }, sp] = await Promise.all([params, searchParams]);
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const f = parseDirectiveFilters(sp);
   const { rows, counts, options } = await listDirectives(user, state, f);
   const listPath = `${basePath}/directives`;

@@ -54,6 +54,7 @@ export function projectScope(user: ScopeUser, stateCode: StateCode): Prisma.Proj
 
 /** Issues are visible when their project is. */
 export function issueScope(user: ScopeUser, stateCode: StateCode): Prisma.IssueWhereInput {
+  if (user.roleKey === "DOIT") return { id: NONE.id }; // DoIT only handles imagery
   return { project: projectScope(user, stateCode) };
 }
 
@@ -62,7 +63,7 @@ export function issueScope(user: ScopeUser, stateCode: StateCode): Prisma.IssueW
  * department / visible projects, plus anything they issued or own.
  */
 export function directiveScope(user: ScopeUser, stateCode: StateCode): Prisma.DirectiveWhereInput {
-  if (!canAccessState(user, stateCode)) return { id: NONE.id };
+  if (!canAccessState(user, stateCode) || user.roleKey === "DOIT") return { id: NONE.id };
 
   const inState: Prisma.DirectiveWhereInput = {
     OR: [
@@ -76,7 +77,6 @@ export function directiveScope(user: ScopeUser, stateCode: StateCode): Prisma.Di
   switch (user.roleKey) {
     case "ADMIN":
     case "CMO":
-    case "DOIT":
       return inState;
     case "DEPARTMENT_HEAD":
       return {

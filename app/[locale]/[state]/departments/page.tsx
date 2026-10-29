@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
+import { notFound } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumbs } from "@/components/app-shell/breadcrumbs";
 import { PageHeader } from "@/components/app-shell/page-parts";
 import { GroupCard } from "@/components/browse/group-card";
 import { requireStateAccess } from "@/lib/auth/dal";
+import { isImageryDeskOnly } from "@/lib/auth/project-permissions";
 import { getDepartmentCards } from "@/lib/data/projects";
 import { formatBudget } from "@/lib/format";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -31,6 +33,7 @@ export default function DepartmentsPage({ params }: Params) {
 async function Departments({ params }: { params: Params["params"] }) {
   const { state: stateParam } = await params;
   const { user, state, basePath } = await requireStateAccess(stateParam);
+  if (isImageryDeskOnly(user)) notFound();
   const [cards, t, locale] = await Promise.all([
     getDepartmentCards(user, state),
     getTranslations("browse"),
