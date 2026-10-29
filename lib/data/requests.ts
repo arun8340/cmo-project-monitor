@@ -244,7 +244,7 @@ export async function getVendorsForOrder(state: StateConfig) {
   const rows = await db.vendor.findMany({
     where: { state: { code: state.code }, active: true },
     select: { id: true, name: true, type: true, turnaroundDays: true },
-    orderBy: [{ type: "asc" }, { name: "asc" }],
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }], // order added: Neuentra BlackSky first
   });
   return rows.map((v) => ({ ...v, type: v.type as ImagerySource }));
 }
@@ -254,7 +254,7 @@ export async function listVendors(state: StateConfig) {
   const rows = await db.vendor.findMany({
     where: { state: { code: state.code } },
     include: { _count: { select: { requests: true } } },
-    orderBy: [{ active: "desc" }, { type: "asc" }, { name: "asc" }],
+    orderBy: [{ active: "desc" }, { createdAt: "asc" }, { id: "asc" }], // order added: Neuentra BlackSky first
   });
   return rows.map((v) => ({ ...v, type: v.type as ImagerySource, orders: v._count.requests }));
 }
