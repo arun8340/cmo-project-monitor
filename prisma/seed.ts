@@ -273,7 +273,7 @@ async function main() {
     });
     // Suppliers DoIT orders from (contacts are placeholders).
     const VENDORS = [
-      { key: "blacksky", name: "BlackSky (satellite tasking)", type: "SATELLITE", turnaroundDays: 2, contact: "Tasking desk · via DoIT account manager" },
+      { key: "blacksky", name: "Neuentra BlackSky (satellite tasking)", type: "SATELLITE", turnaroundDays: 2, contact: "Tasking desk · via DoIT account manager" },
       { key: "maxar", name: "Maxar via Globe Imagery", type: "SATELLITE", turnaroundDays: 5, contact: "Archive & tasking · Globe Imagery" },
       { key: "drone", name: code === "RJ" ? "SkyEye Drone Services, Jaipur" : "AeroMap Drones, Pune", type: "DRONE", turnaroundDays: 5, contact: "Empanelled drone operator" },
       { key: "field", name: `DoIT Field Survey Team, ${cfg.name}`, type: "FIELD_PHOTO", turnaroundDays: 3, contact: "Internal team" },
@@ -579,7 +579,7 @@ async function main() {
         daysAgo: 6,
         steps: [
           { to: "UNDER_REVIEW", daysAgo: 5 },
-          { to: "APPROVED", note: "Approved. Will be tasked on BlackSky this week.", daysAgo: 4 },
+          { to: "APPROVED", note: "Approved. Will be tasked on Neuentra BlackSky this week.", daysAgo: 4 },
         ],
       });
       add(take((p) => !!p.seed.site), {
@@ -598,7 +598,7 @@ async function main() {
         daysAgo: 9,
         steps: [{ to: "REJECTED", note: "A recent satellite image of this site is already available in Live tracking; please use that for the report.", daysAgo: 8 }],
       });
-      // One on order with BlackSky, due shortly.
+      // One on order with Neuentra BlackSky, due shortly.
       add(take((p) => !!p.seed.site), {
         type: "SATELLITE",
         priority: "HIGH",
@@ -608,7 +608,7 @@ async function main() {
         steps: [
           { to: "UNDER_REVIEW", daysAgo: 4 },
           { to: "APPROVED", daysAgo: 4 },
-          { to: "ORDERED", note: "Tasked on BlackSky; first clear pass expected within two days.", daysAgo: 2 },
+          { to: "ORDERED", note: "Tasked on Neuentra BlackSky; first clear pass expected within two days.", daysAgo: 2 },
         ],
         order: { vendor: "blacksky", ref: `BSK-${code}-2026-1043`, orderedAt: addDays(NOW, -2), expectedBy: addDays(NOW, 1) },
       });

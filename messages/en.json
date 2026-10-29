@@ -1002,7 +1002,7 @@
     "intro": "Ask DoIT for satellite, drone or field imagery of a project, and follow each request.",
     "introDoit": "Requests from all departments. Review them, approve or reject, then order the imagery.",
     "new": "Request imagery",
-    "newIntro": "DoIT reviews every request and orders the imagery from BlackSky, a drone operator or the field team. You will see each step here.",
+    "newIntro": "DoIT reviews every request and orders the imagery from Neuentra BlackSky, a drone operator or the field team. You will see each step here.",
     "filterByStatus": "Filter by status",
     "filterByType": "Filter by type",
     "anyType": "Any type",
@@ -1025,7 +1025,7 @@
     "chooseProject": "Choose a project…",
     "fType": "What kind of imagery?",
     "typeHint": {
-      "SATELLITE": "High-resolution satellite image of the site (BlackSky / Maxar). Usually 1–3 days.",
+      "SATELLITE": "High-resolution satellite image of the site (Neuentra BlackSky / Maxar). Usually 1–3 days.",
       "DRONE": "Drone survey of the site by an empanelled operator. Usually 3–7 days.",
       "FIELD_PHOTO": "Geotagged photos taken on site by the field team."
     },
