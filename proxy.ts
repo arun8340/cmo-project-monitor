@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
-import { isDevPortalChooserHost, portalFromHeaders } from "./config/portals";
+import { isDevPortalChooserHost, isMainHostFromHeaders, portalFromHeaders } from "./config/portals";
 import { STATE_CODES } from "./config/states";
-import { LOCALE_COOKIE, resolveLocale } from "./lib/i18n/config";
+import { isLocale, LOCALE_COOKIE, MAIN_LOCALES, resolveLocale } from "./lib/i18n/config";
 
 /**
  * Request routing per portal (see config/portals.ts). Cookie-only checks —
@@ -12,7 +12,9 @@ import { LOCALE_COOKIE, resolveLocale } from "./lib/i18n/config";
  * - State portal (e.g. rj.localhost:3000): clean URLs, rewritten internally to
  *   /<state>/...; other states' paths and admin pages are "not found".
  * - Admin portal: state picker plus /rj, /mh, ...
- * - Unknown host: not found (in development, plain localhost lists the portals).
+ * - Main page (PORTAL_HOST_MAIN): public list of states linking to each state
+ *   portal's sign-in; nothing else is served there and no login is needed.
+ * - Unknown host: not found (in development, localhost:3000/portals lists every portal).
  *
  * Every page is also served under a hidden language segment (app/[locale]),
  * chosen from the portal's language cookie — so /district/jaipur on the
@@ -23,6 +25,7 @@ const { auth } = NextAuth(authConfig);
 // Deep enough that no route (including /[locale]/[state]/...) matches → app/global-not-found.tsx with a 404.
 const NOT_FOUND = "/__not-found/__/__/__";
 const STATE_PREFIXES = STATE_CODES.map((c) => `/${c.toLowerCase()}`);
+const MAIN_PAGE = "/main";
 const ADMIN_ONLY = ["/select-state", "/admin"];
 const hasPrefix = (path: string, prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
 
@@ -30,17 +33,22 @@ export default auth((req) => {
   const { pathname, search } = req.nextUrl;
   const host = req.headers.get("host");
   const portal = portalFromHeaders(req.headers);
-  const locale = resolveLocale(portal, req.cookies.get(LOCALE_COOKIE)?.value);
+  const cookieLocale = req.cookies.get(LOCALE_COOKIE)?.value;
+  const isMain = !portal && isMainHostFromHeaders(req.headers);
+  const locale = isMain
+    ? isLocale(cookieLocale) && MAIN_LOCALES.includes(cookieLocale) ? cookieLocale : MAIN_LOCALES[0]
+    : resolveLocale(portal, cookieLocale);
   const rewriteTo = (path: string) => NextResponse.rewrite(new URL(`/${locale}${path === "/" ? "" : path}${search}`, req.url));
 
   if (!portal) {
-    if (isDevPortalChooserHost(host) && pathname === "/") return rewriteTo("/portals");
+    if (isMain && pathname === "/") return rewriteTo(MAIN_PAGE);
+    if (isDevPortalChooserHost(host) && pathname === "/portals") return rewriteTo("/portals");
     return rewriteTo(NOT_FOUND);
   }
   // Redirects always target the portal's public address.
   const portalUrl = (path: string) => new URL(path, `${req.nextUrl.protocol}//${portal.host}`);
   const redirectTo = (path: string) => NextResponse.redirect(portalUrl(path));
-  if (hasPrefix(pathname, "/portals")) return rewriteTo(NOT_FOUND);
+  if (hasPrefix(pathname, "/portals") || hasPrefix(pathname, MAIN_PAGE)) return rewriteTo(NOT_FOUND);
 
   // A session is only valid on the portal that issued it.
   const user = req.auth?.user;

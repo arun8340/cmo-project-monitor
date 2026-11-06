@@ -9,7 +9,7 @@ import { STATES } from "@/config/states";
 export const metadata: Metadata = { title: "Portals" };
 
 /**
- * Development helper: plain http://localhost:3000 lists the portal addresses.
+ * Development helper: plain http://localhost:3000/portals lists the portal addresses.
  * Proxy only routes here from localhost in development; in production it 404s.
  */
 export default function PortalsPage() {

@@ -4,6 +4,9 @@
  *   PORTAL_HOST_RJ     Rajasthan portal    (default rj.localhost:3000)
  *   PORTAL_HOST_MH     Maharashtra portal  (default mh.localhost:3000)
  *   PORTAL_HOST_ADMIN  Admin portal        (default admin.localhost:3000)
+ *   PORTAL_HOST_MAIN   Public main page    (default localhost:3000) — lists the
+ *                      states and links to each state portal's sign-in. It
+ *                      never links to the admin portal, which stays internal.
  *
  * Values are host[:port] as typed in the browser, e.g. "rajasthan.cmo-monitor.in".
  * A state portal only ever serves that state; only the admin portal sees all states.
@@ -53,7 +56,20 @@ export function portalFromHeaders(headers: { get(name: string): string | null })
   return resolvePortal(forwarded) ?? resolvePortal(headers.get("host"));
 }
 
-/** Plain localhost during development shows a page linking to each portal. */
+/** Address of the public main page (state selection). */
+export function getMainHost() {
+  return normalize(process.env.PORTAL_HOST_MAIN || "localhost:3000");
+}
+
+/** Whether the request is for the public main page (same header order as portalFromHeaders). */
+export function isMainHostFromHeaders(headers: { get(name: string): string | null }) {
+  const main = getMainHost();
+  const forwarded = headers.get("x-forwarded-host")?.split(",")[0];
+  if (resolvePortal(forwarded)) return false;
+  return [forwarded, headers.get("host")].some((h) => !!h && normalize(h) === main);
+}
+
+/** During development, localhost:3000/portals lists every portal address (admin included). */
 export function isDevPortalChooserHost(host: string | null | undefined) {
   if (process.env.NODE_ENV === "production" || !host) return false;
   return /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(normalize(host));

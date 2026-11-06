@@ -25,6 +25,9 @@ export function portalLocales(portal: Portal | null): Locale[] {
   return ["en", STATES[portal.stateCode].locale];
 }
 
+/** Languages on the public main page, which serves every state. */
+export const MAIN_LOCALES: Locale[] = ["en", "hi", "mr"];
+
 /** The language to use on a portal given the cookie value. */
 export function resolveLocale(portal: Portal | null, cookie: string | undefined): Locale {
   const allowed = portalLocales(portal);
