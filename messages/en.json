@@ -156,6 +156,7 @@
     "heroTitle": "Project Monitoring & Review by the CMO – Chief Minister's Office,",
     "heroBody": "District-wise tracking of every reported project, verified with dated satellite, drone and field imagery of the site.",
     "heroTitleImagery": "using On-Demand Instant Satellite Imagery",
+    "changeState": "Choose a different state",
     "imageryCredit": "Satellite imagery © Maxar Technologies, courtesy Globe Imagery"
   },
   "account": {
@@ -1109,5 +1110,14 @@
     "recentDeliveries": "Recently delivered",
     "noDeliveries": "Nothing delivered yet.",
     "deliveredOn": "Delivered {date}"
+  },
+  "main": {
+    "title": "Select your state",
+    "intro": "Each state has its own secure portal for the Chief Minister's Office and its departments. Choose your state to sign in.",
+    "available": "Available states",
+    "comingSoon": "Coming soon",
+    "signIn": "Sign in",
+    "openPortal": "Open the {state} portal",
+    "note": "Officials sign in with the account issued by their state. Contact your state's administrator for access."
   }
 }

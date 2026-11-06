@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { SatelliteIcon, ClipboardCheckIcon, MapIcon, ShieldIcon } from "lucide-react";
+import { ArrowLeftIcon, SatelliteIcon, ClipboardCheckIcon, MapIcon, ShieldIcon } from "lucide-react";
 import { APP_NAMES, BrandMark } from "@/components/app-shell/brand";
 import { DemoBadge } from "@/components/app-shell/app-header";
 import { DEMO_MODE } from "@/lib/demo";
@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { LanguageSwitcher } from "@/components/i18n/language-switcher";
 import { STATES, STATE_CODES } from "@/config/states";
 import { DEMO_ACCOUNTS } from "@/config/demo-accounts";
-import { getCurrentPortal } from "@/lib/portal";
+import { getCurrentPortal, getMainPageUrl } from "@/lib/portal";
 import { portalLocales } from "@/lib/i18n/config";
 import { localName } from "@/lib/i18n/names";
 import { SatelliteStrip } from "@/components/landing/satellite-strip";
@@ -45,7 +45,7 @@ async function PortalLogin() {
   const portal = await getCurrentPortal();
   if (!portal) notFound();
 
-  const [t, locale] = await Promise.all([getTranslations("login"), getLocale()]);
+  const [t, locale, mainPageUrl] = await Promise.all([getTranslations("login"), getLocale(), getMainPageUrl()]);
   const state = portal.kind === "state" ? STATES[portal.stateCode] : null;
   const stateName = state ? localName(locale, state.name, state.nameLocal) : "";
   const demoAccounts = DEMO_ACCOUNTS.filter((a) => a.portal === portal.id);
@@ -89,6 +89,16 @@ async function PortalLogin() {
         </div>
 
         <div className="w-full max-w-sm justify-self-center rounded-2xl bg-card p-6 text-foreground shadow-2xl ring-1 ring-black/5 lg:justify-self-end">
+          {/* State portals only: back to the public state selection (the admin portal stays separate). */}
+          {state && (
+            <a
+              href={mainPageUrl}
+              className="mb-4 inline-flex items-center gap-1.5 rounded-md text-sm font-medium text-muted-foreground hover:text-navy focus-visible:ring-2 focus-visible:ring-amber focus-visible:outline-none"
+            >
+              <ArrowLeftIcon className="size-4" />
+              {t("changeState")}
+            </a>
+          )}
           <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-navy">
             {!state && <ShieldIcon className="size-5 text-muted-foreground" />}
             {state ? t("signIn") : t("adminSignIn")}
